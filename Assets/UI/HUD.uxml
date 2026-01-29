@@ -1,0 +1,12 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/HUD.uss?fileID=7433441132597879392&amp;guid=placeholder" />
+    <ui:VisualElement name="Root" class="root">
+        <ui:VisualElement name="TopBar" class="top-bar">
+            <ui:Label name="Title" text="MASKS" class="title-label" />
+            <ui:VisualElement name="SlotsContainer" class="slots-container" />
+        </ui:VisualElement>
+        <ui:VisualElement name="EquippedIndicator" class="equipped-indicator">
+            <ui:Label name="EquippedLabel" text="Press 1-3 to equip" class="equipped-label" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
