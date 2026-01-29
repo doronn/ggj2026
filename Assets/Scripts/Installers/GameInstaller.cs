@@ -27,6 +27,11 @@ namespace BreakingHue.Installers
             Container.Bind<GameHUDController>()
                 .FromComponentInHierarchy()
                 .AsSingle();
+
+            // Game Manager for win conditions and scene transitions
+            Container.Bind<GameManager>()
+                .FromComponentInHierarchy()
+                .AsSingle();
         }
     }
 }

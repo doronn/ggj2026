@@ -10,6 +10,7 @@ namespace BreakingHue.Level
     /// 
     /// Pixel Protocol:
     /// - Alpha > 0.9: SOLID objects
+    ///   - Black (0,0,0): Exit Goal
     ///   - White (1,1,1): Wall
     ///   - Grey (~0.5,0.5,0.5): Player Spawn
     ///   - RGB colors: Barrier/Door (color determines required mask)
@@ -30,6 +31,7 @@ namespace BreakingHue.Level
         [SerializeField] private GameObject playerPrefab;
         [SerializeField] private GameObject barrierPrefab;
         [SerializeField] private GameObject pickupPrefab;
+        [SerializeField] private GameObject exitPrefab;
 
         [Header("Parent Containers")]
         [SerializeField] private Transform levelContainer;
@@ -107,6 +109,14 @@ namespace BreakingHue.Level
 
         private void ProcessSolidPixel(Vector3 position, Color pixel)
         {
+            // Check for black (exit) FIRST - RGB all < 0.1
+            // Must be before grey check since black could match grey's variance check
+            if (IsBlack(pixel))
+            {
+                SpawnExit(position);
+                return;
+            }
+
             // Check for grey (player spawn): RGB values all similar and around 0.5
             if (IsGrey(pixel))
             {
@@ -191,6 +201,14 @@ namespace BreakingHue.Level
             SetObjectColor(pickup, visualColor);
         }
 
+        private void SpawnExit(Vector3 position)
+        {
+            if (exitPrefab == null) return;
+
+            GameObject exit = _container.InstantiatePrefab(exitPrefab, position, Quaternion.identity, levelContainer);
+            exit.name = "Exit";
+        }
+
         private void SetObjectColor(GameObject obj, Color color)
         {
             var renderer = obj.GetComponentInChildren<Renderer>();
@@ -224,6 +242,11 @@ namespace BreakingHue.Level
             float avg = (color.r + color.g + color.b) / 3f;
             float variance = Mathf.Abs(color.r - avg) + Mathf.Abs(color.g - avg) + Mathf.Abs(color.b - avg);
             return avg > 0.3f && avg < 0.7f && variance < 0.1f;
+        }
+
+        private bool IsBlack(Color color)
+        {
+            return color.r < 0.1f && color.g < 0.1f && color.b < 0.1f;
         }
 
         /// <summary>
