@@ -1,21 +1,34 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
+using BreakingHue.Input;
 
 namespace BreakingHue.Camera
 {
     /// <summary>
-    /// Fixed orthographic camera controller for the 32x32 grid.
-    /// Handles letterboxing/pillarboxing for different aspect ratios.
-    /// Ensures the entire level is always visible on screen.
+    /// Third-person camera controller that follows the player and rotates around Y-axis.
+    /// Supports both perspective and orthographic modes.
+    /// Handles smooth follow, rotation input from mouse/gamepad, and optional letterboxing.
     /// </summary>
     [RequireComponent(typeof(UnityEngine.Camera))]
     public class GameCamera : MonoBehaviour
     {
-        [Header("Grid Settings")]
+        [Header("Camera Mode")]
+        [SerializeField] private bool useThirdPerson = true;
+        
+        [Header("Third Person Settings")]
+        [SerializeField] private float distance = 12f;
+        [SerializeField] private float heightAngle = 60f; // degrees from horizontal (0 = behind, 90 = top-down)
+        [SerializeField] private float rotationSpeed = 120f; // degrees per second for gamepad
+        [SerializeField] private float mouseSensitivity = 0.3f;
+        [SerializeField] private float followSmoothTime = 0.1f;
+        
+        [Header("Target")]
+        [SerializeField] private Transform target;
+        
+        [Header("Fixed Camera Settings (Legacy)")]
         [SerializeField] private float gridSize = 32f;
         [SerializeField] private float cellSize = 1f;
-        [SerializeField] private float padding = 1f; // Extra space around the grid
-        
-        [Header("Camera Position")]
+        [SerializeField] private float padding = 1f;
         [SerializeField] private float cameraHeight = 30f;
         
         [Header("Letterboxing")]
@@ -26,87 +39,277 @@ namespace BreakingHue.Camera
         private int _lastScreenWidth;
         private int _lastScreenHeight;
         private GameObject[] _letterboxBars;
+        
+        // Third person state
+        private float _currentYRotation;
+        private Vector3 _currentVelocity;
+        private Vector3 _targetPosition;
+        
+        // Input
+        private InputAction _lookAction;
+        private Vector2 _lookInput;
+
+        /// <summary>
+        /// The current Y rotation of the camera around the target.
+        /// </summary>
+        public float CurrentYRotation => _currentYRotation;
+        
+        /// <summary>
+        /// The camera's forward direction projected onto the XZ plane.
+        /// </summary>
+        public Vector3 Forward
+        {
+            get
+            {
+                Vector3 forward = transform.forward;
+                forward.y = 0;
+                return forward.normalized;
+            }
+        }
+        
+        /// <summary>
+        /// The camera's right direction projected onto the XZ plane.
+        /// </summary>
+        public Vector3 Right
+        {
+            get
+            {
+                Vector3 right = transform.right;
+                right.y = 0;
+                return right.normalized;
+            }
+        }
 
         private void Awake()
         {
             _camera = GetComponent<UnityEngine.Camera>();
             
-            // Configure as orthographic
-            _camera.orthographic = true;
-            
-            // Position camera to look down at the center of the grid
-            float gridCenter = gridSize * cellSize * 0.5f;
-            transform.position = new Vector3(0, cameraHeight, 0);
-            transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            if (useThirdPerson)
+            {
+                // Configure as perspective
+                _camera.orthographic = false;
+                _camera.fieldOfView = 60f;
+            }
+            else
+            {
+                // Configure as orthographic (legacy fixed camera)
+                _camera.orthographic = true;
+                transform.position = new Vector3(0, cameraHeight, 0);
+                transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            }
             
             UpdateCamera();
         }
 
         private void Start()
         {
-            if (useLetterboxing)
+            if (useLetterboxing && !useThirdPerson)
             {
                 CreateLetterboxBars();
             }
             
-            UpdateCamera();
+            // Find player if no target assigned
+            if (target == null)
+            {
+                var player = GameObject.FindGameObjectWithTag("Player");
+                if (player != null)
+                {
+                    target = player.transform;
+                }
+            }
+            
+            // Setup input
+            SetupInput();
+            
+            // Initialize camera position
+            if (useThirdPerson && target != null)
+            {
+                _targetPosition = target.position;
+                UpdateThirdPersonPosition(true);
+            }
+            else
+            {
+                UpdateCamera();
+            }
+        }
+
+        private void SetupInput()
+        {
+            // Try to get Look action from InputManager
+            if (InputManager.Instance != null)
+            {
+                _lookAction = InputManager.Instance.GetPlayerAction("Look");
+                
+                // Ensure the action is enabled
+                if (_lookAction != null)
+                {
+                    _lookAction.Enable();
+                }
+            }
+            
+            // Fallback: create manual input action
+            if (_lookAction == null)
+            {
+                _lookAction = new InputAction("Look", InputActionType.Value, binding: "<Mouse>/delta");
+                _lookAction.AddBinding("<Gamepad>/rightStick").WithProcessors("StickDeadzone,ScaleVector2(x=3,y=3)");
+                _lookAction.Enable();
+            }
+        }
+
+        private void OnEnable()
+        {
+            _lookAction?.Enable();
+        }
+
+        private void OnDisable()
+        {
+            _lookAction?.Disable();
         }
 
         private void Update()
         {
-            // Check for screen size changes
-            if (Screen.width != _lastScreenWidth || Screen.height != _lastScreenHeight)
+            if (useThirdPerson)
             {
-                UpdateCamera();
-                _lastScreenWidth = Screen.width;
-                _lastScreenHeight = Screen.height;
+                UpdateThirdPersonCamera();
             }
+            else
+            {
+                // Check for screen size changes (fixed camera mode)
+                if (Screen.width != _lastScreenWidth || Screen.height != _lastScreenHeight)
+                {
+                    UpdateCamera();
+                    _lastScreenWidth = Screen.width;
+                    _lastScreenHeight = Screen.height;
+                }
+            }
+        }
+
+        private void LateUpdate()
+        {
+            if (useThirdPerson)
+            {
+                // Keep searching for player if target is null (player spawns after camera)
+                if (target == null)
+                {
+                    var player = GameObject.FindGameObjectWithTag("Player");
+                    if (player != null)
+                    {
+                        target = player.transform;
+                        _targetPosition = target.position;
+                    }
+                }
+                
+                if (target != null)
+                {
+                    UpdateThirdPersonPosition(false);
+                }
+            }
+        }
+
+        private void UpdateThirdPersonCamera()
+        {
+            // Read look input
+            if (_lookAction != null)
+            {
+                _lookInput = _lookAction.ReadValue<Vector2>();
+            }
+            
+            // Apply rotation based on input device
+            bool isGamepad = InputManager.Instance != null && InputManager.Instance.IsGamepad;
+            
+            if (isGamepad)
+            {
+                // Gamepad: continuous rotation
+                _currentYRotation += _lookInput.x * rotationSpeed * Time.deltaTime;
+            }
+            else
+            {
+                // Mouse: direct delta application
+                _currentYRotation += _lookInput.x * mouseSensitivity;
+            }
+            
+            // Wrap rotation
+            if (_currentYRotation > 360f) _currentYRotation -= 360f;
+            if (_currentYRotation < 0f) _currentYRotation += 360f;
+        }
+
+        private void UpdateThirdPersonPosition(bool instant)
+        {
+            if (target == null) return;
+            
+            // Smooth follow target position
+            if (instant)
+            {
+                _targetPosition = target.position;
+            }
+            else
+            {
+                _targetPosition = Vector3.SmoothDamp(
+                    _targetPosition, 
+                    target.position, 
+                    ref _currentVelocity, 
+                    followSmoothTime
+                );
+            }
+            
+            // Calculate camera position based on angle and rotation
+            float heightAngleRad = heightAngle * Mathf.Deg2Rad;
+            float horizontalDistance = distance * Mathf.Cos(heightAngleRad);
+            float verticalDistance = distance * Mathf.Sin(heightAngleRad);
+            
+            // Calculate offset based on Y rotation
+            float yRotRad = _currentYRotation * Mathf.Deg2Rad;
+            Vector3 offset = new Vector3(
+                -Mathf.Sin(yRotRad) * horizontalDistance,
+                verticalDistance,
+                -Mathf.Cos(yRotRad) * horizontalDistance
+            );
+            
+            // Apply position
+            transform.position = _targetPosition + offset;
+            
+            // Look at target
+            transform.LookAt(_targetPosition);
         }
 
         private void UpdateCamera()
         {
-            // Calculate the total world size we need to display
+            if (useThirdPerson) return;
+            
+            // Legacy fixed camera logic
             float worldWidth = gridSize * cellSize + padding * 2;
             float worldHeight = gridSize * cellSize + padding * 2;
             
-            // Get screen aspect ratio
             float screenAspect = (float)Screen.width / Screen.height;
-            float targetAspect = worldWidth / worldHeight; // Should be 1:1 for a square grid
+            float targetAspect = worldWidth / worldHeight;
             
             if (useLetterboxing)
             {
-                // Calculate viewport rect for letterboxing
                 if (screenAspect > targetAspect)
                 {
-                    // Screen is wider than target - add pillarbox (black bars on sides)
                     float viewportWidth = targetAspect / screenAspect;
                     float viewportX = (1f - viewportWidth) / 2f;
                     _camera.rect = new Rect(viewportX, 0, viewportWidth, 1);
                 }
                 else
                 {
-                    // Screen is taller than target - add letterbox (black bars top/bottom)
                     float viewportHeight = screenAspect / targetAspect;
                     float viewportY = (1f - viewportHeight) / 2f;
                     _camera.rect = new Rect(0, viewportY, 1, viewportHeight);
                 }
                 
-                // Set orthographic size to fit the grid exactly
                 _camera.orthographicSize = worldHeight / 2f;
             }
             else
             {
-                // No letterboxing - fit to screen
                 _camera.rect = new Rect(0, 0, 1, 1);
                 
                 if (screenAspect > targetAspect)
                 {
-                    // Wider screen - height limited
                     _camera.orthographicSize = worldHeight / 2f;
                 }
                 else
                 {
-                    // Taller screen - width limited
                     _camera.orthographicSize = worldWidth / (2f * screenAspect);
                 }
             }
@@ -116,12 +319,10 @@ namespace BreakingHue.Camera
 
         private void CreateLetterboxBars()
         {
-            // Create a separate camera for letterbox rendering
             GameObject letterboxContainer = new GameObject("LetterboxBars");
             letterboxContainer.transform.SetParent(transform);
             
-            // Create 4 quads for potential letterbox bars
-            _letterboxBars = new GameObject[4]; // Left, Right, Top, Bottom
+            _letterboxBars = new GameObject[4];
             
             string[] names = { "LeftBar", "RightBar", "TopBar", "BottomBar" };
             for (int i = 0; i < 4; i++)
@@ -130,16 +331,13 @@ namespace BreakingHue.Camera
                 _letterboxBars[i].name = names[i];
                 _letterboxBars[i].transform.SetParent(letterboxContainer.transform);
                 
-                // Remove collider
                 var collider = _letterboxBars[i].GetComponent<Collider>();
                 if (collider != null) Destroy(collider);
                 
-                // Set material
                 var renderer = _letterboxBars[i].GetComponent<Renderer>();
                 renderer.material = new Material(Shader.Find("Unlit/Color"));
                 renderer.material.color = letterboxColor;
                 
-                // Initially hide
                 _letterboxBars[i].SetActive(false);
             }
         }
@@ -148,24 +346,38 @@ namespace BreakingHue.Camera
         {
             if (_letterboxBars == null || !useLetterboxing) return;
             
-            float screenAspect = (float)Screen.width / Screen.height;
-            float worldHeight = gridSize * cellSize + padding * 2;
-            float worldWidth = worldHeight; // Square grid
-            float targetAspect = worldWidth / worldHeight;
-            
-            // Hide all bars first
             foreach (var bar in _letterboxBars)
             {
                 if (bar != null) bar.SetActive(false);
             }
             
-            // Note: With viewport rect approach, we don't need actual 3D bars
-            // The camera rect handles letterboxing automatically
-            // Unity fills the uncovered area with the background clear color
-            
-            // Ensure camera clear flags and background color are set
             _camera.clearFlags = CameraClearFlags.SolidColor;
             _camera.backgroundColor = letterboxColor;
+        }
+
+        /// <summary>
+        /// Sets the follow target for third-person mode.
+        /// </summary>
+        public void SetTarget(Transform newTarget)
+        {
+            target = newTarget;
+            if (target != null && useThirdPerson)
+            {
+                _targetPosition = target.position;
+                UpdateThirdPersonPosition(true);
+            }
+        }
+
+        /// <summary>
+        /// Sets the camera rotation directly (in degrees).
+        /// </summary>
+        public void SetYRotation(float rotation)
+        {
+            _currentYRotation = rotation;
+            if (useThirdPerson && target != null)
+            {
+                UpdateThirdPersonPosition(true);
+            }
         }
 
         /// <summary>
@@ -173,16 +385,13 @@ namespace BreakingHue.Camera
         /// </summary>
         public Vector3 ScreenToWorldPosition(Vector2 screenPosition)
         {
-            // Adjust for viewport
             Vector3 viewportPos = _camera.ScreenToViewportPoint(screenPosition);
-            
-            // Convert viewport to world
             Ray ray = _camera.ViewportPointToRay(viewportPos);
             Plane gamePlane = new Plane(Vector3.up, Vector3.zero);
             
-            if (gamePlane.Raycast(ray, out float distance))
+            if (gamePlane.Raycast(ray, out float rayDistance))
             {
-                return ray.GetPoint(distance);
+                return ray.GetPoint(rayDistance);
             }
             
             return Vector3.zero;
@@ -198,7 +407,7 @@ namespace BreakingHue.Camera
         }
 
         /// <summary>
-        /// Sets the grid size and updates the camera.
+        /// Sets the grid size and updates the camera (legacy mode only).
         /// </summary>
         public void SetGridSize(float size)
         {
@@ -230,32 +439,104 @@ namespace BreakingHue.Camera
             }
         }
 
+        /// <summary>
+        /// Enables or disables third-person mode.
+        /// </summary>
+        public void SetThirdPersonMode(bool enabled)
+        {
+            if (useThirdPerson == enabled) return;
+            
+            useThirdPerson = enabled;
+            
+            if (useThirdPerson)
+            {
+                _camera.orthographic = false;
+                _camera.fieldOfView = 60f;
+                _camera.rect = new Rect(0, 0, 1, 1);
+                
+                if (target != null)
+                {
+                    _targetPosition = target.position;
+                    UpdateThirdPersonPosition(true);
+                }
+            }
+            else
+            {
+                _camera.orthographic = true;
+                transform.position = new Vector3(0, cameraHeight, 0);
+                transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+                UpdateCamera();
+            }
+        }
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
             if (_camera == null)
                 _camera = GetComponent<UnityEngine.Camera>();
             
-            if (_camera != null && Application.isPlaying)
+            // Clamp values
+            distance = Mathf.Max(1f, distance);
+            heightAngle = Mathf.Clamp(heightAngle, 10f, 89f);
+            rotationSpeed = Mathf.Max(0f, rotationSpeed);
+            mouseSensitivity = Mathf.Max(0f, mouseSensitivity);
+            followSmoothTime = Mathf.Max(0.01f, followSmoothTime);
+            
+            if (_camera != null && Application.isPlaying && useThirdPerson && target != null)
             {
-                UpdateCamera();
+                UpdateThirdPersonPosition(true);
             }
         }
 
         private void OnDrawGizmos()
         {
-            // Draw grid bounds
-            float worldSize = gridSize * cellSize;
-            
-            Gizmos.color = Color.green;
-            Vector3 center = Vector3.zero;
-            Vector3 size = new Vector3(worldSize, 0.1f, worldSize);
-            Gizmos.DrawWireCube(center, size);
-            
-            // Draw padding bounds
-            Gizmos.color = Color.yellow;
-            float paddedSize = worldSize + padding * 2;
-            Gizmos.DrawWireCube(center, new Vector3(paddedSize, 0.1f, paddedSize));
+            if (useThirdPerson)
+            {
+                // Draw camera orbit
+                if (target != null)
+                {
+                    Gizmos.color = Color.cyan;
+                    float heightAngleRad = heightAngle * Mathf.Deg2Rad;
+                    float horizontalDistance = distance * Mathf.Cos(heightAngleRad);
+                    
+                    // Draw orbit circle
+                    int segments = 32;
+                    Vector3 prevPoint = Vector3.zero;
+                    for (int i = 0; i <= segments; i++)
+                    {
+                        float angle = (float)i / segments * 360f * Mathf.Deg2Rad;
+                        Vector3 point = target.position + new Vector3(
+                            Mathf.Sin(angle) * horizontalDistance,
+                            distance * Mathf.Sin(heightAngleRad),
+                            Mathf.Cos(angle) * horizontalDistance
+                        );
+                        
+                        if (i > 0)
+                        {
+                            Gizmos.DrawLine(prevPoint, point);
+                        }
+                        prevPoint = point;
+                    }
+                    
+                    // Draw line to target
+                    Gizmos.color = Color.yellow;
+                    Gizmos.DrawLine(transform.position, target.position);
+                }
+            }
+            else
+            {
+                // Draw grid bounds
+                float worldSize = gridSize * cellSize;
+                
+                Gizmos.color = Color.green;
+                Vector3 center = Vector3.zero;
+                Vector3 size = new Vector3(worldSize, 0.1f, worldSize);
+                Gizmos.DrawWireCube(center, size);
+                
+                Gizmos.color = Color.yellow;
+                float paddedSize = worldSize + padding * 2;
+                Gizmos.DrawWireCube(center, new Vector3(paddedSize, 0.1f, paddedSize));
+            }
         }
 #endif
     }

@@ -1,0 +1,9 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="Overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.7); justify-content: center; align-items: center;">
+        <ui:VisualElement name="PauseMenuPanel" style="background-color: rgba(35, 35, 50, 0.95); padding: 30px 50px; border-radius: 12px; align-items: center;">
+            <ui:Label name="Title" text="PAUSED" style="font-size: 36px; color: white; -unity-font-style: bold; margin-bottom: 30px;" />
+            <ui:Button name="ResumeButton" text="Resume" class="menu-button menu-button-primary" style="margin-bottom: 15px;" />
+            <ui:Button name="ExitButton" text="Exit to Menu" class="menu-button menu-button-danger" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -12,6 +12,8 @@ GameObject:
   - component: {fileID: 3998966859340963129}
   - component: {fileID: 3953652996951628480}
   - component: {fileID: 6790770257928047993}
+  - component: {fileID: 7537336268671990459}
+  - component: {fileID: 8182554882856667094}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -77,6 +79,7 @@ MonoBehaviour:
   moveSpeed: 5
   acceleration: 50
   deceleration: 40
+  useCameraRelativeMovement: 1
   visualTransform: {fileID: 0}
   droppedMaskPrefab: {fileID: 0}
   gridCellSize: 1
@@ -103,6 +106,53 @@ CapsuleCollider:
   m_Height: 1
   m_Direction: 1
   m_Center: {x: 0, y: 0.5, z: 0}
+--- !u!114 &7537336268671990459
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3010117779049158797}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.PlayerInput
+  m_Actions: {fileID: -944628639613478452, guid: 93d50da592c0e401f96864229b6b088e, type: 3}
+  m_NotificationBehavior: 0
+  m_UIInputModule: {fileID: 0}
+  m_DeviceLostEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_DeviceRegainedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ControlsChangedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ActionEvents: []
+  m_NeverAutoSwitchControlSchemes: 0
+  m_DefaultControlScheme: 
+  m_DefaultActionMap: Player
+  m_SplitScreenIndex: -1
+  m_Camera: {fileID: 0}
+--- !u!114 &8182554882856667094
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3010117779049158797}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2813f99f27d6d4b64a3d6ed6b55ed63a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BreakingHue.Gameplay.SelfDestructController
+  holdDuration: 2
+  resetOnRelease: 1
+  chargingSound: {fileID: 0}
+  triggerSound: {fileID: 0}
+  cancelSound: {fileID: 0}
 --- !u!1 &5196049501797835620
 GameObject:
   m_ObjectHideFlags: 0

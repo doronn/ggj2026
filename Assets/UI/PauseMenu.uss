@@ -1,0 +1,63 @@
+/* Pause Menu Styles */
+
+#Overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    justify-content: center;
+    align-items: center;
+}
+
+#PauseMenuPanel {
+    background-color: rgba(35, 35, 50, 0.95);
+    padding: 30px 50px;
+    border-radius: 12px;
+    align-items: center;
+    min-width: 300px;
+}
+
+#Title {
+    font-size: 36px;
+    color: white;
+    -unity-font-style: bold;
+    margin-bottom: 30px;
+}
+
+.menu-button {
+    width: 200px;
+    height: 50px;
+    font-size: 18px;
+    color: white;
+    border-radius: 8px;
+    border-width: 0;
+    -unity-font-style: bold;
+    transition-property: background-color, scale;
+    transition-duration: 0.15s;
+}
+
+.menu-button:hover {
+    scale: 1.05;
+}
+
+.menu-button:active {
+    scale: 0.98;
+}
+
+.menu-button-primary {
+    background-color: rgb(50, 150, 80);
+}
+
+.menu-button-primary:hover {
+    background-color: rgb(60, 170, 90);
+}
+
+.menu-button-danger {
+    background-color: rgb(150, 50, 50);
+}
+
+.menu-button-danger:hover {
+    background-color: rgb(170, 60, 60);
+}

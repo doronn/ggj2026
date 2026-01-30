@@ -89,10 +89,13 @@ namespace BreakingHue.Level
             set => gameConfig = value;
         }
 
+        private DiContainer _container;
+
         [Inject]
-        public void Construct(MaskInventory playerInventory)
+        public void Construct(MaskInventory playerInventory, DiContainer container)
         {
             _playerInventory = playerInventory;
+            _container = container;
         }
 
         private void Start()
@@ -617,7 +620,18 @@ namespace BreakingHue.Level
             }
             else if (EffectivePrefabs?.playerPrefab != null)
             {
-                var player = Instantiate(EffectivePrefabs.playerPrefab, position, Quaternion.identity);
+                // Use Zenject container to instantiate player so all [Inject] methods are called
+                GameObject player;
+                if (_container != null)
+                {
+                    player = _container.InstantiatePrefab(EffectivePrefabs.playerPrefab, position, Quaternion.identity, null);
+                }
+                else
+                {
+                    // Fallback to regular instantiate if container not available
+                    player = Instantiate(EffectivePrefabs.playerPrefab, position, Quaternion.identity);
+                    Debug.LogWarning("[LevelManager] DiContainer not available, player may not have all dependencies injected");
+                }
                 _playerController = player.GetComponent<PlayerController>();
             }
         }

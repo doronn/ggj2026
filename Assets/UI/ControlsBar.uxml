@@ -1,0 +1,11 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="Root" style="flex-grow: 1;">
+        <ui:VisualElement name="ControlsBarMain" style="position: absolute; bottom: 0; left: 0; right: 0; padding: 10px 20px; background-color: rgba(0, 0, 0, 0.7);">
+            <ui:VisualElement name="ProgressBarContainer" style="height: 6px; margin-bottom: 8px; background-color: rgba(50, 50, 50, 0.8); border-radius: 3px; display: none;">
+                <ui:VisualElement name="ProgressBarFill" style="height: 100%; width: 0%; background-color: rgb(230, 50, 50); border-radius: 3px;" />
+            </ui:VisualElement>
+            <ui:VisualElement name="ControlsContainer" style="flex-direction: row; justify-content: center; align-items: center; flex-wrap: wrap;">
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
