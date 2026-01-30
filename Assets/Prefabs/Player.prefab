@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 6790770257928047993}
   m_Layer: 0
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -78,6 +78,8 @@ MonoBehaviour:
   acceleration: 50
   deceleration: 40
   visualTransform: {fileID: 0}
+  droppedMaskPrefab: {fileID: 0}
+  gridCellSize: 1
 --- !u!136 &6790770257928047993
 CapsuleCollider:
   m_ObjectHideFlags: 0

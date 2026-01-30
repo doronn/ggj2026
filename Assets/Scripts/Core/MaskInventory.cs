@@ -1,10 +1,14 @@
 using System;
+using System.Collections.Generic;
 
 namespace BreakingHue.Core
 {
     /// <summary>
-    /// Slot-based mask inventory system.
-    /// Supports 3 discrete mask slots with manual equipping.
+    /// Slot-based mask inventory system with multi-mask toggle support.
+    /// Supports 3 discrete mask slots with independent activation.
+    /// Active masks combine their colors for barrier passage.
+    /// When passing through barriers, only the required colors are consumed,
+    /// leaving residue colors in the masks.
     /// Bound as singleton via Zenject.
     /// </summary>
     public class MaskInventory
@@ -12,31 +16,38 @@ namespace BreakingHue.Core
         public const int MaxSlots = 3;
         
         private readonly ColorType[] _slots = new ColorType[MaxSlots];
-        private int _equippedSlotIndex = -1;
+        private readonly bool[] _activeSlots = new bool[MaxSlots];
 
         /// <summary>
-        /// Fired when any slot changes (add, remove, consume).
+        /// Fired when any slot changes (add, remove, transform).
         /// </summary>
         public event Action OnInventoryChanged;
         
         /// <summary>
-        /// Fired when a mask is equipped or unequipped.
-        /// Parameter is the equipped ColorType (None if unequipped).
+        /// Fired when a mask's active state changes.
+        /// Parameters: slot index, new active state
         /// </summary>
-        public event Action<ColorType> OnMaskEquipped;
+        public event Action<int, bool> OnMaskToggled;
         
         /// <summary>
-        /// Fired when the equipped mask is consumed (destroyed).
-        /// Parameter is the ColorType that was consumed.
+        /// Fired when masks are consumed/transformed after barrier passage.
+        /// Parameter is the ColorType that was consumed from the combined masks.
         /// </summary>
         public event Action<ColorType> OnMaskConsumed;
 
+        /// <summary>
+        /// Fired when a mask is dropped.
+        /// Parameters: slot index, ColorType that was dropped
+        /// </summary>
+        public event Action<int, ColorType> OnMaskDropped;
+
         public MaskInventory()
         {
-            // Initialize all slots to empty
+            // Initialize all slots to empty and inactive
             for (int i = 0; i < MaxSlots; i++)
             {
                 _slots[i] = ColorType.None;
+                _activeSlots[i] = false;
             }
         }
 
@@ -56,14 +67,47 @@ namespace BreakingHue.Core
         public ReadOnlySpan<ColorType> Slots => _slots;
 
         /// <summary>
-        /// Gets the currently equipped slot index (-1 if none equipped).
+        /// Checks if a specific slot is active (toggled on).
         /// </summary>
-        public int EquippedSlotIndex => _equippedSlotIndex;
+        public bool IsSlotActive(int index)
+        {
+            if (index < 0 || index >= MaxSlots)
+                return false;
+            return _activeSlots[index];
+        }
 
         /// <summary>
-        /// Gets the currently equipped mask color (None if nothing equipped).
+        /// Gets the combined color of all active masks.
         /// </summary>
-        public ColorType EquippedMask => _equippedSlotIndex >= 0 ? _slots[_equippedSlotIndex] : ColorType.None;
+        public ColorType GetCombinedActiveColor()
+        {
+            ColorType combined = ColorType.None;
+            for (int i = 0; i < MaxSlots; i++)
+            {
+                if (_activeSlots[i] && _slots[i] != ColorType.None)
+                {
+                    combined |= _slots[i];
+                }
+            }
+            
+            return combined;
+        }
+
+        /// <summary>
+        /// Gets indices of all active slots.
+        /// </summary>
+        public List<int> GetActiveSlotIndices()
+        {
+            var indices = new List<int>();
+            for (int i = 0; i < MaxSlots; i++)
+            {
+                if (_activeSlots[i] && _slots[i] != ColorType.None)
+                {
+                    indices.Add(i);
+                }
+            }
+            return indices;
+        }
 
         /// <summary>
         /// Checks if a slot is empty.
@@ -102,6 +146,8 @@ namespace BreakingHue.Core
                 return false;
 
             _slots[emptySlot] = mask;
+            _activeSlots[emptySlot] = false; // New masks start inactive
+
             OnInventoryChanged?.Invoke();
             return true;
         }
@@ -114,102 +160,321 @@ namespace BreakingHue.Core
             if (index < 0 || index >= MaxSlots)
                 return;
 
-            // If we're replacing the equipped slot with None, unequip first
-            if (index == _equippedSlotIndex && mask == ColorType.None)
-            {
-                UnequipMask();
-            }
-
             _slots[index] = mask;
+            if (mask == ColorType.None)
+            {
+                _activeSlots[index] = false;
+            }
             OnInventoryChanged?.Invoke();
         }
 
         /// <summary>
-        /// Equips the mask in the specified slot.
-        /// If the slot is empty, does nothing.
-        /// If the same slot is already equipped, unequips it (toggle).
+        /// Toggles the active state of a mask in the specified slot.
+        /// Empty slots cannot be activated.
         /// </summary>
-        public void EquipSlot(int index)
+        public void ToggleMask(int index)
         {
             if (index < 0 || index >= MaxSlots)
                 return;
 
-            // Toggle off if same slot
-            if (_equippedSlotIndex == index)
+            // Can't activate empty slot
+            if (_slots[index] == ColorType.None)
             {
-                UnequipMask();
+                _activeSlots[index] = false;
                 return;
             }
 
-            // Can't equip empty slot
+            _activeSlots[index] = !_activeSlots[index];
+
+            OnMaskToggled?.Invoke(index, _activeSlots[index]);
+            OnInventoryChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// Sets the active state of a specific slot.
+        /// </summary>
+        public void SetSlotActive(int index, bool active)
+        {
+            if (index < 0 || index >= MaxSlots)
+                return;
+
+            // Can't activate empty slot
             if (_slots[index] == ColorType.None)
+            {
+                _activeSlots[index] = false;
                 return;
+            }
 
-            _equippedSlotIndex = index;
-            OnMaskEquipped?.Invoke(_slots[index]);
+            if (_activeSlots[index] != active)
+            {
+                _activeSlots[index] = active;
+                OnMaskToggled?.Invoke(index, active);
+                OnInventoryChanged?.Invoke();
+            }
+        }
+
+        /// <summary>
+        /// Deactivates all masks.
+        /// </summary>
+        public void DeactivateAll()
+        {
+            for (int i = 0; i < MaxSlots; i++)
+            {
+                if (_activeSlots[i])
+                {
+                    _activeSlots[i] = false;
+                    OnMaskToggled?.Invoke(i, false);
+                }
+            }
             OnInventoryChanged?.Invoke();
         }
 
         /// <summary>
-        /// Unequips the currently worn mask (returns it to inventory, still in slot).
+        /// Checks if the combined active masks can pass through a barrier of the given color.
         /// </summary>
-        public void UnequipMask()
+        public bool CanPassThrough(ColorType barrierColor)
         {
-            if (_equippedSlotIndex < 0)
-                return;
-
-            _equippedSlotIndex = -1;
-            OnMaskEquipped?.Invoke(ColorType.None);
-            OnInventoryChanged?.Invoke();
+            ColorType combined = GetCombinedActiveColor();
+            return ColorTypeExtensions.CanPassThrough(combined, barrierColor);
         }
 
         /// <summary>
-        /// Checks if the currently equipped mask can pass through a door of the given color.
+        /// Transforms a mask in a specific slot to a new color.
+        /// Used for the residue system when colors are partially consumed.
         /// </summary>
-        public bool CanPassThrough(ColorType doorColor)
+        public void TransformMask(int index, ColorType newColor)
         {
-            if (_equippedSlotIndex < 0)
-                return false;
-
-            return ColorTypeExtensions.CanPassThrough(_slots[_equippedSlotIndex], doorColor);
-        }
-
-        /// <summary>
-        /// Consumes (destroys) the currently equipped mask.
-        /// Called when passing through a door.
-        /// </summary>
-        public void ConsumeEquipped()
-        {
-            if (_equippedSlotIndex < 0)
+            if (index < 0 || index >= MaxSlots)
                 return;
 
-            ColorType consumed = _slots[_equippedSlotIndex];
-            _slots[_equippedSlotIndex] = ColorType.None;
+            _slots[index] = newColor;
             
-            int previousSlot = _equippedSlotIndex;
-            _equippedSlotIndex = -1;
+            // If mask becomes empty, deactivate it
+            if (newColor == ColorType.None)
+            {
+                _activeSlots[index] = false;
+            }
             
-            OnMaskConsumed?.Invoke(consumed);
-            OnMaskEquipped?.Invoke(ColorType.None);
             OnInventoryChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// Calculates the optimal way to subtract required colors from active masks,
+        /// minimizing waste and maximizing residue.
+        /// Returns a dictionary mapping slot indices to the colors that should be removed from them.
+        /// </summary>
+        public Dictionary<int, ColorType> CalculateOptimalSubtraction(ColorType required)
+        {
+            var result = new Dictionary<int, ColorType>();
+            var activeIndices = GetActiveSlotIndices();
+            
+            if (activeIndices.Count == 0)
+                return result;
+
+            // Get the primary components we need to satisfy
+            ColorType remaining = required.GetPrimaryComponents();
+            
+            // Strategy: For each required primary, find the mask that has it
+            // with the least "waste" (fewest other primaries)
+            foreach (ColorType primary in new[] { ColorType.Red, ColorType.Yellow, ColorType.Blue })
+            {
+                if ((remaining & primary) == 0)
+                    continue; // This primary not needed
+                
+                // Find best slot to take this primary from
+                int bestSlot = -1;
+                int bestWaste = int.MaxValue;
+                
+                foreach (int slotIndex in activeIndices)
+                {
+                    ColorType mask = _slots[slotIndex];
+                    if ((mask & primary) == 0)
+                        continue; // Slot doesn't have this primary
+                    
+                    // Count how many other primaries this mask has (waste potential)
+                    int waste = mask.CountPrimaries() - 1;
+                    
+                    // Prefer masks that will contribute this primary with least waste
+                    // Also prefer masks we're already taking from
+                    if (result.ContainsKey(slotIndex))
+                    {
+                        // Already taking from this slot, prefer it to minimize fragmentation
+                        bestSlot = slotIndex;
+                        break;
+                    }
+                    
+                    if (waste < bestWaste)
+                    {
+                        bestWaste = waste;
+                        bestSlot = slotIndex;
+                    }
+                }
+                
+                if (bestSlot >= 0)
+                {
+                    // Add this primary to what we're taking from this slot
+                    if (result.ContainsKey(bestSlot))
+                    {
+                        result[bestSlot] |= primary;
+                    }
+                    else
+                    {
+                        result[bestSlot] = primary;
+                    }
+                    
+                    remaining = remaining.Subtract(primary);
+                }
+            }
+            
+            return result;
+        }
+
+        /// <summary>
+        /// Applies the color subtraction from a barrier passage.
+        /// Transforms masks in-place, leaving residue colors.
+        /// </summary>
+        public void ApplyBarrierSubtraction(ColorType barrierColor)
+        {
+            var subtractions = CalculateOptimalSubtraction(barrierColor);
+            
+            foreach (var kvp in subtractions)
+            {
+                int slotIndex = kvp.Key;
+                ColorType toRemove = kvp.Value;
+                
+                ColorType currentMask = _slots[slotIndex];
+                ColorType newMask = currentMask.Subtract(toRemove);
+                
+                TransformMask(slotIndex, newMask);
+            }
+            
+            OnMaskConsumed?.Invoke(barrierColor);
+        }
+
+        /// <summary>
+        /// Applies barrier subtraction using specific slots (used when player deactivated masks mid-phase).
+        /// This ensures masks are consumed based on what was active when phasing STARTED, not current state.
+        /// </summary>
+        public void ApplyBarrierSubtractionFromSlots(ColorType barrierColor, List<int> slotIndices)
+        {
+            if (slotIndices == null || slotIndices.Count == 0)
+                return;
+            
+            var subtractions = CalculateOptimalSubtractionFromSlots(barrierColor, slotIndices);
+            
+            foreach (var kvp in subtractions)
+            {
+                int slotIndex = kvp.Key;
+                ColorType toRemove = kvp.Value;
+                
+                ColorType currentMask = _slots[slotIndex];
+                ColorType newMask = currentMask.Subtract(toRemove);
+                
+                TransformMask(slotIndex, newMask);
+            }
+            
+            OnMaskConsumed?.Invoke(barrierColor);
+        }
+
+        /// <summary>
+        /// Calculates optimal subtraction using specific slot indices (not current active slots).
+        /// </summary>
+        private Dictionary<int, ColorType> CalculateOptimalSubtractionFromSlots(ColorType required, List<int> slotIndices)
+        {
+            var result = new Dictionary<int, ColorType>();
+            
+            if (slotIndices.Count == 0)
+                return result;
+
+            // Get the primary components we need to satisfy
+            ColorType remaining = required.GetPrimaryComponents();
+            
+            // Strategy: For each required primary, find the mask that has it
+            foreach (ColorType primary in new[] { ColorType.Red, ColorType.Yellow, ColorType.Blue })
+            {
+                if ((remaining & primary) == 0)
+                    continue; // This primary not needed
+                
+                // Find best slot to take this primary from (only from provided slots)
+                int bestSlot = -1;
+                int bestWaste = int.MaxValue;
+                
+                foreach (int slotIndex in slotIndices)
+                {
+                    if (slotIndex < 0 || slotIndex >= MaxSlots)
+                        continue;
+                        
+                    ColorType mask = _slots[slotIndex];
+                    if ((mask & primary) == 0)
+                        continue; // Slot doesn't have this primary
+                    
+                    // Count how many other primaries this mask has (waste potential)
+                    int waste = mask.CountPrimaries() - 1;
+                    
+                    // Prefer masks we're already taking from
+                    if (result.ContainsKey(slotIndex))
+                    {
+                        bestSlot = slotIndex;
+                        break;
+                    }
+                    
+                    if (waste < bestWaste)
+                    {
+                        bestWaste = waste;
+                        bestSlot = slotIndex;
+                    }
+                }
+                
+                if (bestSlot >= 0)
+                {
+                    if (result.ContainsKey(bestSlot))
+                    {
+                        result[bestSlot] |= primary;
+                    }
+                    else
+                    {
+                        result[bestSlot] = primary;
+                    }
+                    
+                    remaining = remaining.Subtract(primary);
+                }
+            }
+            
+            return result;
+        }
+
+        /// <summary>
+        /// Drops a mask from a specific slot.
+        /// Returns the color that was dropped (for spawning a pickup).
+        /// </summary>
+        public ColorType DropMask(int index)
+        {
+            if (index < 0 || index >= MaxSlots)
+                return ColorType.None;
+
+            ColorType dropped = _slots[index];
+            if (dropped == ColorType.None)
+                return ColorType.None;
+
+            _slots[index] = ColorType.None;
+            _activeSlots[index] = false;
+            
+            OnMaskDropped?.Invoke(index, dropped);
+            OnInventoryChanged?.Invoke();
+            
+            return dropped;
         }
 
         /// <summary>
         /// Removes the mask from a specific slot.
-        /// If that slot was equipped, unequips it first.
         /// </summary>
         public void RemoveFromSlot(int index)
         {
             if (index < 0 || index >= MaxSlots)
                 return;
 
-            if (index == _equippedSlotIndex)
-            {
-                _equippedSlotIndex = -1;
-                OnMaskEquipped?.Invoke(ColorType.None);
-            }
-
             _slots[index] = ColorType.None;
+            _activeSlots[index] = false;
             OnInventoryChanged?.Invoke();
         }
 
@@ -218,12 +483,11 @@ namespace BreakingHue.Core
         /// </summary>
         public void Reset()
         {
-            _equippedSlotIndex = -1;
             for (int i = 0; i < MaxSlots; i++)
             {
                 _slots[i] = ColorType.None;
+                _activeSlots[i] = false;
             }
-            OnMaskEquipped?.Invoke(ColorType.None);
             OnInventoryChanged?.Invoke();
         }
 
@@ -245,8 +509,120 @@ namespace BreakingHue.Core
         }
 
         /// <summary>
+        /// Gets the count of active (toggled on) slots.
+        /// </summary>
+        public int ActiveCount
+        {
+            get
+            {
+                int count = 0;
+                for (int i = 0; i < MaxSlots; i++)
+                {
+                    if (_activeSlots[i] && _slots[i] != ColorType.None)
+                        count++;
+                }
+                return count;
+            }
+        }
+
+        /// <summary>
         /// Checks if the inventory is full.
         /// </summary>
         public bool IsFull => FindEmptySlot() < 0;
+
+        /// <summary>
+        /// Creates a snapshot of the current inventory state for checkpointing.
+        /// </summary>
+        public InventorySnapshot CreateSnapshot()
+        {
+            return new InventorySnapshot
+            {
+                Slots = (ColorType[])_slots.Clone(),
+                ActiveSlots = (bool[])_activeSlots.Clone()
+            };
+        }
+
+        /// <summary>
+        /// Restores inventory state from a snapshot.
+        /// </summary>
+        public void RestoreFromSnapshot(InventorySnapshot snapshot)
+        {
+            if (snapshot?.Slots == null || snapshot.ActiveSlots == null)
+                return;
+
+            for (int i = 0; i < MaxSlots && i < snapshot.Slots.Length; i++)
+            {
+                _slots[i] = snapshot.Slots[i];
+                _activeSlots[i] = snapshot.ActiveSlots[i];
+            }
+            
+            OnInventoryChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// Checks if the inventory already contains a specific color.
+        /// Used by bots to avoid picking up duplicate colors.
+        /// </summary>
+        public bool ContainsColor(ColorType color)
+        {
+            if (color == ColorType.None)
+                return false;
+
+            for (int i = 0; i < MaxSlots; i++)
+            {
+                if ((_slots[i] & color) != ColorType.None)
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Gets colors that are NOT already in the inventory.
+        /// Used for bots picking up partial colors from masks.
+        /// </summary>
+        public ColorType GetMissingColors(ColorType maskColor)
+        {
+            ColorType owned = ColorType.None;
+            for (int i = 0; i < MaxSlots; i++)
+            {
+                owned |= _slots[i];
+            }
+            
+            // Return only the colors from maskColor that we don't have
+            return maskColor.Subtract(owned);
+        }
+
+        // Legacy compatibility - maps to toggle behavior
+        [Obsolete("Use ToggleMask instead for the new multi-select system")]
+        public int EquippedSlotIndex => GetActiveSlotIndices().Count > 0 ? GetActiveSlotIndices()[0] : -1;
+
+        [Obsolete("Use GetCombinedActiveColor instead")]
+        public ColorType EquippedMask => GetCombinedActiveColor();
+
+        [Obsolete("Use ToggleMask instead")]
+        public void EquipSlot(int index) => ToggleMask(index);
+
+        [Obsolete("Use DeactivateAll instead")]
+        public void UnequipMask() => DeactivateAll();
+
+        [Obsolete("Use ApplyBarrierSubtraction instead")]
+        public void ConsumeEquipped()
+        {
+            var active = GetActiveSlotIndices();
+            if (active.Count > 0)
+            {
+                RemoveFromSlot(active[0]);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Snapshot of inventory state for checkpointing.
+    /// </summary>
+    [Serializable]
+    public class InventorySnapshot
+    {
+        public ColorType[] Slots;
+        public bool[] ActiveSlots;
     }
 }

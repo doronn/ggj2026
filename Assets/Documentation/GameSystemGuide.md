@@ -1,197 +1,101 @@
-# Breaking Hue - Game System Guide
+# Breaking Hue - RYB Color Puzzle Game
 
-## Quick Start
+## Overview
 
-### One-Click Setup
-1. Open Unity
-2. Go to **Window > Breaking Hue > Game Setup**
-3. Click **Run Full Setup**
-4. Open the **MainMenu** scene
-5. Press **Play** and click the **PLAY** button
+A puzzle game using the RYB (Red-Yellow-Blue) color model where players collect and combine masks to pass through color-coded barriers.
 
-### Controls
-- **WASD / Arrow Keys**: Move player
-- **1, 2, 3**: Equip mask from inventory slot
-- **0 / Backquote**: Unequip current mask
+## Color System (RYB)
+
+### Primary Colors
+- **Red** - Primary
+- **Yellow** - Primary  
+- **Blue** - Primary
+
+### Secondary Colors (combinations)
+- **Orange** = Red + Yellow
+- **Green** = Yellow + Blue
+- **Purple** = Red + Blue
+
+### Tertiary Color
+- **Black** = Red + Yellow + Blue (all primaries)
+
+## New Mechanics
+
+### Multi-Mask Toggle System
+- Press 1/2/3 to toggle individual masks active/inactive
+- Multiple masks can be active simultaneously
+- Combined colors are displayed on the player
+
+### Residue System
+When passing through barriers, only the required colors are consumed:
+- Example: Purple mask (R+B) passing through Red barrier leaves Blue residue
+
+### Barrels
+- Blocks entities without matching mask color
+- Explodes when entity with matching color enters
+- Player death → return to checkpoint
+- Bot death → drops remaining masks
+
+### Bots
+- Follow predefined paths
+- Pick up masks (only colors they don't have)
+- Can pass through barriers using same rules as player
+- Stop when colliding with player
+
+### Portals & Checkpoints
+- Bidirectional portals connect areas/levels
+- Checkpoint portals save game state
+- Death returns player to last checkpoint
+
+### Hidden Areas
+- Dark gray blocks reveal secrets when entered
+- No condition required - just touch them
+
+## Controls
+
+| Key | Action |
+|-----|--------|
+| WASD / Arrows | Move |
+| 1, 2, 3 | Toggle mask slot active |
+| Q | Drop first active mask |
+| 0 / ` | Deactivate all masks |
+
+## Level Editor
+
+Open via **Window > Breaking Hue > Level Editor**
+
+### Layers
+1. Ground - Walkable floor tiles
+2. Walls - Solid blocks
+3. Barriers - Color-coded barriers
+4. Pickups - Mask collectibles
+5. Barrels - Exploding hazards
+6. Bots - Enemy/helper bots
+7. Bot Paths - Waypoint chains
+8. Portals - Level connections
+9. Hidden Areas - Secret blocks
+
+## File Structure
+
+```
+Assets/
+├── Scripts/
+│   ├── Core/           # ColorType, MaskInventory
+│   ├── Gameplay/       # Player, Barrier, Barrel, Bot, Portal
+│   ├── Level/          # LevelManager, LevelData
+│   ├── Save/           # CheckpointManager
+│   ├── Camera/         # GameCamera
+│   └── UI/             # HUD, MainMenu
+├── Editor/
+│   ├── GameSetupWindow.cs
+│   └── LevelEditorWindow.cs
+├── Materials/          # RYB color materials
+├── Prefabs/            # All game prefabs
+├── Levels/             # LevelData assets
+├── Scenes/             # MainMenu, World
+└── UI/                 # UXML, USS files
+```
 
 ---
 
-## Creating New Levels
-
-### Pixel Color Reference
-
-| Color | RGB Value | Alpha | Object Spawned |
-|-------|-----------|-------|----------------|
-| **Black** | (0, 0, 0) | 1.0 | Exit Goal |
-| **White** | (1, 1, 1) | 1.0 | Wall |
-| **Grey** | (0.5, 0.5, 0.5) | 1.0 | Player Spawn |
-| **Red** | (1, 0, 0) | 1.0 | Red Barrier |
-| **Green** | (0, 1, 0) | 1.0 | Green Barrier |
-| **Blue** | (0, 0, 1) | 1.0 | Blue Barrier |
-| **Red** | (1, 0, 0) | 0.5 | Red Mask Pickup |
-| **Green** | (0, 1, 0) | 0.5 | Green Mask Pickup |
-| **Blue** | (0, 0, 1) | 0.5 | Blue Mask Pickup |
-| **Transparent** | Any | < 0.4 | Empty Space |
-
-### Step-by-Step Level Creation
-
-1. **Create Image**: Use any image editor (Photoshop, GIMP, Aseprite)
-2. **Set Size**: 16x16 pixels recommended (can be larger)
-3. **Draw Level**: Use colors from the reference table above
-4. **Save as PNG**: Save with transparency support
-5. **Import to Unity**: Drag into `Assets/Levels/` folder
-6. **Configure Import Settings**:
-   - Read/Write Enabled: ✓
-   - Filter Mode: Point (no filter)
-   - Compression: None
-   - Max Size: At least your texture size
-7. **Assign to LevelGenerator**: 
-   - Open Game scene
-   - Select LevelGenerator object
-   - Drag your texture to the `Level Map` field
-
-### Important: Texture Import Settings
-
-**If your level doesn't generate correctly**, check these settings in the Inspector when selecting your PNG:
-
-```
-Texture Type: Default
-Read/Write: ✓ Enabled
-Filter Mode: Point (no filter)
-Compression: None
-```
-
----
-
-## System Architecture
-
-### Component Overview
-
-```
-[MainMenu Scene]
-├── Camera
-├── UI (UIDocument + MainMenuController)
-└── Light
-
-[Game Scene]
-├── Camera (top-down)
-├── Floor
-├── SceneContext (Zenject)
-│   └── GameInstaller
-├── LevelGenerator
-│   └── Spawns: Walls, Player, Barriers, Pickups, Exit
-├── GameManager
-├── HUD (UIDocument + GameHUDController)
-└── Light
-```
-
-### Event Flow
-
-```
-MaskPickup.OnTriggerEnter
-    → MaskInventory.TryAddMask()
-    → MaskInventory.OnInventoryChanged event
-    → GameHUDController.RefreshAllSlots()
-
-Player equips mask (1/2/3 key)
-    → MaskInventory.EquipSlot()
-    → MaskInventory.OnMaskEquipped event
-    → PlayerController.UpdatePlayerColor()
-    → GameHUDController.RefreshAllSlots()
-
-ColorBarrier.OnTriggerEnter
-    → MaskInventory.CanPassThrough()
-    → If true: Disable solid collider, allow passage
-
-ColorBarrier.OnTriggerExit
-    → Re-enable solid collider
-    → MaskInventory.ConsumeEquipped()
-
-ExitGoal.OnTriggerEnter
-    → ExitGoal.OnPlayerReachedExit event
-    → GameManager.OnLevelComplete()
-    → Scene transition to MainMenu
-```
-
-### Zenject Dependency Injection
-
-The `GameInstaller` binds these services:
-- `MaskInventory`: Singleton, manages 3 inventory slots
-- `LevelGenerator`: From hierarchy, generates level from texture
-- `GameHUDController`: From hierarchy, displays inventory UI
-- `GameManager`: From hierarchy, handles win/lose conditions
-
----
-
-## Prefab Reference
-
-### Wall
-- Simple 1x1x1 cube
-- BoxCollider (solid)
-- White emissive material
-
-### Player
-- Root: PlayerController, Rigidbody, CapsuleCollider
-- Child "Visual": Capsule mesh with grey material
-- Uses Rigidbody physics with gravity
-- Tag: "Player" (set automatically in script)
-
-### ColorBarrier
-- 1x1x1 cube with ColorBarrier script
-- Auto-creates dual colliders (trigger + solid)
-- Transparent material for phasing visual effect
-- Initialize() sets required color
-
-### MaskPickup
-- 0.5x0.5x0.5 cube with MaskPickup script
-- Trigger collider (auto-set)
-- Rotates and bobs in Update()
-- Initialize() sets color type to give
-
-### ExitGoal
-- Flat cylinder platform
-- Tall trigger collider to catch player
-- Green emissive material with pulsing effect
-- Fires static event when player enters
-
----
-
-## Troubleshooting
-
-### Player Falls Through Floor
-- **Cause**: No floor in scene or floor position wrong
-- **Fix**: Ensure Floor object exists at Y=-0.5
-
-### Barriers Don't Block/Allow Passage
-- **Cause**: Player tag not set
-- **Fix**: Verify player has "Player" tag (set automatically by PlayerController)
-
-### Level Doesn't Generate
-- **Cause**: Texture import settings incorrect
-- **Fix**: Enable Read/Write, set Filter to Point, disable Compression
-
-### Pickups Can't Be Collected
-- **Cause**: MaskInventory not injected
-- **Fix**: Ensure SceneContext has GameInstaller in Installers list
-
-### HUD Doesn't Show
-- **Cause**: Missing PanelSettings or UXML reference
-- **Fix**: Assign PanelSettings.asset and HUD.uxml to UIDocument
-
-### Scene Transition Fails
-- **Cause**: Scenes not in Build Settings
-- **Fix**: Run "Update Build Settings" from Game Setup window
-
----
-
-## Tips for Level Design
-
-1. **Always surround with walls** - Prevents player from walking off the map
-2. **Place pickups before barriers** - Player needs mask before reaching barrier
-3. **One player spawn** - Only place one grey pixel
-4. **Test mask combinations** - Yellow = Red + Green, Cyan = Green + Blue, etc.
-5. **Place exit last** - Put it where the player should end up after all barriers
-
----
-
-*Generated by Breaking Hue Game Setup Tool*
+*Generated by Breaking Hue Game Setup Tool (RYB System)*

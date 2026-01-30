@@ -1,6 +1,7 @@
 using Zenject;
 using BreakingHue.Core;
 using BreakingHue.Level;
+using BreakingHue.Save;
 using BreakingHue.UI;
 
 namespace BreakingHue.Installers
@@ -30,6 +31,16 @@ namespace BreakingHue.Installers
 
             // Game Manager for win conditions and scene transitions
             Container.Bind<GameManager>()
+                .FromComponentInHierarchy()
+                .AsSingle();
+
+            // Level Manager for level loading and transitions
+            Container.Bind<LevelManager>()
+                .FromComponentInHierarchy()
+                .AsSingle();
+
+            // Checkpoint Manager for save/restore functionality
+            Container.Bind<CheckpointManager>()
                 .FromComponentInHierarchy()
                 .AsSingle();
         }

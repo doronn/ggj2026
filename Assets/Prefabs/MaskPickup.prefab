@@ -89,7 +89,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: bc2ad09000c034ca7b7cbb4409ee7bad, type: 2}
+  - {fileID: 2100000, guid: 70fed59d65ad4466ea6962b3c9f3674e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -127,6 +127,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BreakingHue.Gameplay.MaskPickup
   colorToGive: 0
   destroyOnPickup: 1
+  pickupId: 
   rotationSpeed: 90
   bobHeight: 0.2
   bobSpeed: 2

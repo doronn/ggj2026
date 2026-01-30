@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: add340810e0eb4bce80dbc9549c5b04d, type: 3}
+  m_Name: GameConfig
+  m_EditorClassIdentifier: Assembly-CSharp::BreakingHue.Core.GameConfig
+  prefabs:
+    floorPrefab: {fileID: 5504168687007361811, guid: f6904767b87c7421f8d1610856331d9f, type: 3}
+    wallPrefab: {fileID: 3194495879680204498, guid: 9450704438e584464be100992a469875, type: 3}
+    barrierPrefab: {fileID: 2746134318583273277, guid: cce5d7273819841e2858f830d392513b, type: 3}
+    pickupPrefab: {fileID: 6440807573589539521, guid: 17dd125c30e344959bcf8a0fcf93af33, type: 3}
+    barrelPrefab: {fileID: 4569951929453695873, guid: 9b13c10b5611942e39acf063b0c11dbf, type: 3}
+    botPrefab: {fileID: 7511458473292882502, guid: 4f00f0bf1995a417c89bde00ea483b01, type: 3}
+    portalPrefab: {fileID: 4614199247774131310, guid: 290c1736978c7447bbf7a4376d063e34, type: 3}
+    hiddenBlockPrefab: {fileID: 2463891353458770857, guid: 87e6f156182b24513bd99f94bd49bddc, type: 3}
+    droppedMaskPrefab: {fileID: 5837938775444079518, guid: 00209dd2e1b9e42879b2e9d9c3fa385c, type: 3}
+    playerPrefab: {fileID: 3010117779049158797, guid: 20540361f8e54426284672a65ce94914, type: 3}
+  startingLevel: {fileID: 11400000, guid: ae29ac174230c42d28100c1158091ff2, type: 2}
+  allLevels:
+  - {fileID: 11400000, guid: 60b5000236a4c4e54ba85a4318f70451, type: 2}
+  - {fileID: 11400000, guid: ae29ac174230c42d28100c1158091ff2, type: 2}
+  - {fileID: 11400000, guid: 294d278df2ee941df947da93b4fe2220, type: 2}
+  portalLinks: []

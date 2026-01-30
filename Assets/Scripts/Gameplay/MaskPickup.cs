@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using Zenject;
 using BreakingHue.Core;
@@ -13,6 +14,7 @@ namespace BreakingHue.Gameplay
     {
         [SerializeField] private ColorType colorToGive = ColorType.None;
         [SerializeField] private bool destroyOnPickup = true;
+        [SerializeField] private string pickupId;
         
         [Header("Visual Effects")]
         [SerializeField] private float rotationSpeed = 90f;
@@ -20,8 +22,15 @@ namespace BreakingHue.Gameplay
         [SerializeField] private float bobSpeed = 2f;
 
         private MaskInventory _inventory;
+        private Renderer _renderer;
         private Vector3 _startPosition;
         private bool _collected;
+
+        /// <summary>
+        /// Event fired when any mask pickup is collected.
+        /// Parameters: pickupId
+        /// </summary>
+        public static event Action<string> OnMaskPickupCollected;
 
         [Inject]
         public void Construct(MaskInventory inventory)
@@ -34,6 +43,30 @@ namespace BreakingHue.Gameplay
             var collider = GetComponent<Collider>();
             collider.isTrigger = true;
             _startPosition = transform.position;
+            _renderer = GetComponentInChildren<Renderer>();
+            
+            // Generate ID if not set
+            if (string.IsNullOrEmpty(pickupId))
+            {
+                pickupId = Guid.NewGuid().ToString();
+            }
+            
+            UpdateVisualColor();
+        }
+
+        private void Start()
+        {
+            // Fallback: If Zenject injection didn't happen (e.g., instantiated via Instantiate()),
+            // try to resolve the inventory manually
+            if (_inventory == null)
+            {
+                var sceneContext = FindObjectOfType<Zenject.SceneContext>();
+                if (sceneContext != null && sceneContext.Container != null)
+                {
+                    _inventory = sceneContext.Container.TryResolve<MaskInventory>();
+                }
+            }
+
         }
 
         private void Update()
@@ -55,6 +88,33 @@ namespace BreakingHue.Gameplay
         public void Initialize(ColorType color)
         {
             colorToGive = color;
+            UpdateVisualColor();
+        }
+
+        /// <summary>
+        /// Initialize the pickup with color and ID for save/load tracking.
+        /// </summary>
+        public void Initialize(ColorType color, string id)
+        {
+            colorToGive = color;
+            pickupId = id;
+            UpdateVisualColor();
+        }
+
+        private void UpdateVisualColor()
+        {
+            if (_renderer != null)
+            {
+                Color color = colorToGive.ToColor();
+                color.a = 1f;
+                _renderer.material.color = color;
+                
+                if (_renderer.material.HasProperty("_EmissionColor"))
+                {
+                    _renderer.material.EnableKeyword("_EMISSION");
+                    _renderer.material.SetColor("_EmissionColor", color * 1.5f);
+                }
+            }
         }
 
         private void OnTriggerEnter(Collider other)
@@ -91,14 +151,33 @@ namespace BreakingHue.Gameplay
         }
 
         /// <summary>
+        /// Force collect this pickup (for bots).
+        /// </summary>
+        public void ForceCollect()
+        {
+            if (_collected) return;
+            
+            _collected = true;
+            OnCollected();
+            
+            if (destroyOnPickup)
+            {
+                Destroy(gameObject);
+            }
+            else
+            {
+                gameObject.SetActive(false);
+            }
+        }
+
+        /// <summary>
         /// Called when the pickup is collected.
         /// Override or extend for custom effects.
         /// </summary>
         protected virtual void OnCollected()
         {
             Debug.Log($"[MaskPickup] Collected {colorToGive.GetDisplayName()} mask");
-            
-            // Optional: Spawn particle effect, play sound, etc.
+            OnMaskPickupCollected?.Invoke(pickupId);
         }
 
         /// <summary>
@@ -107,13 +186,24 @@ namespace BreakingHue.Gameplay
         protected virtual void OnInventoryFull()
         {
             Debug.Log($"[MaskPickup] Cannot collect {colorToGive.GetDisplayName()} - inventory full!");
-            
-            // Optional: Show UI feedback, play "error" sound, etc.
         }
 
         /// <summary>
         /// Gets the color type this pickup grants.
         /// </summary>
         public ColorType ColorToGive => colorToGive;
+
+        /// <summary>
+        /// Gets the unique ID of this pickup.
+        /// </summary>
+        public string PickupId => pickupId;
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (_renderer == null)
+                _renderer = GetComponentInChildren<Renderer>();
+        }
+#endif
     }
 }

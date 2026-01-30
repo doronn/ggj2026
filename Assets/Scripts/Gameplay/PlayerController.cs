@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Zenject;
@@ -8,7 +9,12 @@ namespace BreakingHue.Gameplay
     /// <summary>
     /// 3D top-down player controller using Rigidbody physics.
     /// Uses Unity's New Input System.
-    /// Handles movement and mask equipping.
+    /// Handles movement, mask toggling, and mask dropping.
+    /// 
+    /// New Controls:
+    /// - Keys 1/2/3: Toggle mask active state (multi-select supported)
+    /// - Key Q: Drop first active mask at current position
+    /// - Key 0 or `: Deactivate all masks
     /// </summary>
     [RequireComponent(typeof(Rigidbody))]
     public class PlayerController : MonoBehaviour
@@ -21,18 +27,33 @@ namespace BreakingHue.Gameplay
         [Header("Visual")]
         [SerializeField] private Transform visualTransform;
         
+        [Header("Mask Drop Settings")]
+        [SerializeField] private GameObject droppedMaskPrefab;
+        [SerializeField] private float gridCellSize = 1f;
+
         private Rigidbody _rigidbody;
         private MaskInventory _inventory;
         private Vector2 _inputDirection;
         private Vector3 _currentVelocity;
         
+        // Track if we're standing on a dropped mask to prevent immediate re-pickup
+        private DroppedMask _currentTileMask;
+        
+        
         // Input System
         private InputAction _moveAction;
-        private InputAction _equipSlot1Action;
-        private InputAction _equipSlot2Action;
-        private InputAction _equipSlot3Action;
-        private InputAction _unequipAction;
+        private InputAction _toggleSlot1Action;
+        private InputAction _toggleSlot2Action;
+        private InputAction _toggleSlot3Action;
+        private InputAction _deactivateAllAction;
+        private InputAction _dropMaskAction;
         private PlayerInput _playerInput;
+
+        /// <summary>
+        /// Event fired when player requests to drop a mask.
+        /// Parameters: world position, color to drop
+        /// </summary>
+        public static event Action<Vector3, ColorType> OnMaskDropRequested;
 
         [Inject]
         public void Construct(MaskInventory inventory)
@@ -54,15 +75,16 @@ namespace BreakingHue.Gameplay
             else
             {
                 _moveAction = _playerInput.actions["Move"];
-                // Try to get equip actions if defined in input asset
-                _equipSlot1Action = _playerInput.actions.FindAction("EquipSlot1");
-                _equipSlot2Action = _playerInput.actions.FindAction("EquipSlot2");
-                _equipSlot3Action = _playerInput.actions.FindAction("EquipSlot3");
-                _unequipAction = _playerInput.actions.FindAction("Unequip");
+                // Try to get actions if defined in input asset
+                _toggleSlot1Action = _playerInput.actions.FindAction("ToggleSlot1");
+                _toggleSlot2Action = _playerInput.actions.FindAction("ToggleSlot2");
+                _toggleSlot3Action = _playerInput.actions.FindAction("ToggleSlot3");
+                _deactivateAllAction = _playerInput.actions.FindAction("DeactivateAll");
+                _dropMaskAction = _playerInput.actions.FindAction("DropMask");
                 
                 // If not defined, create them manually
-                if (_equipSlot1Action == null)
-                    SetupEquipInputManually();
+                if (_toggleSlot1Action == null)
+                    SetupMaskInputManually();
             }
 
             if (visualTransform == null)
@@ -72,11 +94,33 @@ namespace BreakingHue.Gameplay
             
             // Ensure player has the correct tag
             gameObject.tag = "Player";
-            
+        }
+
+        private void Start()
+        {
+            // Fallback: If Zenject injection didn't happen (e.g., instantiated via Instantiate()),
+            // try to resolve the inventory manually
+            if (_inventory == null)
+            {
+                var sceneContext = FindObjectOfType<Zenject.SceneContext>();
+                if (sceneContext != null && sceneContext.Container != null)
+                {
+                    _inventory = sceneContext.Container.TryResolve<MaskInventory>();
+                }
+            }
+
             // Subscribe to inventory events for visual updates
             if (_inventory != null)
             {
-                _inventory.OnMaskEquipped += OnMaskEquipped;
+                _inventory.OnInventoryChanged += OnInventoryChanged;
+                _inventory.OnMaskToggled += OnMaskToggled;
+                
+                // Initial visual update
+                UpdatePlayerColor();
+            }
+            else
+            {
+                Debug.LogError("[PlayerController] Failed to resolve MaskInventory!");
             }
         }
 
@@ -84,16 +128,18 @@ namespace BreakingHue.Gameplay
         {
             if (_inventory != null)
             {
-                _inventory.OnMaskEquipped -= OnMaskEquipped;
+                _inventory.OnInventoryChanged -= OnInventoryChanged;
+                _inventory.OnMaskToggled -= OnMaskToggled;
             }
             
             if (_playerInput == null)
             {
                 _moveAction?.Dispose();
-                _equipSlot1Action?.Dispose();
-                _equipSlot2Action?.Dispose();
-                _equipSlot3Action?.Dispose();
-                _unequipAction?.Dispose();
+                _toggleSlot1Action?.Dispose();
+                _toggleSlot2Action?.Dispose();
+                _toggleSlot3Action?.Dispose();
+                _deactivateAllAction?.Dispose();
+                _dropMaskAction?.Dispose();
             }
         }
 
@@ -129,48 +175,56 @@ namespace BreakingHue.Gameplay
             
             _moveAction.Enable();
             
-            SetupEquipInputManually();
+            SetupMaskInputManually();
         }
 
-        private void SetupEquipInputManually()
+        private void SetupMaskInputManually()
         {
-            // Slot 1 - Key 1
-            _equipSlot1Action = new InputAction("EquipSlot1", InputActionType.Button);
-            _equipSlot1Action.AddBinding("<Keyboard>/1");
-            _equipSlot1Action.AddBinding("<Keyboard>/numpad1");
-            _equipSlot1Action.performed += _ => EquipSlot(0);
-            _equipSlot1Action.Enable();
+            // Slot 1 - Key 1 (Toggle)
+            _toggleSlot1Action = new InputAction("ToggleSlot1", InputActionType.Button);
+            _toggleSlot1Action.AddBinding("<Keyboard>/1");
+            _toggleSlot1Action.AddBinding("<Keyboard>/numpad1");
+            _toggleSlot1Action.performed += _ => ToggleSlot(0);
+            _toggleSlot1Action.Enable();
             
-            // Slot 2 - Key 2
-            _equipSlot2Action = new InputAction("EquipSlot2", InputActionType.Button);
-            _equipSlot2Action.AddBinding("<Keyboard>/2");
-            _equipSlot2Action.AddBinding("<Keyboard>/numpad2");
-            _equipSlot2Action.performed += _ => EquipSlot(1);
-            _equipSlot2Action.Enable();
+            // Slot 2 - Key 2 (Toggle)
+            _toggleSlot2Action = new InputAction("ToggleSlot2", InputActionType.Button);
+            _toggleSlot2Action.AddBinding("<Keyboard>/2");
+            _toggleSlot2Action.AddBinding("<Keyboard>/numpad2");
+            _toggleSlot2Action.performed += _ => ToggleSlot(1);
+            _toggleSlot2Action.Enable();
             
-            // Slot 3 - Key 3
-            _equipSlot3Action = new InputAction("EquipSlot3", InputActionType.Button);
-            _equipSlot3Action.AddBinding("<Keyboard>/3");
-            _equipSlot3Action.AddBinding("<Keyboard>/numpad3");
-            _equipSlot3Action.performed += _ => EquipSlot(2);
-            _equipSlot3Action.Enable();
+            // Slot 3 - Key 3 (Toggle)
+            _toggleSlot3Action = new InputAction("ToggleSlot3", InputActionType.Button);
+            _toggleSlot3Action.AddBinding("<Keyboard>/3");
+            _toggleSlot3Action.AddBinding("<Keyboard>/numpad3");
+            _toggleSlot3Action.performed += _ => ToggleSlot(2);
+            _toggleSlot3Action.Enable();
             
-            // Unequip - Key 0 or Escape
-            _unequipAction = new InputAction("Unequip", InputActionType.Button);
-            _unequipAction.AddBinding("<Keyboard>/0");
-            _unequipAction.AddBinding("<Keyboard>/numpad0");
-            _unequipAction.AddBinding("<Keyboard>/backquote"); // ` key
-            _unequipAction.performed += _ => UnequipMask();
-            _unequipAction.Enable();
+            // Deactivate All - Key 0 or `
+            _deactivateAllAction = new InputAction("DeactivateAll", InputActionType.Button);
+            _deactivateAllAction.AddBinding("<Keyboard>/0");
+            _deactivateAllAction.AddBinding("<Keyboard>/numpad0");
+            _deactivateAllAction.AddBinding("<Keyboard>/backquote"); // ` key
+            _deactivateAllAction.performed += _ => DeactivateAllMasks();
+            _deactivateAllAction.Enable();
+            
+            // Drop Mask - Key Q
+            _dropMaskAction = new InputAction("DropMask", InputActionType.Button);
+            _dropMaskAction.AddBinding("<Keyboard>/q");
+            _dropMaskAction.AddBinding("<Gamepad>/buttonWest"); // X on Xbox, Square on PlayStation
+            _dropMaskAction.performed += _ => DropMask();
+            _dropMaskAction.Enable();
         }
 
         private void OnEnable()
         {
             _moveAction?.Enable();
-            _equipSlot1Action?.Enable();
-            _equipSlot2Action?.Enable();
-            _equipSlot3Action?.Enable();
-            _unequipAction?.Enable();
+            _toggleSlot1Action?.Enable();
+            _toggleSlot2Action?.Enable();
+            _toggleSlot3Action?.Enable();
+            _deactivateAllAction?.Enable();
+            _dropMaskAction?.Enable();
         }
 
         private void OnDisable()
@@ -178,10 +232,11 @@ namespace BreakingHue.Gameplay
             if (_playerInput == null)
             {
                 _moveAction?.Disable();
-                _equipSlot1Action?.Disable();
-                _equipSlot2Action?.Disable();
-                _equipSlot3Action?.Disable();
-                _unequipAction?.Disable();
+                _toggleSlot1Action?.Disable();
+                _toggleSlot2Action?.Disable();
+                _toggleSlot3Action?.Disable();
+                _deactivateAllAction?.Disable();
+                _dropMaskAction?.Disable();
             }
         }
 
@@ -224,7 +279,7 @@ namespace BreakingHue.Gameplay
 
         private void UpdateVisuals()
         {
-            // Update player color based on equipped mask
+            // Update player color based on combined active masks
             UpdatePlayerColor();
             
             // Optional: Rotate visual to face movement direction
@@ -243,67 +298,164 @@ namespace BreakingHue.Gameplay
         {
             if (_inventory == null) return;
             
-            var renderer = visualTransform.GetComponentInChildren<Renderer>();
-            if (renderer != null)
+            // Show combined active mask colors, or grey if nothing active
+            ColorType combined = _inventory.GetCombinedActiveColor();
+            
+            // Get ALL renderers in the player hierarchy and set color on ALL of them
+            var allRenderers = visualTransform?.GetComponentsInChildren<Renderer>();
+            
+            if (allRenderers != null && allRenderers.Length > 0)
             {
-                Color playerColor;
+                Color playerColor = combined != ColorType.None ? combined.ToColor() : Color.grey;
                 
-                // Show equipped mask color, or grey if nothing equipped
-                ColorType equipped = _inventory.EquippedMask;
-                if (equipped != ColorType.None)
+                // Set color on ALL renderers
+                foreach (var rend in allRenderers)
                 {
-                    playerColor = equipped.ToColor();
-                }
-                else
-                {
-                    playerColor = Color.grey;
-                }
-                
-                renderer.material.color = playerColor;
-                
-                // Update emissive
-                if (renderer.material.HasProperty("_EmissionColor"))
-                {
-                    renderer.material.EnableKeyword("_EMISSION");
-                    renderer.material.SetColor("_EmissionColor", playerColor * 1.5f);
+                    // Set color using multiple property names for compatibility with different render pipelines
+                    rend.material.color = playerColor;  // Sets _Color (Standard RP)
+                    
+                    if (rend.material.HasProperty("_BaseColor"))
+                    {
+                        rend.material.SetColor("_BaseColor", playerColor);  // URP/HDRP
+                    }
+                    
+                    // Update emissive
+                    if (rend.material.HasProperty("_EmissionColor"))
+                    {
+                        rend.material.EnableKeyword("_EMISSION");
+                        rend.material.SetColor("_EmissionColor", playerColor * 1.5f);
+                    }
                 }
             }
         }
 
         /// <summary>
-        /// Called when a mask is equipped or unequipped.
+        /// Called when inventory changes.
         /// </summary>
-        private void OnMaskEquipped(ColorType mask)
+        private void OnInventoryChanged()
         {
-            if (mask != ColorType.None)
-            {
-                Debug.Log($"[PlayerController] Equipped {mask.GetDisplayName()} mask");
-            }
-            else
-            {
-                Debug.Log("[PlayerController] Mask unequipped");
-            }
-            
-            // Force visual update
             UpdatePlayerColor();
         }
 
         /// <summary>
-        /// Equips the mask in the specified slot (0-2).
+        /// Called when a mask's active state is toggled.
         /// </summary>
-        public void EquipSlot(int slotIndex)
+        private void OnMaskToggled(int slotIndex, bool isActive)
         {
-            if (_inventory == null) return;
-            _inventory.EquipSlot(slotIndex);
+            ColorType mask = _inventory.GetSlot(slotIndex);
+            if (isActive)
+            {
+                Debug.Log($"[PlayerController] Activated {mask.GetDisplayName()} mask (slot {slotIndex + 1})");
+            }
+            else
+            {
+                Debug.Log($"[PlayerController] Deactivated {mask.GetDisplayName()} mask (slot {slotIndex + 1})");
+            }
+            
+            UpdatePlayerColor();
         }
 
         /// <summary>
-        /// Unequips the currently worn mask.
+        /// Toggles the active state of a mask slot (0-2).
         /// </summary>
-        public void UnequipMask()
+        public void ToggleSlot(int slotIndex)
         {
             if (_inventory == null) return;
-            _inventory.UnequipMask();
+            _inventory.ToggleMask(slotIndex);
+        }
+
+        /// <summary>
+        /// Deactivates all masks.
+        /// </summary>
+        public void DeactivateAllMasks()
+        {
+            if (_inventory == null) return;
+            _inventory.DeactivateAll();
+            Debug.Log("[PlayerController] All masks deactivated");
+        }
+
+        /// <summary>
+        /// Drops the first active mask at the player's current grid position.
+        /// </summary>
+        public void DropMask()
+        {
+            if (_inventory == null) return;
+            
+            // Find first active slot with a mask
+            var activeSlots = _inventory.GetActiveSlotIndices();
+            if (activeSlots.Count == 0)
+            {
+                Debug.Log("[PlayerController] No active mask to drop");
+                return;
+            }
+            
+            int slotToDrop = activeSlots[0];
+            ColorType colorToDrop = _inventory.DropMask(slotToDrop);
+            
+            if (colorToDrop == ColorType.None)
+            {
+                Debug.Log("[PlayerController] Failed to drop mask");
+                return;
+            }
+            
+            // Calculate grid position
+            Vector3 dropPosition = GetCurrentGridPosition();
+            
+            // Check if there's already a mask at this position
+            if (_currentTileMask != null && !_currentTileMask.IsCollected)
+            {
+                // Swap: pick up existing mask, drop new one
+                ColorType existingColor = _currentTileMask.MaskColor;
+                _currentTileMask.Collect();
+                _inventory.TryAddMask(existingColor);
+                Debug.Log($"[PlayerController] Swapped {colorToDrop.GetDisplayName()} with {existingColor.GetDisplayName()}");
+            }
+            
+            // Request mask spawn at grid position
+            OnMaskDropRequested?.Invoke(dropPosition, colorToDrop);
+            
+            // Also try direct spawn if prefab is assigned
+            if (droppedMaskPrefab != null)
+            {
+                var dropped = DroppedMask.Spawn(droppedMaskPrefab, dropPosition, colorToDrop);
+                if (dropped != null)
+                {
+                    dropped.PreventImmediatePickup();
+                    _currentTileMask = dropped;
+                }
+            }
+            
+            Debug.Log($"[PlayerController] Dropped {colorToDrop.GetDisplayName()} mask at {dropPosition}");
+        }
+
+        /// <summary>
+        /// Gets the current grid-aligned position.
+        /// </summary>
+        private Vector3 GetCurrentGridPosition()
+        {
+            Vector3 pos = transform.position;
+            float x = Mathf.Round(pos.x / gridCellSize) * gridCellSize;
+            float z = Mathf.Round(pos.z / gridCellSize) * gridCellSize;
+            return new Vector3(x, 0.5f, z);
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            // Track dropped masks we're standing on
+            var droppedMask = other.GetComponent<DroppedMask>();
+            if (droppedMask != null)
+            {
+                _currentTileMask = droppedMask;
+            }
+        }
+
+        private void OnTriggerExit(Collider other)
+        {
+            var droppedMask = other.GetComponent<DroppedMask>();
+            if (droppedMask != null && droppedMask == _currentTileMask)
+            {
+                _currentTileMask = null;
+            }
         }
 
         /// <summary>
@@ -317,8 +469,20 @@ namespace BreakingHue.Gameplay
         }
 
         /// <summary>
+        /// Gets the player's inventory.
+        /// </summary>
+        public MaskInventory GetInventory() => _inventory;
+
+        /// <summary>
         /// Gets the current movement velocity.
         /// </summary>
         public Vector3 CurrentVelocity => _currentVelocity;
+
+        // Legacy compatibility
+        [Obsolete("Use ToggleSlot instead")]
+        public void EquipSlot(int slotIndex) => ToggleSlot(slotIndex);
+
+        [Obsolete("Use DeactivateAllMasks instead")]
+        public void UnequipMask() => DeactivateAllMasks();
     }
 }

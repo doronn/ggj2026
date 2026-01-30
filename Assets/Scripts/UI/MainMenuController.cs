@@ -12,7 +12,7 @@ namespace BreakingHue.UI
     public class MainMenuController : MonoBehaviour
     {
         [Header("Scene Settings")]
-        [SerializeField] private string gameSceneName = "Game";
+        [SerializeField] private string gameSceneName = "World";
 
         private UIDocument _uiDocument;
         private Button _playButton;

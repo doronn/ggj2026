@@ -1,7 +1,12 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
     <ui:VisualElement name="Root" style="flex-grow: 1; justify-content: center; align-items: center; background-color: rgb(20, 20, 35);">
-        <ui:Label text="BREAKING HUE" name="Title" style="font-size: 64px; color: rgb(255, 255, 255); margin-bottom: 20px; -unity-font-style: bold;" />
-        <ui:Label text="Collect masks to pass through barriers" name="Subtitle" style="font-size: 20px; color: rgb(180, 180, 180); margin-bottom: 60px;" />
+        <ui:Label text="BREAKING HUE" name="Title" style="font-size: 64px; color: rgb(255, 255, 255); margin-bottom: 10px; -unity-font-style: bold;" />
+        <ui:Label text="RYB Color Puzzle" name="Subtitle" style="font-size: 24px; color: rgb(255, 200, 100); margin-bottom: 40px;" />
+        <ui:Label text="Toggle masks to combine colors and pass through barriers" name="Description" style="font-size: 18px; color: rgb(180, 180, 180); margin-bottom: 60px;" />
         <ui:Button text="PLAY" name="PlayButton" style="font-size: 32px; padding: 20px 80px; background-color: rgb(60, 120, 200); color: white; border-radius: 8px;" />
+        <ui:VisualElement style="margin-top: 40px;">
+            <ui:Label text="Controls:" style="font-size: 16px; color: white; margin-bottom: 10px;" />
+            <ui:Label text="WASD - Move  |  1/2/3 - Toggle Masks  |  Q - Drop Mask" style="font-size: 14px; color: rgb(150, 150, 150);" />
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

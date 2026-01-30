@@ -1,0 +1,279 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c73d28e0b4d8d4cafbf66be9e6e01cc5, type: 3}
+  m_Name: Level01_Basics
+  m_EditorClassIdentifier: Assembly-CSharp::BreakingHue.Level.Data.LevelData
+  levelName: Level 1 - Basics
+  levelId: 8c93f409-8540-4e89-b36a-affa8ea44d3c
+  levelIndex: 0
+  cellSize: 1
+  groundLayer:
+    isVisible: 1
+    floorTiles:
+    - {x: 1, y: 1}
+    - {x: 1, y: 2}
+    - {x: 1, y: 3}
+    - {x: 1, y: 4}
+    - {x: 1, y: 5}
+    - {x: 1, y: 6}
+    - {x: 1, y: 7}
+    - {x: 1, y: 8}
+    - {x: 1, y: 9}
+    - {x: 1, y: 10}
+    - {x: 1, y: 11}
+    - {x: 1, y: 12}
+    - {x: 2, y: 1}
+    - {x: 2, y: 2}
+    - {x: 2, y: 3}
+    - {x: 2, y: 4}
+    - {x: 2, y: 5}
+    - {x: 2, y: 6}
+    - {x: 2, y: 7}
+    - {x: 2, y: 8}
+    - {x: 2, y: 9}
+    - {x: 2, y: 10}
+    - {x: 2, y: 11}
+    - {x: 2, y: 12}
+    - {x: 3, y: 1}
+    - {x: 3, y: 2}
+    - {x: 3, y: 3}
+    - {x: 3, y: 4}
+    - {x: 3, y: 5}
+    - {x: 3, y: 6}
+    - {x: 3, y: 7}
+    - {x: 3, y: 8}
+    - {x: 3, y: 9}
+    - {x: 3, y: 10}
+    - {x: 3, y: 11}
+    - {x: 3, y: 12}
+    - {x: 4, y: 1}
+    - {x: 4, y: 2}
+    - {x: 4, y: 3}
+    - {x: 4, y: 4}
+    - {x: 4, y: 5}
+    - {x: 4, y: 6}
+    - {x: 4, y: 7}
+    - {x: 4, y: 8}
+    - {x: 4, y: 9}
+    - {x: 4, y: 10}
+    - {x: 4, y: 11}
+    - {x: 4, y: 12}
+    - {x: 5, y: 1}
+    - {x: 5, y: 2}
+    - {x: 5, y: 3}
+    - {x: 5, y: 4}
+    - {x: 5, y: 5}
+    - {x: 5, y: 6}
+    - {x: 5, y: 7}
+    - {x: 5, y: 8}
+    - {x: 5, y: 9}
+    - {x: 5, y: 10}
+    - {x: 5, y: 11}
+    - {x: 5, y: 12}
+    - {x: 6, y: 1}
+    - {x: 6, y: 2}
+    - {x: 6, y: 3}
+    - {x: 6, y: 4}
+    - {x: 6, y: 5}
+    - {x: 6, y: 6}
+    - {x: 6, y: 7}
+    - {x: 6, y: 8}
+    - {x: 6, y: 9}
+    - {x: 6, y: 10}
+    - {x: 6, y: 11}
+    - {x: 6, y: 12}
+    - {x: 7, y: 1}
+    - {x: 7, y: 2}
+    - {x: 7, y: 3}
+    - {x: 7, y: 4}
+    - {x: 7, y: 5}
+    - {x: 7, y: 6}
+    - {x: 7, y: 7}
+    - {x: 7, y: 8}
+    - {x: 7, y: 9}
+    - {x: 7, y: 10}
+    - {x: 7, y: 11}
+    - {x: 7, y: 12}
+    - {x: 8, y: 1}
+    - {x: 8, y: 2}
+    - {x: 8, y: 3}
+    - {x: 8, y: 4}
+    - {x: 8, y: 5}
+    - {x: 8, y: 6}
+    - {x: 8, y: 7}
+    - {x: 8, y: 8}
+    - {x: 8, y: 9}
+    - {x: 8, y: 10}
+    - {x: 8, y: 11}
+    - {x: 8, y: 12}
+    - {x: 9, y: 1}
+    - {x: 9, y: 2}
+    - {x: 9, y: 3}
+    - {x: 9, y: 4}
+    - {x: 9, y: 5}
+    - {x: 9, y: 6}
+    - {x: 9, y: 7}
+    - {x: 9, y: 8}
+    - {x: 9, y: 9}
+    - {x: 9, y: 10}
+    - {x: 9, y: 11}
+    - {x: 9, y: 12}
+    - {x: 10, y: 1}
+    - {x: 10, y: 2}
+    - {x: 10, y: 3}
+    - {x: 10, y: 4}
+    - {x: 10, y: 5}
+    - {x: 10, y: 6}
+    - {x: 10, y: 7}
+    - {x: 10, y: 8}
+    - {x: 10, y: 9}
+    - {x: 10, y: 10}
+    - {x: 10, y: 11}
+    - {x: 10, y: 12}
+    - {x: 11, y: 1}
+    - {x: 11, y: 2}
+    - {x: 11, y: 3}
+    - {x: 11, y: 4}
+    - {x: 11, y: 5}
+    - {x: 11, y: 6}
+    - {x: 11, y: 7}
+    - {x: 11, y: 8}
+    - {x: 11, y: 9}
+    - {x: 11, y: 10}
+    - {x: 11, y: 11}
+    - {x: 11, y: 12}
+    - {x: 12, y: 1}
+    - {x: 12, y: 2}
+    - {x: 12, y: 3}
+    - {x: 12, y: 4}
+    - {x: 12, y: 5}
+    - {x: 12, y: 6}
+    - {x: 12, y: 7}
+    - {x: 12, y: 8}
+    - {x: 12, y: 9}
+    - {x: 12, y: 10}
+    - {x: 12, y: 11}
+    - {x: 12, y: 12}
+  wallLayer:
+    isVisible: 1
+    wallTiles:
+    - {x: 0, y: 0}
+    - {x: 0, y: 13}
+    - {x: 0, y: 0}
+    - {x: 13, y: 0}
+    - {x: 1, y: 0}
+    - {x: 1, y: 13}
+    - {x: 0, y: 1}
+    - {x: 13, y: 1}
+    - {x: 2, y: 0}
+    - {x: 2, y: 13}
+    - {x: 0, y: 2}
+    - {x: 13, y: 2}
+    - {x: 3, y: 0}
+    - {x: 3, y: 13}
+    - {x: 0, y: 3}
+    - {x: 13, y: 3}
+    - {x: 4, y: 0}
+    - {x: 4, y: 13}
+    - {x: 0, y: 4}
+    - {x: 13, y: 4}
+    - {x: 5, y: 0}
+    - {x: 5, y: 13}
+    - {x: 0, y: 5}
+    - {x: 13, y: 5}
+    - {x: 6, y: 0}
+    - {x: 6, y: 13}
+    - {x: 0, y: 6}
+    - {x: 13, y: 6}
+    - {x: 7, y: 0}
+    - {x: 7, y: 13}
+    - {x: 0, y: 7}
+    - {x: 13, y: 7}
+    - {x: 8, y: 0}
+    - {x: 8, y: 13}
+    - {x: 0, y: 8}
+    - {x: 13, y: 8}
+    - {x: 9, y: 0}
+    - {x: 9, y: 13}
+    - {x: 0, y: 9}
+    - {x: 13, y: 9}
+    - {x: 10, y: 0}
+    - {x: 10, y: 13}
+    - {x: 0, y: 10}
+    - {x: 13, y: 10}
+    - {x: 11, y: 0}
+    - {x: 11, y: 13}
+    - {x: 0, y: 11}
+    - {x: 13, y: 11}
+    - {x: 12, y: 0}
+    - {x: 12, y: 13}
+    - {x: 0, y: 12}
+    - {x: 13, y: 12}
+    - {x: 13, y: 0}
+    - {x: 13, y: 13}
+    - {x: 0, y: 13}
+    - {x: 13, y: 13}
+    - {x: 6, y: 4}
+    - {x: 6, y: 5}
+    - {x: 6, y: 6}
+    - {x: 6, y: 7}
+    - {x: 6, y: 8}
+  barrierLayer:
+    isVisible: 1
+    barriers:
+    - position: {x: 6, y: 2}
+      color: 1
+    - position: {x: 10, y: 2}
+      color: 3
+    - position: {x: 3, y: 9}
+      color: 4
+  pickupLayer:
+    isVisible: 1
+    pickups:
+    - position: {x: 4, y: 2}
+      color: 1
+      pickupId: 8f46a871-e485-4bbe-a664-1dff849e4f4f
+    - position: {x: 8, y: 2}
+      color: 2
+      pickupId: f699d348-0285-4e71-8a98-a4b5985b9e98
+    - position: {x: 3, y: 6}
+      color: 4
+      pickupId: 0f2322ef-49d7-403d-825b-8676f4e621a2
+  barrelLayer:
+    isVisible: 1
+    barrels: []
+  botLayer:
+    isVisible: 1
+    bots: []
+  portalLayer:
+    isVisible: 1
+    portals:
+    - portalId: ea689e0a-cfe6-4a8d-ad05-53c57d026aad
+      position: {x: 10, y: 10}
+      link: {fileID: 0}
+      isCheckpoint: 1
+      isEntrance: 0
+    playerSpawnPosition: {x: 2, y: 2}
+  hiddenAreaLayer:
+    isVisible: 1
+    hiddenBlocks: []
+  prefabs:
+    floorPrefab: {fileID: 0}
+    wallPrefab: {fileID: 0}
+    barrierPrefab: {fileID: 0}
+    pickupPrefab: {fileID: 0}
+    barrelPrefab: {fileID: 0}
+    botPrefab: {fileID: 0}
+    portalPrefab: {fileID: 0}
+    hiddenBlockPrefab: {fileID: 0}
+    droppedMaskPrefab: {fileID: 0}
+    playerPrefab: {fileID: 0}
