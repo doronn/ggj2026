@@ -88,7 +88,6 @@ MonoBehaviour:
     - {x: 5, y: 18}
     - {x: 5, y: 19}
     - {x: 5, y: 20}
-    - {x: 5, y: 21}
     - {x: 5, y: 22}
     - {x: 5, y: 23}
     - {x: 6, y: 23}
@@ -108,6 +107,35 @@ MonoBehaviour:
     - {x: 18, y: 17}
     - {x: 17, y: 17}
     - {x: 16, y: 17}
+    - {x: 4, y: 22}
+    - {x: 4, y: 23}
+    - {x: 3, y: 22}
+    - {x: 2, y: 22}
+    - {x: 2, y: 21}
+    - {x: 2, y: 20}
+    - {x: 2, y: 19}
+    - {x: 1, y: 19}
+    - {x: 1, y: 18}
+    - {x: 1, y: 17}
+    - {x: 1, y: 16}
+    - {x: 1, y: 15}
+    - {x: 1, y: 14}
+    - {x: 1, y: 13}
+    - {x: 1, y: 12}
+    - {x: 1, y: 11}
+    - {x: 2, y: 11}
+    - {x: 3, y: 11}
+    - {x: 4, y: 10}
+    - {x: 5, y: 10}
+    - {x: 6, y: 10}
+    - {x: 3, y: 10}
+    - {x: 7, y: 11}
+    - {x: 8, y: 11}
+    - {x: 7, y: 10}
+    - {x: 10, y: 12}
+    - {x: 10, y: 13}
+    - {x: 9, y: 12}
+    - {x: 9, y: 11}
   barrierLayer:
     isVisible: 1
     barriers:
@@ -117,6 +145,8 @@ MonoBehaviour:
       color: 1
     - position: {x: 19, y: 20}
       color: 4
+    - position: {x: 5, y: 21}
+      color: 2
   pickupLayer:
     isVisible: 1
     pickups:
