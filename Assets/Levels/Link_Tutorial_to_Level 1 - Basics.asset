@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6eb5991fcb4ed4144a18392edcf8a52d, type: 3}
+  m_Name: Link_Tutorial_to_Level 1 - Basics
+  m_EditorClassIdentifier: Assembly-CSharp::BreakingHue.Level.Data.EntranceExitLink
+  linkId: 1ab636b0-0fa5-4c9d-859a-057787e4485e
+  displayName: Tutorial <-> Level 1 - Basics
+  levelA: {fileID: 11400000, guid: 294d278df2ee941df947da93b4fe2220, type: 2}
+  portalIdA: 72ee4caf-6056-4354-8c35-e64b146d6ff6
+  levelB: {fileID: 11400000, guid: 60b5000236a4c4e54ba85a4318f70451, type: 2}
+  portalIdB: ea689e0a-cfe6-4a8d-ad05-53c57d026aad
+  isCheckpointA: 0
+  isCheckpointB: 1

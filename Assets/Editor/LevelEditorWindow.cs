@@ -1175,6 +1175,10 @@ namespace BreakingHue.Editor
                 MessageType.Info);
         }
         
+        // Cross-level linking state
+        private LevelData _destinationLevel;
+        private int _destinationPortalIndex = -1;
+        
         private void DrawPortalProperties()
         {
             GUILayout.Label("Portal Properties", EditorStyles.boldLabel);
@@ -1183,7 +1187,8 @@ namespace BreakingHue.Editor
             
             GUILayout.Space(10);
             
-            GUILayout.Label("Portal Linking", EditorStyles.boldLabel);
+            // Same-level linking section
+            GUILayout.Label("Same-Level Portal Linking", EditorStyles.boldLabel);
             
             if (_selectedPortalA != null)
             {
@@ -1205,7 +1210,7 @@ namespace BreakingHue.Editor
             
             if (_selectedPortalA != null && _selectedPortalB != null)
             {
-                if (GUILayout.Button("Create Link"))
+                if (GUILayout.Button("Create Same-Level Link"))
                 {
                     CreatePortalLink();
                 }
@@ -1217,8 +1222,64 @@ namespace BreakingHue.Editor
                 _selectedPortalB = null;
             }
             
+            GUILayout.Space(10);
+            
+            // Cross-level linking section
+            GUILayout.Label("Cross-Level Portal Linking", EditorStyles.boldLabel);
+            
+            if (_selectedPortalA != null)
+            {
+                EditorGUILayout.LabelField("Source Portal:", $"({_selectedPortalA.Position.x}, {_selectedPortalA.Position.y}) in {_currentLevel?.levelName}");
+                
+                // Destination level selection
+                EditorGUI.BeginChangeCheck();
+                _destinationLevel = (LevelData)EditorGUILayout.ObjectField("Destination Level", _destinationLevel, typeof(LevelData), false);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    _destinationPortalIndex = -1; // Reset portal selection when level changes
+                }
+                
+                // Destination portal selection
+                if (_destinationLevel != null && _destinationLevel.portalLayer?.portals != null && _destinationLevel.portalLayer.portals.Count > 0)
+                {
+                    string[] portalNames = _destinationLevel.portalLayer.portals
+                        .Select((p, i) => $"Portal {i + 1} @ ({p.position.x}, {p.position.y}){(p.isCheckpoint ? " [Checkpoint]" : "")}")
+                        .ToArray();
+                    
+                    _destinationPortalIndex = EditorGUILayout.Popup("Destination Portal", _destinationPortalIndex, portalNames);
+                    
+                    if (_destinationPortalIndex >= 0 && GUILayout.Button("Create Cross-Level Link", GUILayout.Height(25)))
+                    {
+                        CreateCrossLevelPortalLink();
+                    }
+                }
+                else if (_destinationLevel != null)
+                {
+                    EditorGUILayout.HelpBox("Destination level has no portals.", MessageType.Warning);
+                }
+            }
+            else
+            {
+                EditorGUILayout.HelpBox("Select a portal in the grid first (click on it).", MessageType.Info);
+            }
+            
+            GUILayout.Space(10);
+            
+            // Existing link display
+            if (_selectedPortalA != null && _selectedPortalA.Link != null)
+            {
+                GUILayout.Label("Current Link", EditorStyles.boldLabel);
+                EditorGUILayout.ObjectField("Link Asset", _selectedPortalA.Link, typeof(EntranceExitLink), false);
+                
+                if (GUILayout.Button("Remove Link"))
+                {
+                    _selectedPortalA.Link = null;
+                    MarkDirty();
+                }
+            }
+            
             GUILayout.Space(5);
-            EditorGUILayout.HelpBox("Click on portals to select them, then create a link.", MessageType.Info);
+            EditorGUILayout.HelpBox("Click on a portal to select it, then choose a destination level and portal to create a cross-level link.", MessageType.Info);
         }
         
         #endregion
@@ -2315,6 +2376,59 @@ namespace BreakingHue.Editor
                 MarkDirty();
                 
                 Debug.Log($"[LevelEditor] Created portal link at {path}");
+            }
+        }
+        
+        private void CreateCrossLevelPortalLink()
+        {
+            if (_selectedPortalA == null || _destinationLevel == null || _destinationPortalIndex < 0) return;
+            
+            var destPortal = _destinationLevel.portalLayer.portals[_destinationPortalIndex];
+            
+            // Generate a meaningful default name
+            string defaultName = $"Link_{_currentLevel.levelName}_to_{_destinationLevel.levelName}";
+            
+            string path = EditorUtility.SaveFilePanelInProject(
+                "Save Cross-Level Portal Link",
+                defaultName,
+                "asset",
+                "Save the portal link asset"
+            );
+            
+            if (!string.IsNullOrEmpty(path))
+            {
+                var link = ScriptableObject.CreateInstance<EntranceExitLink>();
+                link.linkId = Guid.NewGuid().ToString();
+                link.displayName = $"{_currentLevel.levelName} <-> {_destinationLevel.levelName}";
+                link.levelA = _currentLevel;
+                link.portalIdA = _selectedPortalA.PortalId;
+                link.levelB = _destinationLevel;
+                link.portalIdB = destPortal.portalId;
+                link.isCheckpointA = _selectedPortalA.IsCheckpoint;
+                link.isCheckpointB = destPortal.isCheckpoint;
+                
+                AssetDatabase.CreateAsset(link, path);
+                AssetDatabase.SaveAssets();
+                
+                // Assign link to source portal in working copy
+                _selectedPortalA.Link = link;
+                
+                // Also assign to destination portal in the destination level data (directly, not via snapshot)
+                destPortal.link = link;
+                EditorUtility.SetDirty(_destinationLevel);
+                AssetDatabase.SaveAssets();
+                
+                MarkDirty();
+                
+                // Clear selection
+                _selectedPortalA = null;
+                _destinationLevel = null;
+                _destinationPortalIndex = -1;
+                
+                Debug.Log($"[LevelEditor] Created cross-level portal link at {path}");
+                EditorUtility.DisplayDialog("Portal Link Created", 
+                    $"Cross-level portal link created successfully!\n\nRemember to SAVE both levels for the changes to take effect.", 
+                    "OK");
             }
         }
         

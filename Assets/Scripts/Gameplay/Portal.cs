@@ -34,6 +34,7 @@ namespace BreakingHue.Gameplay
         private LevelManager _levelManager;
         private bool _isTransitioning;
         private bool _checkpointTriggeredThisEntry; // Prevents multiple checkpoint triggers while standing on portal
+        private bool _requiresExitBeforeTransition; // Prevents immediate transition when player spawns on portal
 
         /// <summary>
         /// Event fired when a player enters a checkpoint portal.
@@ -86,6 +87,41 @@ namespace BreakingHue.Gameplay
             link = linkAsset;
             isCheckpoint = checkpoint;
             UpdateVisualColor();
+            
+            // Assume player might be inside until we verify otherwise
+            // This prevents immediate transition if spawned on portal
+            _requiresExitBeforeTransition = true;
+            
+            // Check if player is actually inside after a short delay for physics to settle
+            Invoke(nameof(CheckForPlayerInsideAndArm), 0.15f);
+        }
+        
+        private void CheckForPlayerInsideAndArm()
+        {
+            // Check if player is overlapping with this portal
+            var collider = GetComponent<Collider>();
+            if (collider != null)
+            {
+                Collider[] overlaps = Physics.OverlapBox(
+                    collider.bounds.center,
+                    collider.bounds.extents,
+                    transform.rotation
+                );
+                
+                foreach (var overlap in overlaps)
+                {
+                    if (overlap.CompareTag("Player"))
+                    {
+                        // Player IS inside - keep the flag set, they must exit first
+                        Debug.Log($"[Portal] Player inside portal {portalId} - must exit before transition");
+                        return;
+                    }
+                }
+            }
+            
+            // Player is NOT inside this portal - arm it immediately
+            _requiresExitBeforeTransition = false;
+            Debug.Log($"[Portal] Portal {portalId} armed (player not inside)");
         }
 
         private void UpdateVisualColor()
@@ -122,6 +158,13 @@ namespace BreakingHue.Gameplay
             
             // Only respond to player
             if (!other.CompareTag("Player")) return;
+            
+            // If player spawned on this portal, they must exit first before it activates
+            if (_requiresExitBeforeTransition)
+            {
+                Debug.Log($"[Portal] Player must exit portal {portalId} before it can be used (spawned on it)");
+                return;
+            }
 
             // Reset the checkpoint trigger flag when player enters
             _checkpointTriggeredThisEntry = false;
@@ -139,9 +182,16 @@ namespace BreakingHue.Gameplay
         {
             if (!other.CompareTag("Player")) return;
             
-            // Reset flag when player leaves portal
+            // Reset flags when player leaves portal
             _checkpointTriggeredThisEntry = false;
             _isTransitioning = false;
+            
+            // Portal is now armed - player exited so they can re-enter to trigger transition
+            if (_requiresExitBeforeTransition)
+            {
+                _requiresExitBeforeTransition = false;
+                Debug.Log($"[Portal] Portal {portalId} is now armed - player exited");
+            }
         }
 
         private void StartTransition()

@@ -259,7 +259,7 @@ MonoBehaviour:
     portals:
     - portalId: ea689e0a-cfe6-4a8d-ad05-53c57d026aad
       position: {x: 10, y: 10}
-      link: {fileID: 0}
+      link: {fileID: 11400000, guid: daadba176cd2d4d4c8b45bf9b239b557, type: 2}
       isCheckpoint: 1
       isEntrance: 1
     playerSpawnPosition: {x: 2, y: 2}

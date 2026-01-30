@@ -140,9 +140,9 @@ MonoBehaviour:
       link: {fileID: 0}
       isCheckpoint: 1
       isEntrance: 0
-    - portalId: f16c0bcb-915f-47f4-a46e-7b4be979307c
-      position: {x: 24, y: 14}
-      link: {fileID: 0}
+    - portalId: 72ee4caf-6056-4354-8c35-e64b146d6ff6
+      position: {x: 24, y: 15}
+      link: {fileID: 11400000, guid: daadba176cd2d4d4c8b45bf9b239b557, type: 2}
       isCheckpoint: 0
       isEntrance: 0
     playerSpawnPosition: {x: 16, y: 19}
