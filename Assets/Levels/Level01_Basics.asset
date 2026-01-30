@@ -261,7 +261,7 @@ MonoBehaviour:
       position: {x: 10, y: 10}
       link: {fileID: 0}
       isCheckpoint: 1
-      isEntrance: 0
+      isEntrance: 1
     playerSpawnPosition: {x: 2, y: 2}
   hiddenAreaLayer:
     isVisible: 1

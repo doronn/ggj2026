@@ -531,21 +531,25 @@ MonoBehaviour:
       color: 4
     - position: {x: 15, y: 15}
       color: 7
+    - position: {x: 5, y: 17}
+      color: 1
+    - position: {x: 8, y: 17}
+      color: 2
   pickupLayer:
     isVisible: 1
     pickups:
-    - position: {x: 4, y: 3}
-      color: 1
-      pickupId: b836d879-2c4c-4331-a954-7e512f5faac3
-    - position: {x: 6, y: 3}
-      color: 2
-      pickupId: 47b31eaf-0bed-4bf8-bcce-64a71dbb578d
-    - position: {x: 8, y: 3}
-      color: 4
-      pickupId: ca3c5b2b-3cb2-4050-9005-9c11a7812e0f
     - position: {x: 18, y: 3}
       color: 5
       pickupId: 0f8e8646-1519-4bed-b192-621e51b263b4
+    - position: {x: 13, y: 19}
+      color: 1
+      pickupId: c051f89d-46cb-483d-8c23-135cb1f0934b
+    - position: {x: 15, y: 18}
+      color: 7
+      pickupId: 1702c332-160a-4179-934d-f33568a1c9ac
+    - position: {x: 6, y: 3}
+      color: 1
+      pickupId: 031a779d-001c-4e37-9c70-ef46e8c97c21
   barrelLayer:
     isVisible: 1
     barrels:
@@ -558,15 +562,12 @@ MonoBehaviour:
   botLayer:
     isVisible: 1
     bots:
-    - botId: 549d5c92-965f-4c5e-a808-671a6b5fcaae
-      startPosition: {x: 3, y: 10}
+    - botId: aaa
+      startPosition: {x: 6, y: 15}
       initialColor: 1
       pathData: {fileID: 0}
       inlineWaypoints:
-      - {x: 3, y: 10}
-      - {x: 12, y: 10}
-      - {x: 12, y: 7}
-      - {x: 3, y: 7}
+      - {x: 6, y: 15}
       pathMode: 0
   portalLayer:
     isVisible: 1
