@@ -29,6 +29,7 @@ namespace BreakingHue.Gameplay
         private bool _canBePickedUpByPlayer = true;
         private bool _playerInTrigger;
         private bool _isCollected;
+        private bool _isRestoredFromSave;
 
         /// <summary>
         /// Unique ID for this dropped mask (for save/load).
@@ -53,6 +54,18 @@ namespace BreakingHue.Gameplay
         /// Event fired when this mask is collected.
         /// </summary>
         public event Action<DroppedMask> OnCollected;
+        
+        /// <summary>
+        /// Static event fired when ANY dropped mask is collected.
+        /// Used by LevelManager to track collected masks in save data.
+        /// </summary>
+        public static event Action<DroppedMask> OnAnyMaskCollected;
+        
+        /// <summary>
+        /// Static event fired when a dropped mask is spawned/created.
+        /// Used by LevelManager to track dropped masks with correct IDs.
+        /// </summary>
+        public static event Action<DroppedMask> OnMaskSpawned;
 
         private void Awake()
         {
@@ -63,6 +76,16 @@ namespace BreakingHue.Gameplay
             MaskId = $"dropped_{transform.position.x:F2}_{transform.position.z:F2}_{Guid.NewGuid().ToString().Substring(0, 8)}";
             
             UpdateVisualColor();
+        }
+        
+        private void Start()
+        {
+            // Only notify for newly created masks, not ones restored from save
+            // (restored masks are already in save data)
+            if (!_isRestoredFromSave)
+            {
+                OnMaskSpawned?.Invoke(this);
+            }
         }
 
         private void Update()
@@ -179,6 +202,7 @@ namespace BreakingHue.Gameplay
             
             _isCollected = true;
             OnCollected?.Invoke(this);
+            OnAnyMaskCollected?.Invoke(this);
             
             Debug.Log($"[DroppedMask] Collected {maskColor.GetDisplayName()}");
             
@@ -227,6 +251,15 @@ namespace BreakingHue.Gameplay
         /// </summary>
         public static DroppedMask Spawn(GameObject prefab, Vector3 position, ColorType color, Transform parent = null)
         {
+            return Spawn(prefab, position, color, null, parent);
+        }
+        
+        /// <summary>
+        /// Spawns a dropped mask at the given position with the given color and ID.
+        /// Used when restoring from save data to preserve the original mask ID.
+        /// </summary>
+        public static DroppedMask Spawn(GameObject prefab, Vector3 position, ColorType color, string savedMaskId, Transform parent = null)
+        {
             if (prefab == null)
             {
                 Debug.LogError("[DroppedMask] No prefab provided for spawning");
@@ -239,6 +272,13 @@ namespace BreakingHue.Gameplay
             if (droppedMask != null)
             {
                 droppedMask.Initialize(position, color);
+                
+                // If restoring from save, use the saved ID instead of generated one
+                if (!string.IsNullOrEmpty(savedMaskId))
+                {
+                    droppedMask.MaskId = savedMaskId;
+                    droppedMask._isRestoredFromSave = true;
+                }
             }
             
             return droppedMask;

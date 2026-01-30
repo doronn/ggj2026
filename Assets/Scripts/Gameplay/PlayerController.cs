@@ -122,6 +122,26 @@ namespace BreakingHue.Gameplay
             {
                 Debug.LogError("[PlayerController] Failed to resolve MaskInventory!");
             }
+            
+            // Fallback: If droppedMaskPrefab not assigned, try to find one in Resources
+            if (droppedMaskPrefab == null)
+            {
+                droppedMaskPrefab = Resources.Load<GameObject>("DroppedMask");
+                if (droppedMaskPrefab == null)
+                {
+                    // Try to find any existing DroppedMask in the scene to use as template
+                    var existingMask = FindObjectOfType<DroppedMask>(true);
+                    if (existingMask != null)
+                    {
+                        Debug.Log("[PlayerController] Found existing DroppedMask to use as prefab template");
+                        droppedMaskPrefab = existingMask.gameObject;
+                    }
+                    else
+                    {
+                        Debug.LogWarning("[PlayerController] droppedMaskPrefab not assigned and no fallback found. Mask dropping will create a primitive.");
+                    }
+                }
+            }
         }
 
         private void OnDestroy()
@@ -374,12 +394,22 @@ namespace BreakingHue.Gameplay
             Debug.Log("[PlayerController] All masks deactivated");
         }
 
+        // Track if player is currently inside a barrier (for drop prevention)
+        private ColorBarrier _currentBarrier;
+        
         /// <summary>
         /// Drops the first active mask at the player's current grid position.
         /// </summary>
         public void DropMask()
         {
             if (_inventory == null) return;
+            
+            // Cannot drop mask while inside a barrier
+            if (_currentBarrier != null)
+            {
+                Debug.Log("[PlayerController] Cannot drop mask while inside a barrier");
+                return;
+            }
             
             // Find first active slot with a mask
             var activeSlots = _inventory.GetActiveSlotIndices();
@@ -414,15 +444,22 @@ namespace BreakingHue.Gameplay
             // Request mask spawn at grid position
             OnMaskDropRequested?.Invoke(dropPosition, colorToDrop);
             
-            // Also try direct spawn if prefab is assigned
+            // Spawn the dropped mask
+            DroppedMask dropped = null;
             if (droppedMaskPrefab != null)
             {
-                var dropped = DroppedMask.Spawn(droppedMaskPrefab, dropPosition, colorToDrop);
-                if (dropped != null)
-                {
-                    dropped.PreventImmediatePickup();
-                    _currentTileMask = dropped;
-                }
+                dropped = DroppedMask.Spawn(droppedMaskPrefab, dropPosition, colorToDrop);
+            }
+            else
+            {
+                // Fallback: Create a basic dropped mask at runtime
+                dropped = CreateDroppedMaskAtRuntime(dropPosition, colorToDrop);
+            }
+            
+            if (dropped != null)
+            {
+                dropped.PreventImmediatePickup();
+                _currentTileMask = dropped;
             }
             
             Debug.Log($"[PlayerController] Dropped {colorToDrop.GetDisplayName()} mask at {dropPosition}");
@@ -438,6 +475,39 @@ namespace BreakingHue.Gameplay
             float z = Mathf.Round(pos.z / gridCellSize) * gridCellSize;
             return new Vector3(x, 0.5f, z);
         }
+        
+        /// <summary>
+        /// Creates a dropped mask at runtime when no prefab is assigned.
+        /// This is a fallback to ensure mask dropping always works.
+        /// </summary>
+        private DroppedMask CreateDroppedMaskAtRuntime(Vector3 position, ColorType color)
+        {
+            // Create a simple sphere as the visual representation
+            var maskObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            maskObj.name = $"DroppedMask_{color}";
+            maskObj.transform.position = position;
+            maskObj.transform.localScale = Vector3.one * 0.5f;
+            
+            // Set the color
+            var renderer = maskObj.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material.color = color.ToColor();
+            }
+            
+            // Configure the collider as a trigger
+            var collider = maskObj.GetComponent<Collider>();
+            if (collider != null)
+            {
+                collider.isTrigger = true;
+            }
+            
+            // Add the DroppedMask component
+            var droppedMask = maskObj.AddComponent<DroppedMask>();
+            droppedMask.Initialize(position, color);
+            
+            return droppedMask;
+        }
 
         private void OnTriggerEnter(Collider other)
         {
@@ -447,6 +517,13 @@ namespace BreakingHue.Gameplay
             {
                 _currentTileMask = droppedMask;
             }
+            
+            // Track barriers we're inside
+            var barrier = other.GetComponent<ColorBarrier>();
+            if (barrier != null)
+            {
+                _currentBarrier = barrier;
+            }
         }
 
         private void OnTriggerExit(Collider other)
@@ -455,6 +532,12 @@ namespace BreakingHue.Gameplay
             if (droppedMask != null && droppedMask == _currentTileMask)
             {
                 _currentTileMask = null;
+            }
+            
+            var barrier = other.GetComponent<ColorBarrier>();
+            if (barrier != null && barrier == _currentBarrier)
+            {
+                _currentBarrier = null;
             }
         }
 

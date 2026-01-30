@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Level02_Advanced
   m_EditorClassIdentifier: Assembly-CSharp::BreakingHue.Level.Data.LevelData
   levelName: Level 2 - Advanced
-  levelId: afecce55-a243-4092-9098-f81da9f6245b
+  levelId: 21f58cf9-cab2-4f87-90dc-19d3f1bbcc2c
   levelIndex: 1
   cellSize: 1
   groundLayer:
@@ -512,10 +512,6 @@ MonoBehaviour:
     - {x: 21, y: 21}
     - {x: 9, y: 5}
     - {x: 9, y: 6}
-    - {x: 9, y: 7}
-    - {x: 9, y: 8}
-    - {x: 9, y: 9}
-    - {x: 9, y: 10}
     - {x: 9, y: 11}
     - {x: 9, y: 12}
     - {x: 13, y: 14}
@@ -540,47 +536,47 @@ MonoBehaviour:
     pickups:
     - position: {x: 4, y: 3}
       color: 1
-      pickupId: 30176bb8-edf2-447f-a0e5-a0a72bf9c1a7
+      pickupId: b836d879-2c4c-4331-a954-7e512f5faac3
     - position: {x: 6, y: 3}
       color: 2
-      pickupId: 68b6a176-38d6-460c-a8d4-d5cd47039027
+      pickupId: 47b31eaf-0bed-4bf8-bcce-64a71dbb578d
     - position: {x: 8, y: 3}
       color: 4
-      pickupId: 616bcd95-d60f-449b-ac1c-6211ffffecc8
+      pickupId: ca3c5b2b-3cb2-4050-9005-9c11a7812e0f
     - position: {x: 18, y: 3}
       color: 5
-      pickupId: 8764190a-9298-4bad-8022-3a204ac24dd4
+      pickupId: 0f8e8646-1519-4bed-b192-621e51b263b4
   barrelLayer:
     isVisible: 1
     barrels:
     - position: {x: 12, y: 7}
       color: 1
-      barrelId: 064b8d65-6fe9-43f6-a054-cd18a7bde87c
+      barrelId: 6c41df31-5df0-4d04-bd2f-21a68a6c5694
     - position: {x: 14, y: 10}
       color: 2
-      barrelId: 62ccfe14-e4df-4b8e-9e88-8557520a2502
+      barrelId: 58225a60-faed-4d91-aa09-8337b38c848c
   botLayer:
     isVisible: 1
     bots:
-    - botId: 779530e7-d476-472c-88a4-42dd6ea39ca7
+    - botId: 549d5c92-965f-4c5e-a808-671a6b5fcaae
       startPosition: {x: 3, y: 10}
       initialColor: 1
       pathData: {fileID: 0}
       inlineWaypoints:
       - {x: 3, y: 10}
-      - {x: 3, y: 15}
-      - {x: 8, y: 15}
-      - {x: 8, y: 10}
+      - {x: 12, y: 10}
+      - {x: 12, y: 7}
+      - {x: 3, y: 7}
       pathMode: 0
   portalLayer:
     isVisible: 1
     portals:
-    - portalId: 759f7a2e-b37c-40ac-acc8-6acc3f435546
+    - portalId: 26cc2507-db8f-49f3-8ad1-32a8863537c3
       position: {x: 5, y: 10}
       link: {fileID: 0}
       isCheckpoint: 1
       isEntrance: 0
-    - portalId: c36a6c59-603e-4bee-b975-4d7d2f847463
+    - portalId: 7eb20c00-29b1-4677-bced-1a563f2f454f
       position: {x: 18, y: 18}
       link: {fileID: 0}
       isCheckpoint: 1
@@ -590,29 +586,29 @@ MonoBehaviour:
     isVisible: 1
     hiddenBlocks:
     - position: {x: 16, y: 2}
-      blockId: 84fe942e-1393-42e9-b91b-b43cd58e0be3
+      blockId: 5f91dbc8-e021-419c-b3aa-b0331c81e08a
     - position: {x: 16, y: 3}
-      blockId: a33bf6ce-e27a-4f4c-9022-a92d4a3b6932
+      blockId: d2eb2d03-e54c-4569-8ba5-5b2668e6535c
     - position: {x: 16, y: 4}
-      blockId: 7db2c545-6324-4cae-8e66-88be85d68dca
+      blockId: 778c965e-0918-45df-b341-59860e8112bf
     - position: {x: 17, y: 2}
-      blockId: 0dbc7a65-98fc-4c14-8da4-45aa0823b06d
+      blockId: 575095f1-6221-4a9c-b393-7a8446554ffe
     - position: {x: 17, y: 3}
-      blockId: f08a9de9-9c7a-46f4-a244-94eb3f6d6218
+      blockId: 630ef2b1-8c67-4edb-a513-8ca115d1096f
     - position: {x: 17, y: 4}
-      blockId: d859c349-29e7-4b5e-8d2c-d82a6158f9f2
+      blockId: a64f1a05-a3fa-4b44-8cb1-6984ae4579ac
     - position: {x: 18, y: 2}
-      blockId: f7b69621-0a9b-4070-a982-74c9c0555ed8
+      blockId: 761437be-e73e-489f-929a-5582d15aaaa6
     - position: {x: 18, y: 3}
-      blockId: 9fd5ce91-1110-4a4d-85df-1aa8b1e5122a
+      blockId: 15d81e0e-4563-4527-b61d-9b7defbac323
     - position: {x: 18, y: 4}
-      blockId: b195055f-daff-4ae5-82f7-ea886c726923
+      blockId: 961fe31f-f949-4c88-a28b-6632e75ef6e7
     - position: {x: 19, y: 2}
-      blockId: c09df673-cb9a-4fb2-a8db-ea3837653aa6
+      blockId: 6f3f029e-894f-4285-ad28-58cda8f56020
     - position: {x: 19, y: 3}
-      blockId: 9694d32d-1f54-4d2f-a713-8be45dd270bd
+      blockId: 11c57828-8647-45e1-9dcf-ac17a039c88d
     - position: {x: 19, y: 4}
-      blockId: 13647595-2a9a-4aad-b232-4d86d26faf2c
+      blockId: cb8c8466-c084-4a21-884f-bb195cb152e3
   prefabs:
     floorPrefab: {fileID: 0}
     wallPrefab: {fileID: 0}

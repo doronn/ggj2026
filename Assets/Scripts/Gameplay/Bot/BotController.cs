@@ -201,7 +201,11 @@ namespace BreakingHue.Gameplay.Bot
                 _isStoppedByPlayer = true;
                 _blockingPlayer = collision.gameObject;
                 _currentVelocity = Vector3.zero;
-                Debug.Log("[BotController] Stopped by player collision");
+                
+                // Make bot immovable by player - set to kinematic while stopped
+                _rigidbody.isKinematic = true;
+                
+                Debug.Log("[BotController] Stopped by player collision - now kinematic");
             }
         }
 
@@ -211,6 +215,9 @@ namespace BreakingHue.Gameplay.Bot
             {
                 _isStoppedByPlayer = false;
                 _blockingPlayer = null;
+                
+                // Restore physics when player moves away
+                _rigidbody.isKinematic = false;
             }
         }
 
@@ -302,9 +309,41 @@ namespace BreakingHue.Gameplay.Bot
 
         private void HandleMaskDropped(Vector3 position, ColorType color)
         {
-            // Request spawning a dropped mask at this position
-            // This is handled by the level manager or a dedicated spawner
-            DroppedMask.RequestSpawnDroppedMask(position, color);
+            // Spawn the dropped mask directly instead of using the event system
+            // (the SpawnDroppedMask event has no subscribers)
+            SpawnDroppedMaskDirectly(position, color);
+        }
+        
+        /// <summary>
+        /// Directly spawns a dropped mask at the given position.
+        /// </summary>
+        private void SpawnDroppedMaskDirectly(Vector3 position, ColorType color)
+        {
+            // Create a simple sphere as the visual representation
+            var maskObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            maskObj.name = $"DroppedMask_{color}";
+            maskObj.transform.position = position + Vector3.up * 0.5f; // Raise slightly off ground
+            maskObj.transform.localScale = Vector3.one * 0.5f;
+            
+            // Set the color
+            var renderer = maskObj.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material.color = color.ToColor();
+            }
+            
+            // Configure the collider as a trigger
+            var collider = maskObj.GetComponent<Collider>();
+            if (collider != null)
+            {
+                collider.isTrigger = true;
+            }
+            
+            // Add the DroppedMask component
+            var droppedMask = maskObj.AddComponent<DroppedMask>();
+            droppedMask.Initialize(position + Vector3.up * 0.5f, color);
+            
+            Debug.Log($"[BotController] Spawned dropped {color.GetDisplayName()} mask at {position}");
         }
 
         /// <summary>

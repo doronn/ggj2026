@@ -6,6 +6,7 @@ using BreakingHue.Core;
 using BreakingHue.Gameplay;
 using BreakingHue.Gameplay.Bot;
 using BreakingHue.Level.Data;
+using BreakingHue.Save;
 
 namespace BreakingHue.Level
 {
@@ -96,6 +97,31 @@ namespace BreakingHue.Level
 
         private void Start()
         {
+            // Subscribe to pickup collection events to track collected pickups
+            MaskPickup.OnMaskPickupCollected += OnPickupCollected;
+            
+            // Subscribe to barrel explosion events to track destroyed barrels
+            ExplodingBarrel.OnBarrelExploded += OnBarrelExploded;
+            
+            // Subscribe to dropped mask events to track dropped masks
+            DroppedMask.OnMaskSpawned += OnMaskSpawned;
+            DroppedMask.OnAnyMaskCollected += OnMaskCollected;
+            
+            // Before loading level, check if CheckpointManager has states to apply
+            var checkpointManager = FindObjectOfType<CheckpointManager>();
+            if (checkpointManager != null && checkpointManager.HasCheckpoint)
+            {
+                var checkpointStates = checkpointManager.GetCheckpointLevelStates();
+                if (checkpointStates != null && checkpointStates.Count > 0)
+                {
+                    foreach (var kvp in checkpointStates)
+                    {
+                        _levelStates[kvp.Key] = kvp.Value.Clone();
+                    }
+                    Debug.Log($"[LevelManager] Applied {checkpointStates.Count} checkpoint level states before loading");
+                }
+            }
+            
             var levelToLoad = EffectiveStartingLevel;
             if (autoLoadOnStart && levelToLoad != null)
             {
@@ -106,6 +132,75 @@ namespace BreakingHue.Level
                 Debug.LogWarning("[LevelManager] Auto-load is enabled but no starting level is set. " +
                     "Assign a GameConfig or set startingLevel directly.");
             }
+        }
+        
+        private void OnDestroy()
+        {
+            MaskPickup.OnMaskPickupCollected -= OnPickupCollected;
+            ExplodingBarrel.OnBarrelExploded -= OnBarrelExploded;
+            DroppedMask.OnMaskSpawned -= OnMaskSpawned;
+            DroppedMask.OnAnyMaskCollected -= OnMaskCollected;
+        }
+        
+        /// <summary>
+        /// Called when a mask pickup is collected - tracks it in save data.
+        /// </summary>
+        private void OnPickupCollected(string pickupId)
+        {
+            if (_currentLevel == null) return;
+            
+            var saveData = GetOrCreateLevelSaveData(_currentLevel.levelId);
+            saveData.MarkPickupCollected(pickupId);
+            
+            Debug.Log($"[LevelManager] Tracked pickup collection: {pickupId}");
+        }
+        
+        /// <summary>
+        /// Called when a barrel explodes - tracks it in save data.
+        /// </summary>
+        private void OnBarrelExploded(ExplodingBarrel barrel, bool wasPlayer)
+        {
+            if (_currentLevel == null || barrel == null) return;
+            
+            var saveData = GetOrCreateLevelSaveData(_currentLevel.levelId);
+            saveData.MarkBarrelDestroyed(barrel.barrelId);
+            
+            Debug.Log($"[LevelManager] Tracked barrel destruction: {barrel.barrelId}");
+        }
+        
+        /// <summary>
+        /// Called when a dropped mask is spawned - tracks it in save data.
+        /// </summary>
+        private void OnMaskSpawned(DroppedMask mask)
+        {
+            if (_currentLevel == null || mask == null) return;
+            
+            // Don't track masks spawned from save data (they already exist in save)
+            // Only track new drops (masks created during gameplay)
+            var saveData = GetOrCreateLevelSaveData(_currentLevel.levelId);
+            
+            // Check if this mask already exists in save data (was loaded from save)
+            if (saveData.droppedMasks.Exists(m => m.maskId == mask.MaskId))
+            {
+                return; // Already tracked
+            }
+            
+            saveData.AddDroppedMask(mask.MaskId, mask.transform.position, mask.MaskColor);
+            
+            Debug.Log($"[LevelManager] Tracked dropped mask: {mask.MaskId} ({mask.MaskColor})");
+        }
+        
+        /// <summary>
+        /// Called when a dropped mask is collected - removes it from save data.
+        /// </summary>
+        private void OnMaskCollected(DroppedMask mask)
+        {
+            if (_currentLevel == null || mask == null) return;
+            
+            var saveData = GetOrCreateLevelSaveData(_currentLevel.levelId);
+            saveData.RemoveDroppedMask(mask.MaskId);
+            
+            Debug.Log($"[LevelManager] Removed collected mask from tracking: {mask.MaskId}");
         }
 
         /// <summary>
@@ -183,12 +278,18 @@ namespace BreakingHue.Level
             LoadLevel(allLevels[levelIndex], spawnPortalId);
         }
 
+        private bool _skipSaveOnUnload = false;
+        
         private void UnloadCurrentLevel()
         {
             if (_currentLevel == null) return;
 
-            // Save state before unloading
-            SaveCurrentLevelState();
+            // Save state before unloading (unless restoring from checkpoint)
+            if (!_skipSaveOnUnload)
+            {
+                SaveCurrentLevelState();
+            }
+            _skipSaveOnUnload = false;
 
             // Destroy all spawned objects
             foreach (var obj in _spawnedObjects)
@@ -306,7 +407,9 @@ namespace BreakingHue.Level
             {
                 // Skip if already collected
                 if (saveData.collectedPickupIds.Contains(pickupData.pickupId))
+                {
                     continue;
+                }
 
                 Vector3 pos = data.GridToWorld(pickupData.position.x, pickupData.position.y) + offset;
                 pos.y = 0.5f;
@@ -339,6 +442,7 @@ namespace BreakingHue.Level
                 var barrelComponent = barrel.GetComponent<ExplodingBarrel>();
                 if (barrelComponent != null)
                 {
+                    barrelComponent.SetBarrelId(barrelData.barrelId);
                     barrelComponent.Initialize(barrelData.color);
                 }
                 
@@ -467,7 +571,8 @@ namespace BreakingHue.Level
 
             foreach (var maskData in saveData.droppedMasks)
             {
-                var mask = DroppedMask.Spawn(prefabs.droppedMaskPrefab, maskData.position, maskData.color, _currentLevelInstance.transform);
+                // Pass the saved maskId to preserve it across save/load
+                var mask = DroppedMask.Spawn(prefabs.droppedMaskPrefab, maskData.position, maskData.color, maskData.maskId, _currentLevelInstance.transform);
                 if (mask != null)
                 {
                     _spawnedObjects.Add(mask.gameObject);
@@ -526,6 +631,18 @@ namespace BreakingHue.Level
             // Save bot states
             foreach (var kvp in _activeBots)
             {
+                // Skip destroyed bots (null check for Unity objects)
+                if (kvp.Value == null)
+                {
+                    // Bot was destroyed - mark as dead in save data
+                    saveData.UpdateBotState(new BotSaveData
+                    {
+                        botId = kvp.Key,
+                        isDead = true
+                    });
+                    continue;
+                }
+                
                 var snapshot = kvp.Value.CreateSnapshot();
                 saveData.UpdateBotState(new BotSaveData
                 {
@@ -573,6 +690,9 @@ namespace BreakingHue.Level
             {
                 _levelStates[kvp.Key] = kvp.Value.Clone();
             }
+            
+            // Skip saving on next unload to prevent overwriting restored checkpoint data
+            _skipSaveOnUnload = true;
         }
 
         /// <summary>
@@ -584,6 +704,24 @@ namespace BreakingHue.Level
             {
                 LoadLevel(_currentLevel, spawnPortalId);
             }
+        }
+        
+        /// <summary>
+        /// Forces saving the current level state without unloading.
+        /// Used by CheckpointManager before capturing checkpoint data.
+        /// </summary>
+        public void ForceSaveCurrentLevelState()
+        {
+            SaveCurrentLevelState();
+        }
+        
+        /// <summary>
+        /// Resets the skipSaveOnUnload flag.
+        /// Used after applying checkpoint states on startup.
+        /// </summary>
+        public void ResetSkipSaveFlag()
+        {
+            _skipSaveOnUnload = false;
         }
 
         /// <summary>

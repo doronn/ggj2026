@@ -33,6 +33,7 @@ namespace BreakingHue.Gameplay
         
         private LevelManager _levelManager;
         private bool _isTransitioning;
+        private bool _checkpointTriggeredThisEntry; // Prevents multiple checkpoint triggers while standing on portal
 
         /// <summary>
         /// Event fired when a player enters a checkpoint portal.
@@ -122,32 +123,50 @@ namespace BreakingHue.Gameplay
             // Only respond to player
             if (!other.CompareTag("Player")) return;
 
+            // Reset the checkpoint trigger flag when player enters
+            _checkpointTriggeredThisEntry = false;
+
             OnPortalEntered?.Invoke(this);
             
-            // Trigger checkpoint save if this is a checkpoint portal
-            if (isCheckpoint)
-            {
-                OnCheckpointReached?.Invoke(this);
-            }
+            // NOTE: Checkpoint is now saved on ARRIVAL at destination, not on entering source portal
+            // See StartTransition/ExecuteTransition for checkpoint handling
             
             // Start transition
             StartTransition();
         }
+        
+        private void OnTriggerExit(Collider other)
+        {
+            if (!other.CompareTag("Player")) return;
+            
+            // Reset flag when player leaves portal
+            _checkpointTriggeredThisEntry = false;
+            _isTransitioning = false;
+        }
 
         private void StartTransition()
         {
-            if (link == null)
-            {
-                Debug.LogWarning($"[Portal] Portal {portalId} has no link configured");
-                return;
-            }
-
             _isTransitioning = true;
             
             // Play transition effect
             if (portalVFX != null)
             {
                 portalVFX.Play();
+            }
+
+            // If no link, handle checkpoint immediately and return
+            if (link == null)
+            {
+                // Still save checkpoint if this is a checkpoint portal (player stays here)
+                // But only once per entry
+                if (isCheckpoint && !_checkpointTriggeredThisEntry)
+                {
+                    _checkpointTriggeredThisEntry = true;
+                    OnCheckpointReached?.Invoke(this);
+                    Debug.Log($"[Portal] Checkpoint saved at portal {portalId}");
+                }
+                _isTransitioning = false;
+                return;
             }
 
             // Delay the actual transition for visual effect
@@ -171,10 +190,22 @@ namespace BreakingHue.Gameplay
             if (_levelManager != null && link != null)
             {
                 _levelManager.TransitionToLevel(link, portalId);
+                
+                // Save checkpoint AFTER arriving at destination (if this portal is a checkpoint)
+                if (isCheckpoint)
+                {
+                    OnCheckpointReached?.Invoke(this);
+                }
             }
             else
             {
-                Debug.LogError($"[Portal] Cannot transition - LevelManager or Link is null");
+                // No link configured - if this is a checkpoint, save state here
+                // (player stays at this location)
+                if (isCheckpoint)
+                {
+                    OnCheckpointReached?.Invoke(this);
+                }
+                Debug.LogWarning($"[Portal] Cannot transition - Link is null. Checkpoint saved at current location.");
             }
 
             _isTransitioning = false;

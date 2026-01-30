@@ -34,6 +34,11 @@ namespace BreakingHue.Gameplay
         private MaskInventory _playerInventory;
         private Renderer _renderer;
         private bool _hasExploded;
+        
+        /// <summary>
+        /// Unique ID for this barrel (for save/load tracking).
+        /// </summary>
+        public string barrelId { get; private set; }
 
         /// <summary>
         /// Event fired when the barrel explodes.
@@ -56,6 +61,39 @@ namespace BreakingHue.Gameplay
         {
             _renderer = GetComponentInChildren<Renderer>();
             SetupColliders();
+            
+            // Generate unique ID based on position
+            barrelId = $"barrel_{transform.position.x:F2}_{transform.position.z:F2}_{System.Guid.NewGuid().ToString().Substring(0, 8)}";
+        }
+        
+        /// <summary>
+        /// Sets the barrel ID (used when spawning from level data with pre-defined IDs).
+        /// </summary>
+        public void SetBarrelId(string id)
+        {
+            if (!string.IsNullOrEmpty(id))
+            {
+                barrelId = id;
+            }
+        }
+
+        private void Start()
+        {
+            // Fallback: If Zenject injection didn't happen (e.g., instantiated via Instantiate()),
+            // try to resolve the inventory manually
+            if (_playerInventory == null)
+            {
+                var sceneContext = FindObjectOfType<Zenject.SceneContext>();
+                if (sceneContext != null && sceneContext.Container != null)
+                {
+                    _playerInventory = sceneContext.Container.TryResolve<MaskInventory>();
+                }
+            }
+            
+            if (_playerInventory == null)
+            {
+                Debug.LogWarning($"[ExplodingBarrel] Failed to resolve MaskInventory for barrel at {transform.position}");
+            }
         }
 
         private void SetupColliders()
