@@ -536,7 +536,7 @@ namespace BreakingHue.Level
                 var portalComponent = portal.GetComponent<Portal>();
                 if (portalComponent != null)
                 {
-                    portalComponent.Initialize(portalData.portalId, portalData.link, portalData.isCheckpoint);
+                    portalComponent.Initialize(portalData.portalId, portalData.link, portalData.isCheckpoint, portalData.isEndGame, portalData.endGameConfig);
                     _activePortals[portalData.portalId] = portalComponent;
                 }
                 

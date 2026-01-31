@@ -223,6 +223,8 @@ namespace BreakingHue.Level.Data
         public EntranceExitLink link; // Reference to the link asset
         public bool isCheckpoint;
         public bool isEntrance; // True = entrance, False = exit (though they're bidirectional)
+        public bool isEndGame; // True = triggers end game sequence when entered
+        public EndGameConfig endGameConfig; // Configuration for end game (required if isEndGame is true)
     }
 
     /// <summary>

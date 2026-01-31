@@ -39,12 +39,15 @@ namespace BreakingHue.Editor
         private Vector2 _propertiesScrollPosition;
         private Vector2 _gridOffset = Vector2.zero;
         private float _zoom = 1f;
+        private Rect _gridRect; // Cached grid rect for consistent input handling
         
         // Tool state
         private EditorLayer _currentLayer = EditorLayer.Ground;
         private EditorTool _currentTool = EditorTool.Paint;
         private ColorType _selectedColor = ColorType.Red;
         private bool _isCheckpoint;
+        private bool _isEndGame;
+        private EndGameConfig _selectedEndGameConfig;
         
         // Layer visibility
         private bool[] _layerVisibility = new bool[9] { true, true, true, true, true, true, true, true, true };
@@ -422,6 +425,9 @@ namespace BreakingHue.Editor
                 GUILayout.ExpandHeight(true)
             );
             
+            // Cache the grid rect for input handling (must use actual layout position)
+            _gridRect = gridRect;
+            
             // Background
             EditorGUI.DrawRect(gridRect, new Color(0.15f, 0.15f, 0.15f));
             
@@ -591,7 +597,7 @@ namespace BreakingHue.Editor
                 case EditorLayer.Pickups: return Color.Lerp(_selectedColor.ToColor(), Color.white, 0.3f);
                 case EditorLayer.Barrels: return Color.Lerp(_selectedColor.ToColor(), Color.black, 0.3f);
                 case EditorLayer.Bots: return Color.cyan;
-                case EditorLayer.Portals: return _isCheckpoint ? new Color(1f, 0.8f, 0f) : new Color(0f, 0.8f, 1f);
+                case EditorLayer.Portals: return _isEndGame ? new Color(1f, 0.4f, 1f) : (_isCheckpoint ? new Color(1f, 0.8f, 0f) : new Color(0f, 0.8f, 1f));
                 case EditorLayer.HiddenAreas: return new Color(0.25f, 0.25f, 0.25f);
                 default: return Color.gray;
             }
@@ -667,7 +673,8 @@ namespace BreakingHue.Editor
                 var portal = _workingCopy.Portals.Find(p => p.Position == pos);
                 if (portal != null)
                 {
-                    return portal.IsCheckpoint ? new Color(1f, 0.8f, 0f) : new Color(0f, 0.8f, 1f);
+                    // End game portals: magenta, Checkpoint portals: gold, Normal portals: cyan
+                    return portal.IsEndGame ? new Color(1f, 0.4f, 1f) : (portal.IsCheckpoint ? new Color(1f, 0.8f, 0f) : new Color(0f, 0.8f, 1f));
                 }
                 
                 if (_workingCopy.PlayerSpawnPosition == pos)
@@ -895,7 +902,7 @@ namespace BreakingHue.Editor
         
         private void DrawSelectionProperties()
         {
-            GUILayout.Label($"Selection ({_selection.Count} items)", EditorStyles.boldLabel);
+            GUILayout.Label($"Selected Tile Properties", EditorStyles.boldLabel);
             
             // Get first selected item for reference
             var firstItem = _selection[0];
@@ -903,40 +910,633 @@ namespace BreakingHue.Editor
             // Check if all items are from the same layer
             bool sameLayer = _selection.All(s => s.Layer == firstItem.Layer);
             
-            if (sameLayer)
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            
+            if (_selection.Count == 1)
             {
+                // Single selection - show full editing interface
                 EditorGUILayout.LabelField("Layer:", firstItem.Layer.ToString());
+                EditorGUILayout.LabelField("Position:", $"({firstItem.Position.x}, {firstItem.Position.y})");
                 
-                // Color editing for color-based elements
-                if (firstItem.Layer == EditorLayer.Barriers || 
-                    firstItem.Layer == EditorLayer.Pickups || 
-                    firstItem.Layer == EditorLayer.Barrels)
-                {
-                    GUILayout.Label("Change Color", EditorStyles.boldLabel);
-                    DrawColorPicker();
-                    
-                    if (GUILayout.Button("Apply Color to Selection"))
-                    {
-                        ApplyColorToSelection(_selectedColor);
-                    }
-                }
+                GUILayout.Space(5);
+                
+                DrawSingleItemEditor(firstItem);
+            }
+            else if (sameLayer)
+            {
+                // Multiple selection of same type
+                EditorGUILayout.LabelField("Layer:", firstItem.Layer.ToString());
+                EditorGUILayout.LabelField("Count:", $"{_selection.Count} items");
+                
+                GUILayout.Space(5);
+                
+                DrawMultiItemEditor(firstItem.Layer);
             }
             else
             {
+                // Mixed selection
                 EditorGUILayout.LabelField("Layer:", "Mixed");
+                EditorGUILayout.LabelField("Count:", $"{_selection.Count} items");
+                EditorGUILayout.HelpBox("Mixed selection - only delete/clear available", MessageType.Info);
+            }
+            
+            EditorGUILayout.EndVertical();
+            
+            GUILayout.Space(10);
+            
+            // Action buttons
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Delete (Del)", GUILayout.Height(25)))
+            {
+                DeleteSelection();
+            }
+            if (GUILayout.Button("Clear (Esc)", GUILayout.Height(25)))
+            {
+                ClearSelection();
+            }
+            EditorGUILayout.EndHorizontal();
+        }
+        
+        /// <summary>
+        /// Draw full editing interface for a single selected item
+        /// </summary>
+        private void DrawSingleItemEditor(SelectedItem item)
+        {
+            switch (item.Layer)
+            {
+                case EditorLayer.Ground:
+                    DrawGroundEditor(item);
+                    break;
+                    
+                case EditorLayer.Walls:
+                    DrawWallEditor(item);
+                    break;
+                    
+                case EditorLayer.Barriers:
+                    DrawBarrierEditor(item);
+                    break;
+                    
+                case EditorLayer.Pickups:
+                    DrawPickupEditor(item);
+                    break;
+                    
+                case EditorLayer.Barrels:
+                    DrawBarrelEditor(item);
+                    break;
+                    
+                case EditorLayer.Bots:
+                    DrawBotEditor(item);
+                    break;
+                    
+                case EditorLayer.Portals:
+                    DrawPortalEditor(item);
+                    break;
+                    
+                case EditorLayer.HiddenAreas:
+                    DrawHiddenBlockEditor(item);
+                    break;
+            }
+        }
+        
+        /// <summary>
+        /// Draw editing interface for multiple selected items of the same type
+        /// </summary>
+        private void DrawMultiItemEditor(EditorLayer layer)
+        {
+            switch (layer)
+            {
+                case EditorLayer.Ground:
+                case EditorLayer.Walls:
+                case EditorLayer.HiddenAreas:
+                    EditorGUILayout.HelpBox("Position tiles can only be moved or deleted.", MessageType.Info);
+                    break;
+                    
+                case EditorLayer.Barriers:
+                case EditorLayer.Pickups:
+                case EditorLayer.Barrels:
+                    GUILayout.Label("Change Color (All)", EditorStyles.boldLabel);
+                    DrawColorPicker();
+                    if (GUILayout.Button("Apply Color to All Selected", GUILayout.Height(25)))
+                    {
+                        ApplyColorToSelection(_selectedColor);
+                    }
+                    break;
+                    
+                case EditorLayer.Bots:
+                    DrawMultiBotEditor();
+                    break;
+                    
+                case EditorLayer.Portals:
+                    DrawMultiPortalEditor();
+                    break;
+            }
+        }
+        
+        #region Single Item Editors
+        
+        private void DrawGroundEditor(SelectedItem item)
+        {
+            EditorGUILayout.HelpBox("Floor tiles have position only. Use Select tool to move.", MessageType.Info);
+        }
+        
+        private void DrawWallEditor(SelectedItem item)
+        {
+            EditorGUILayout.HelpBox("Wall tiles have position only. Use Select tool to move.", MessageType.Info);
+        }
+        
+        private void DrawBarrierEditor(SelectedItem item)
+        {
+            var barrier = _workingCopy.Barriers.Find(b => b.Position == item.Position);
+            if (barrier == null) return;
+            
+            GUILayout.Label("Current Color", EditorStyles.miniBoldLabel);
+            DrawColorSwatch(barrier.Color);
+            
+            GUILayout.Space(5);
+            GUILayout.Label("Change Color", EditorStyles.miniBoldLabel);
+            DrawColorPicker();
+            
+            if (GUILayout.Button("Apply New Color", GUILayout.Height(25)))
+            {
+                ModifyBarrierColor(item.Position, _selectedColor);
+            }
+        }
+        
+        private void DrawPickupEditor(SelectedItem item)
+        {
+            var pickup = _workingCopy.Pickups.Find(p => p.Position == item.Position);
+            if (pickup == null) return;
+            
+            EditorGUILayout.LabelField("Pickup ID:", pickup.PickupId?.Substring(0, Mathf.Min(8, pickup.PickupId?.Length ?? 0)) ?? "N/A");
+            
+            GUILayout.Label("Current Color", EditorStyles.miniBoldLabel);
+            DrawColorSwatch(pickup.Color);
+            
+            GUILayout.Space(5);
+            GUILayout.Label("Change Color", EditorStyles.miniBoldLabel);
+            DrawColorPicker();
+            
+            if (GUILayout.Button("Apply New Color", GUILayout.Height(25)))
+            {
+                ModifyPickupColor(item.Position, _selectedColor);
+            }
+        }
+        
+        private void DrawBarrelEditor(SelectedItem item)
+        {
+            var barrel = _workingCopy.Barrels.Find(b => b.Position == item.Position);
+            if (barrel == null) return;
+            
+            EditorGUILayout.LabelField("Barrel ID:", barrel.BarrelId?.Substring(0, Mathf.Min(8, barrel.BarrelId?.Length ?? 0)) ?? "N/A");
+            
+            GUILayout.Label("Current Color", EditorStyles.miniBoldLabel);
+            DrawColorSwatch(barrel.Color);
+            
+            GUILayout.Space(5);
+            GUILayout.Label("Change Color", EditorStyles.miniBoldLabel);
+            DrawColorPicker();
+            
+            if (GUILayout.Button("Apply New Color", GUILayout.Height(25)))
+            {
+                ModifyBarrelColor(item.Position, _selectedColor);
+            }
+        }
+        
+        private void DrawBotEditor(SelectedItem item)
+        {
+            var bot = _workingCopy.Bots.Find(b => b.StartPosition == item.Position);
+            if (bot == null) return;
+            
+            EditorGUILayout.LabelField("Bot ID:", bot.BotId?.Substring(0, Mathf.Min(8, bot.BotId?.Length ?? 0)) ?? "N/A");
+            
+            GUILayout.Space(5);
+            
+            // Current color display
+            GUILayout.Label("Current Color", EditorStyles.miniBoldLabel);
+            DrawColorSwatch(bot.InitialColor);
+            
+            GUILayout.Space(5);
+            
+            // Color editing
+            GUILayout.Label("Change Color", EditorStyles.miniBoldLabel);
+            DrawColorPicker();
+            
+            if (GUILayout.Button("Apply New Color", GUILayout.Height(25)))
+            {
+                ModifyBotColor(item.Position, _selectedColor);
+            }
+            
+            GUILayout.Space(10);
+            
+            // Path mode editing
+            GUILayout.Label("Path Mode", EditorStyles.miniBoldLabel);
+            EditorGUILayout.LabelField("Current:", bot.PathMode.ToString());
+            
+            EditorGUI.BeginChangeCheck();
+            PathMode newPathMode = (PathMode)EditorGUILayout.EnumPopup("New Mode:", bot.PathMode);
+            if (EditorGUI.EndChangeCheck() && newPathMode != bot.PathMode)
+            {
+                ModifyBotPathMode(item.Position, newPathMode);
+            }
+            
+            GUILayout.Space(10);
+            
+            // Path information
+            GUILayout.Label("Patrol Path", EditorStyles.miniBoldLabel);
+            int waypointCount = bot.InlineWaypoints?.Count ?? 0;
+            EditorGUILayout.LabelField("Waypoints:", waypointCount.ToString());
+            
+            bool hasValidPath = waypointCount >= 2 || bot.PathData != null;
+            if (!hasValidPath)
+            {
+                EditorGUILayout.HelpBox("No patrol path defined! Switch to Bot Paths layer to add waypoints.", MessageType.Warning);
+            }
+            
+            if (GUILayout.Button("Edit Path (Go to Bot Paths Layer)"))
+            {
+                _currentLayer = EditorLayer.BotPaths;
+                _selectedBotForPath = bot;
+                _currentBotPath.Clear();
+                if (bot.InlineWaypoints != null)
+                {
+                    _currentBotPath = new List<Vector2Int>(bot.InlineWaypoints);
+                }
+                ClearSelection();
+            }
+        }
+        
+        private void DrawPortalEditor(SelectedItem item)
+        {
+            var portal = _workingCopy.Portals.Find(p => p.Position == item.Position);
+            if (portal == null) return;
+            
+            EditorGUILayout.LabelField("Portal ID:", portal.PortalId?.Substring(0, Mathf.Min(8, portal.PortalId?.Length ?? 0)) ?? "N/A");
+            
+            GUILayout.Space(5);
+            
+            // Checkpoint toggle
+            GUILayout.Label("Checkpoint Settings", EditorStyles.miniBoldLabel);
+            EditorGUI.BeginChangeCheck();
+            bool newIsCheckpoint = EditorGUILayout.Toggle("Is Checkpoint", portal.IsCheckpoint);
+            if (EditorGUI.EndChangeCheck() && newIsCheckpoint != portal.IsCheckpoint)
+            {
+                ModifyPortalCheckpoint(item.Position, newIsCheckpoint);
+            }
+            
+            GUILayout.Space(10);
+            
+            // End game settings
+            GUILayout.Label("End Game Settings", EditorStyles.miniBoldLabel);
+            
+            EditorGUI.BeginChangeCheck();
+            bool newIsEndGame = EditorGUILayout.Toggle("Is End Game Portal", portal.IsEndGame);
+            if (EditorGUI.EndChangeCheck() && newIsEndGame != portal.IsEndGame)
+            {
+                ModifyPortalEndGame(item.Position, newIsEndGame);
+            }
+            
+            if (portal.IsEndGame)
+            {
+                EditorGUI.BeginChangeCheck();
+                EndGameConfig newConfig = (EndGameConfig)EditorGUILayout.ObjectField(
+                    "End Game Config", 
+                    portal.EndGameConfig, 
+                    typeof(EndGameConfig), 
+                    false);
+                if (EditorGUI.EndChangeCheck() && newConfig != portal.EndGameConfig)
+                {
+                    ModifyPortalEndGameConfig(item.Position, newConfig);
+                }
+                
+                if (portal.EndGameConfig == null)
+                {
+                    EditorGUILayout.HelpBox("EndGameConfig asset required for end game portals.", MessageType.Warning);
+                }
+            }
+            
+            GUILayout.Space(10);
+            
+            // Portal link information
+            GUILayout.Label("Portal Link", EditorStyles.miniBoldLabel);
+            if (portal.Link != null)
+            {
+                EditorGUILayout.LabelField("Linked:", "Yes");
+                EditorGUILayout.ObjectField("Link Asset", portal.Link, typeof(EntranceExitLink), false);
+            }
+            else
+            {
+                EditorGUILayout.LabelField("Linked:", "No");
+                EditorGUILayout.HelpBox("Use the Portals layer tools to create links between portals.", MessageType.Info);
             }
             
             GUILayout.Space(5);
             
-            if (GUILayout.Button("Delete Selection (Del)"))
+            // Quick select for linking
+            if (GUILayout.Button("Select for Linking"))
             {
-                DeleteSelection();
+                if (_selectedPortalA == null || _selectedPortalA == portal)
+                {
+                    _selectedPortalA = portal;
+                }
+                else
+                {
+                    _selectedPortalB = portal;
+                }
+            }
+        }
+        
+        private void DrawHiddenBlockEditor(SelectedItem item)
+        {
+            var hidden = _workingCopy.HiddenBlocks.Find(h => h.Position == item.Position);
+            if (hidden == null) return;
+            
+            EditorGUILayout.LabelField("Block ID:", hidden.BlockId?.Substring(0, Mathf.Min(8, hidden.BlockId?.Length ?? 0)) ?? "N/A");
+            EditorGUILayout.HelpBox("Hidden blocks have position only. Use Select tool to move.", MessageType.Info);
+        }
+        
+        #endregion
+        
+        #region Multi Item Editors
+        
+        private void DrawMultiBotEditor()
+        {
+            GUILayout.Label("Change Color (All Bots)", EditorStyles.boldLabel);
+            DrawColorPicker();
+            
+            if (GUILayout.Button("Apply Color to All Selected Bots", GUILayout.Height(25)))
+            {
+                ApplyColorToSelectedBots(_selectedColor);
             }
             
-            if (GUILayout.Button("Clear Selection (Esc)"))
+            GUILayout.Space(10);
+            
+            GUILayout.Label("Change Path Mode (All Bots)", EditorStyles.boldLabel);
+            PathMode newMode = (PathMode)EditorGUILayout.EnumPopup("Path Mode:", _currentPathMode);
+            
+            if (GUILayout.Button("Apply Path Mode to All Selected Bots", GUILayout.Height(25)))
             {
-                ClearSelection();
+                ApplyPathModeToSelectedBots(newMode);
             }
+        }
+        
+        private void DrawMultiPortalEditor()
+        {
+            GUILayout.Label("Change Checkpoint (All Portals)", EditorStyles.boldLabel);
+            
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Set All as Checkpoint", GUILayout.Height(25)))
+            {
+                ApplyCheckpointToSelectedPortals(true);
+            }
+            if (GUILayout.Button("Remove Checkpoint", GUILayout.Height(25)))
+            {
+                ApplyCheckpointToSelectedPortals(false);
+            }
+            EditorGUILayout.EndHorizontal();
+            
+            GUILayout.Space(10);
+            
+            GUILayout.Label("Change End Game (All Portals)", EditorStyles.boldLabel);
+            
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Set All as End Game", GUILayout.Height(25)))
+            {
+                ApplyEndGameToSelectedPortals(true);
+            }
+            if (GUILayout.Button("Remove End Game", GUILayout.Height(25)))
+            {
+                ApplyEndGameToSelectedPortals(false);
+            }
+            EditorGUILayout.EndHorizontal();
+        }
+        
+        #endregion
+        
+        #region Modification Methods with Undo Support
+        
+        private void ModifyBarrierColor(Vector2Int pos, ColorType newColor)
+        {
+            var barrier = _workingCopy.Barriers.Find(b => b.Position == pos);
+            if (barrier == null || barrier.Color == newColor) return;
+            
+            RecordAction(new LevelEditorAction(EditorLayer.Barriers, ActionType.Modify, "Change barrier color")
+            {
+                Elements = { new ActionData(pos) { Color = barrier.Color, NewColor = newColor } }
+            });
+            
+            barrier.Color = newColor;
+            MarkDirty();
+        }
+        
+        private void ModifyPickupColor(Vector2Int pos, ColorType newColor)
+        {
+            var pickup = _workingCopy.Pickups.Find(p => p.Position == pos);
+            if (pickup == null || pickup.Color == newColor) return;
+            
+            RecordAction(new LevelEditorAction(EditorLayer.Pickups, ActionType.Modify, "Change pickup color")
+            {
+                Elements = { new ActionData(pos) { Id = pickup.PickupId, Color = pickup.Color, NewColor = newColor } }
+            });
+            
+            pickup.Color = newColor;
+            MarkDirty();
+        }
+        
+        private void ModifyBarrelColor(Vector2Int pos, ColorType newColor)
+        {
+            var barrel = _workingCopy.Barrels.Find(b => b.Position == pos);
+            if (barrel == null || barrel.Color == newColor) return;
+            
+            RecordAction(new LevelEditorAction(EditorLayer.Barrels, ActionType.Modify, "Change barrel color")
+            {
+                Elements = { new ActionData(pos) { Id = barrel.BarrelId, Color = barrel.Color, NewColor = newColor } }
+            });
+            
+            barrel.Color = newColor;
+            MarkDirty();
+        }
+        
+        private void ModifyBotColor(Vector2Int pos, ColorType newColor)
+        {
+            var bot = _workingCopy.Bots.Find(b => b.StartPosition == pos);
+            if (bot == null || bot.InitialColor == newColor) return;
+            
+            RecordAction(new LevelEditorAction(EditorLayer.Bots, ActionType.Modify, "Change bot color")
+            {
+                Elements = { new ActionData(pos) { Id = bot.BotId, Color = bot.InitialColor, NewColor = newColor } }
+            });
+            
+            bot.InitialColor = newColor;
+            MarkDirty();
+        }
+        
+        private void ModifyBotPathMode(Vector2Int pos, PathMode newPathMode)
+        {
+            var bot = _workingCopy.Bots.Find(b => b.StartPosition == pos);
+            if (bot == null || bot.PathMode == newPathMode) return;
+            
+            RecordAction(new LevelEditorAction(EditorLayer.Bots, ActionType.Modify, "Change bot path mode")
+            {
+                Elements = { new ActionData(pos) { Id = bot.BotId, PathMode = bot.PathMode, NewPathMode = newPathMode } }
+            });
+            
+            bot.PathMode = newPathMode;
+            MarkDirty();
+        }
+        
+        private void ModifyPortalCheckpoint(Vector2Int pos, bool newIsCheckpoint)
+        {
+            var portal = _workingCopy.Portals.Find(p => p.Position == pos);
+            if (portal == null || portal.IsCheckpoint == newIsCheckpoint) return;
+            
+            RecordAction(new LevelEditorAction(EditorLayer.Portals, ActionType.Modify, "Change portal checkpoint")
+            {
+                Elements = { new ActionData(pos) { Id = portal.PortalId, IsCheckpoint = portal.IsCheckpoint, NewIsCheckpoint = newIsCheckpoint } }
+            });
+            
+            portal.IsCheckpoint = newIsCheckpoint;
+            MarkDirty();
+        }
+        
+        private void ModifyPortalEndGame(Vector2Int pos, bool newIsEndGame)
+        {
+            var portal = _workingCopy.Portals.Find(p => p.Position == pos);
+            if (portal == null || portal.IsEndGame == newIsEndGame) return;
+            
+            RecordAction(new LevelEditorAction(EditorLayer.Portals, ActionType.Modify, "Change portal end game")
+            {
+                Elements = { new ActionData(pos) { Id = portal.PortalId, IsEndGame = portal.IsEndGame, NewIsEndGame = newIsEndGame } }
+            });
+            
+            portal.IsEndGame = newIsEndGame;
+            MarkDirty();
+        }
+        
+        private void ModifyPortalEndGameConfig(Vector2Int pos, EndGameConfig newConfig)
+        {
+            var portal = _workingCopy.Portals.Find(p => p.Position == pos);
+            if (portal == null || portal.EndGameConfig == newConfig) return;
+            
+            RecordAction(new LevelEditorAction(EditorLayer.Portals, ActionType.Modify, "Change portal end game config")
+            {
+                Elements = { new ActionData(pos) { 
+                    Id = portal.PortalId, 
+                    EndGameConfig = portal.EndGameConfig, 
+                    NewEndGameConfig = newConfig,
+                    ExtraData = "EndGameConfigModified" // Flag for undo/redo
+                } }
+            });
+            
+            portal.EndGameConfig = newConfig;
+            MarkDirty();
+        }
+        
+        private void ApplyColorToSelectedBots(ColorType newColor)
+        {
+            var action = new LevelEditorAction(EditorLayer.Bots, ActionType.Modify, "Change selected bots color");
+            
+            foreach (var item in _selection.Where(s => s.Layer == EditorLayer.Bots))
+            {
+                var bot = _workingCopy.Bots.Find(b => b.StartPosition == item.Position);
+                if (bot != null && bot.InitialColor != newColor)
+                {
+                    action.AddElement(new ActionData(item.Position) { Id = bot.BotId, Color = bot.InitialColor, NewColor = newColor });
+                    bot.InitialColor = newColor;
+                }
+            }
+            
+            if (action.Elements.Count > 0)
+            {
+                RecordAction(action);
+                MarkDirty();
+            }
+        }
+        
+        private void ApplyPathModeToSelectedBots(PathMode newMode)
+        {
+            var action = new LevelEditorAction(EditorLayer.Bots, ActionType.Modify, "Change selected bots path mode");
+            
+            foreach (var item in _selection.Where(s => s.Layer == EditorLayer.Bots))
+            {
+                var bot = _workingCopy.Bots.Find(b => b.StartPosition == item.Position);
+                if (bot != null && bot.PathMode != newMode)
+                {
+                    action.AddElement(new ActionData(item.Position) { Id = bot.BotId, PathMode = bot.PathMode, NewPathMode = newMode });
+                    bot.PathMode = newMode;
+                }
+            }
+            
+            if (action.Elements.Count > 0)
+            {
+                RecordAction(action);
+                MarkDirty();
+            }
+        }
+        
+        private void ApplyCheckpointToSelectedPortals(bool isCheckpoint)
+        {
+            var action = new LevelEditorAction(EditorLayer.Portals, ActionType.Modify, $"Set selected portals checkpoint to {isCheckpoint}");
+            
+            foreach (var item in _selection.Where(s => s.Layer == EditorLayer.Portals))
+            {
+                var portal = _workingCopy.Portals.Find(p => p.Position == item.Position);
+                if (portal != null && portal.IsCheckpoint != isCheckpoint)
+                {
+                    action.AddElement(new ActionData(item.Position) { Id = portal.PortalId, IsCheckpoint = portal.IsCheckpoint, NewIsCheckpoint = isCheckpoint });
+                    portal.IsCheckpoint = isCheckpoint;
+                }
+            }
+            
+            if (action.Elements.Count > 0)
+            {
+                RecordAction(action);
+                MarkDirty();
+            }
+        }
+        
+        private void ApplyEndGameToSelectedPortals(bool isEndGame)
+        {
+            var action = new LevelEditorAction(EditorLayer.Portals, ActionType.Modify, $"Set selected portals end game to {isEndGame}");
+            
+            foreach (var item in _selection.Where(s => s.Layer == EditorLayer.Portals))
+            {
+                var portal = _workingCopy.Portals.Find(p => p.Position == item.Position);
+                if (portal != null && portal.IsEndGame != isEndGame)
+                {
+                    action.AddElement(new ActionData(item.Position) { Id = portal.PortalId, IsEndGame = portal.IsEndGame, NewIsEndGame = isEndGame });
+                    portal.IsEndGame = isEndGame;
+                }
+            }
+            
+            if (action.Elements.Count > 0)
+            {
+                RecordAction(action);
+                MarkDirty();
+            }
+        }
+        
+        #endregion
+        
+        /// <summary>
+        /// Draw a color swatch showing the current color
+        /// </summary>
+        private void DrawColorSwatch(ColorType color)
+        {
+            EditorGUILayout.BeginHorizontal();
+            
+            Rect swatchRect = GUILayoutUtility.GetRect(24, 24, GUILayout.Width(24));
+            Color guiColor = color.ToColor();
+            guiColor.a = 1f;
+            EditorGUI.DrawRect(swatchRect, guiColor);
+            EditorGUI.DrawRect(new Rect(swatchRect.x, swatchRect.y, swatchRect.width, 1), Color.black);
+            EditorGUI.DrawRect(new Rect(swatchRect.x, swatchRect.y + swatchRect.height - 1, swatchRect.width, 1), Color.black);
+            EditorGUI.DrawRect(new Rect(swatchRect.x, swatchRect.y, 1, swatchRect.height), Color.black);
+            EditorGUI.DrawRect(new Rect(swatchRect.x + swatchRect.width - 1, swatchRect.y, 1, swatchRect.height), Color.black);
+            
+            GUILayout.Space(5);
+            GUILayout.Label(color.GetDisplayName(), EditorStyles.label);
+            
+            EditorGUILayout.EndHorizontal();
         }
         
         private void DrawLegend()
@@ -954,6 +1554,7 @@ namespace BreakingHue.Editor
                 DrawLegendItem("Bot (no path)", new Color(1f, 0.3f, 0.3f));
                 DrawLegendItem("Portal", new Color(0f, 0.8f, 1f));
                 DrawLegendItem("Checkpoint", new Color(1f, 0.8f, 0f));
+                DrawLegendItem("End Game", new Color(1f, 0.4f, 1f));
                 DrawLegendItem("Player Spawn", Color.green);
                 DrawLegendItem("Hidden Area", new Color(0.25f, 0.25f, 0.25f));
                 
@@ -1023,7 +1624,7 @@ namespace BreakingHue.Editor
                     return "1. Click on a bot to select it\n2. Click grid cells to add waypoints\n3. Click 'Apply Path' when done";
                     
                 case EditorLayer.Portals:
-                    return "Click to place portals. Toggle 'Is Checkpoint' before placing. Select two portals and click 'Create Link' to connect them.";
+                    return "Click to place portals. Toggle 'Is Checkpoint' or 'Is End Game Portal' before placing. Select two portals and click 'Create Link' to connect them. End game portals require an EndGameConfig asset.";
                     
                 case EditorLayer.HiddenAreas:
                     return "Click to mark hidden areas. These areas are concealed until the player discovers them.";
@@ -1184,6 +1785,49 @@ namespace BreakingHue.Editor
             GUILayout.Label("Portal Properties", EditorStyles.boldLabel);
             
             _isCheckpoint = EditorGUILayout.Toggle("Is Checkpoint", _isCheckpoint);
+            
+            GUILayout.Space(5);
+            
+            // End Game portal section
+            GUILayout.Label("End Game Portal", EditorStyles.boldLabel);
+            
+            _isEndGame = EditorGUILayout.Toggle("Is End Game Portal", _isEndGame);
+            
+            if (_isEndGame)
+            {
+                _selectedEndGameConfig = (EndGameConfig)EditorGUILayout.ObjectField(
+                    "End Game Config", 
+                    _selectedEndGameConfig, 
+                    typeof(EndGameConfig), 
+                    false);
+                    
+                if (_selectedEndGameConfig == null)
+                {
+                    EditorGUILayout.HelpBox("An EndGameConfig asset is required for end game portals. Create one via Assets > Create > Breaking Hue > End Game Config.", MessageType.Warning);
+                }
+            }
+            
+            // Show selected portal's end game settings if applicable
+            if (_selectedPortalA != null)
+            {
+                GUILayout.Space(5);
+                EditorGUILayout.LabelField("Selected Portal Settings:", EditorStyles.miniBoldLabel);
+                
+                EditorGUI.BeginChangeCheck();
+                bool newIsEndGame = EditorGUILayout.Toggle("Is End Game", _selectedPortalA.IsEndGame);
+                EndGameConfig newConfig = (EndGameConfig)EditorGUILayout.ObjectField(
+                    "Config", 
+                    _selectedPortalA.EndGameConfig, 
+                    typeof(EndGameConfig), 
+                    false);
+                    
+                if (EditorGUI.EndChangeCheck())
+                {
+                    _selectedPortalA.IsEndGame = newIsEndGame;
+                    _selectedPortalA.EndGameConfig = newConfig;
+                    MarkDirty();
+                }
+            }
             
             GUILayout.Space(10);
             
@@ -1635,22 +2279,17 @@ namespace BreakingHue.Editor
         
         private Vector2Int? ScreenToGrid(Vector2 screenPos)
         {
-            Rect gridRect = new Rect(
-                LayerPanelWidth,
-                ToolbarHeight,
-                position.width - LayerPanelWidth - PropertiesPanelWidth,
-                position.height - ToolbarHeight
-            );
-            
-            if (!gridRect.Contains(screenPos)) return null;
+            // Use the cached grid rect from layout (not hardcoded values)
+            // This ensures input handling matches the actual drawn grid position
+            if (!_gridRect.Contains(screenPos)) return null;
             
             float cellDisplaySize = CellSize * _zoom;
             float gridWidth = GridSize * cellDisplaySize;
             float gridHeight = GridSize * cellDisplaySize;
             
             Vector2 gridStart = new Vector2(
-                gridRect.x + (gridRect.width - gridWidth) / 2 + _gridOffset.x,
-                gridRect.y + (gridRect.height - gridHeight) / 2 + _gridOffset.y
+                _gridRect.x + (_gridRect.width - gridWidth) / 2 + _gridOffset.x,
+                _gridRect.y + (_gridRect.height - gridHeight) / 2 + _gridOffset.y
             );
             
             int x = Mathf.FloorToInt((screenPos.x - gridStart.x) / cellDisplaySize);
@@ -2061,14 +2700,16 @@ namespace BreakingHue.Editor
                 string id = Guid.NewGuid().ToString();
                 RecordAction(new LevelEditorAction(EditorLayer.Portals, ActionType.Add)
                 {
-                    Elements = { new ActionData(pos) { Id = id, IsCheckpoint = _isCheckpoint } }
+                    Elements = { new ActionData(pos) { Id = id, IsCheckpoint = _isCheckpoint, IsEndGame = _isEndGame, EndGameConfig = _selectedEndGameConfig } }
                 });
                 
                 var portal = new PortalDataSnapshot
                 {
                     PortalId = id,
                     Position = pos,
-                    IsCheckpoint = _isCheckpoint
+                    IsCheckpoint = _isCheckpoint,
+                    IsEndGame = _isEndGame,
+                    EndGameConfig = _selectedEndGameConfig
                 };
                 _workingCopy.Portals.Add(portal);
                 
@@ -2101,7 +2742,7 @@ namespace BreakingHue.Editor
             
             RecordAction(new LevelEditorAction(EditorLayer.Portals, ActionType.Remove)
             {
-                Elements = { new ActionData(pos) { Id = existing.PortalId, IsCheckpoint = existing.IsCheckpoint } }
+                Elements = { new ActionData(pos) { Id = existing.PortalId, IsCheckpoint = existing.IsCheckpoint, IsEndGame = existing.IsEndGame, EndGameConfig = existing.EndGameConfig } }
             });
             
             if (_selectedPortalA == existing) _selectedPortalA = null;
@@ -2285,27 +2926,27 @@ namespace BreakingHue.Editor
                 {
                     case EditorLayer.Barriers:
                         var barrier = _workingCopy.Barriers.Find(b => b.Position == item.Position);
-                        if (barrier != null)
+                        if (barrier != null && barrier.Color != color)
                         {
-                            action.AddElement(new ActionData(item.Position, barrier.Color));
+                            action.AddElement(new ActionData(item.Position) { Color = barrier.Color, NewColor = color });
                             barrier.Color = color;
                         }
                         break;
                         
                     case EditorLayer.Pickups:
                         var pickup = _workingCopy.Pickups.Find(p => p.Position == item.Position);
-                        if (pickup != null)
+                        if (pickup != null && pickup.Color != color)
                         {
-                            action.AddElement(new ActionData(item.Position, pickup.Color));
+                            action.AddElement(new ActionData(item.Position) { Id = pickup.PickupId, Color = pickup.Color, NewColor = color });
                             pickup.Color = color;
                         }
                         break;
                         
                     case EditorLayer.Barrels:
                         var barrel = _workingCopy.Barrels.Find(b => b.Position == item.Position);
-                        if (barrel != null)
+                        if (barrel != null && barrel.Color != color)
                         {
-                            action.AddElement(new ActionData(item.Position, barrel.Color));
+                            action.AddElement(new ActionData(item.Position) { Id = barrel.BarrelId, Color = barrel.Color, NewColor = color });
                             barrel.Color = color;
                         }
                         break;
@@ -2526,8 +3167,8 @@ namespace BreakingHue.Editor
                         break;
                         
                     case ActionType.Modify:
-                        // The color was stored as "previous color", so we need to swap it
-                        // This is a simplification - in a full implementation, we'd store both old and new values
+                        // Apply the new values stored in the action
+                        ApplyElementModification(element, action.Layer);
                         break;
                         
                     case ActionType.Move:
@@ -2583,12 +3224,25 @@ namespace BreakingHue.Editor
                     });
                     break;
                     
+                case EditorLayer.Bots:
+                    _workingCopy.Bots.Add(new BotDataSnapshot 
+                    { 
+                        StartPosition = element.Position, 
+                        InitialColor = element.Color ?? ColorType.Red,
+                        BotId = element.Id ?? Guid.NewGuid().ToString(),
+                        PathMode = element.PathMode ?? PathMode.Loop,
+                        InlineWaypoints = new List<Vector2Int> { element.Position }
+                    });
+                    break;
+                    
                 case EditorLayer.Portals:
                     _workingCopy.Portals.Add(new PortalDataSnapshot 
                     { 
                         Position = element.Position,
                         PortalId = element.Id ?? Guid.NewGuid().ToString(),
-                        IsCheckpoint = element.IsCheckpoint ?? false
+                        IsCheckpoint = element.IsCheckpoint ?? false,
+                        IsEndGame = element.IsEndGame ?? false,
+                        EndGameConfig = element.EndGameConfig
                     });
                     break;
                     
@@ -2602,25 +3256,151 @@ namespace BreakingHue.Editor
             }
         }
         
+        /// <summary>
+        /// Restore element properties to their previous state (for undo)
+        /// </summary>
         private void RestoreElementColor(ActionData element, EditorLayer layer)
         {
-            if (!element.Color.HasValue) return;
-            
             switch (layer)
             {
                 case EditorLayer.Barriers:
-                    var barrier = _workingCopy.Barriers.Find(b => b.Position == element.Position);
-                    if (barrier != null) barrier.Color = element.Color.Value;
+                    if (element.Color.HasValue)
+                    {
+                        var barrier = _workingCopy.Barriers.Find(b => b.Position == element.Position);
+                        if (barrier != null) barrier.Color = element.Color.Value;
+                    }
                     break;
                     
                 case EditorLayer.Pickups:
-                    var pickup = _workingCopy.Pickups.Find(p => p.Position == element.Position);
-                    if (pickup != null) pickup.Color = element.Color.Value;
+                    if (element.Color.HasValue)
+                    {
+                        var pickup = _workingCopy.Pickups.Find(p => p.Position == element.Position);
+                        if (pickup != null) pickup.Color = element.Color.Value;
+                    }
                     break;
                     
                 case EditorLayer.Barrels:
-                    var barrel = _workingCopy.Barrels.Find(b => b.Position == element.Position);
-                    if (barrel != null) barrel.Color = element.Color.Value;
+                    if (element.Color.HasValue)
+                    {
+                        var barrel = _workingCopy.Barrels.Find(b => b.Position == element.Position);
+                        if (barrel != null) barrel.Color = element.Color.Value;
+                    }
+                    break;
+                    
+                case EditorLayer.Bots:
+                    var bot = _workingCopy.Bots.Find(b => b.StartPosition == element.Position);
+                    if (bot != null)
+                    {
+                        // Restore color if it was modified
+                        if (element.Color.HasValue)
+                        {
+                            bot.InitialColor = element.Color.Value;
+                        }
+                        // Restore path mode if it was modified
+                        if (element.PathMode.HasValue)
+                        {
+                            bot.PathMode = element.PathMode.Value;
+                        }
+                    }
+                    break;
+                    
+                case EditorLayer.Portals:
+                    var portal = _workingCopy.Portals.Find(p => p.Position == element.Position);
+                    if (portal != null)
+                    {
+                        // Restore checkpoint status if it was modified
+                        if (element.IsCheckpoint.HasValue)
+                        {
+                            portal.IsCheckpoint = element.IsCheckpoint.Value;
+                        }
+                        // Restore end game status if it was modified
+                        if (element.IsEndGame.HasValue)
+                        {
+                            portal.IsEndGame = element.IsEndGame.Value;
+                        }
+                        // Restore end game config if it was modified (check ExtraData for flag)
+                        if (element.ExtraData is string flag && flag == "EndGameConfigModified")
+                        {
+                            portal.EndGameConfig = element.EndGameConfig;
+                        }
+                        // Also check NewEndGameConfig for explicit config changes
+                        else if (element.NewEndGameConfig != null || element.EndGameConfig != null)
+                        {
+                            portal.EndGameConfig = element.EndGameConfig;
+                        }
+                    }
+                    break;
+            }
+        }
+        
+        /// <summary>
+        /// Apply new element properties (for redo)
+        /// </summary>
+        private void ApplyElementModification(ActionData element, EditorLayer layer)
+        {
+            switch (layer)
+            {
+                case EditorLayer.Barriers:
+                    if (element.NewColor.HasValue)
+                    {
+                        var barrier = _workingCopy.Barriers.Find(b => b.Position == element.Position);
+                        if (barrier != null) barrier.Color = element.NewColor.Value;
+                    }
+                    break;
+                    
+                case EditorLayer.Pickups:
+                    if (element.NewColor.HasValue)
+                    {
+                        var pickup = _workingCopy.Pickups.Find(p => p.Position == element.Position);
+                        if (pickup != null) pickup.Color = element.NewColor.Value;
+                    }
+                    break;
+                    
+                case EditorLayer.Barrels:
+                    if (element.NewColor.HasValue)
+                    {
+                        var barrel = _workingCopy.Barrels.Find(b => b.Position == element.Position);
+                        if (barrel != null) barrel.Color = element.NewColor.Value;
+                    }
+                    break;
+                    
+                case EditorLayer.Bots:
+                    var bot = _workingCopy.Bots.Find(b => b.StartPosition == element.Position);
+                    if (bot != null)
+                    {
+                        // Apply new color if specified
+                        if (element.NewColor.HasValue)
+                        {
+                            bot.InitialColor = element.NewColor.Value;
+                        }
+                        // Apply new path mode if specified
+                        if (element.NewPathMode.HasValue)
+                        {
+                            bot.PathMode = element.NewPathMode.Value;
+                        }
+                    }
+                    break;
+                    
+                case EditorLayer.Portals:
+                    var portal = _workingCopy.Portals.Find(p => p.Position == element.Position);
+                    if (portal != null)
+                    {
+                        // Apply new checkpoint status if specified
+                        if (element.NewIsCheckpoint.HasValue)
+                        {
+                            portal.IsCheckpoint = element.NewIsCheckpoint.Value;
+                        }
+                        // Apply new end game status if specified
+                        if (element.NewIsEndGame.HasValue)
+                        {
+                            portal.IsEndGame = element.NewIsEndGame.Value;
+                        }
+                        // Apply new end game config if specified
+                        if (element.NewEndGameConfig != null || (element.ExtraData is string flag && flag == "EndGameConfigModified"))
+                        {
+                            portal.EndGameConfig = element.NewEndGameConfig;
+                        }
+                    }
                     break;
             }
         }

@@ -200,11 +200,15 @@ MonoBehaviour:
       link: {fileID: 0}
       isCheckpoint: 1
       isEntrance: 0
+      isEndGame: 1
+      endGameConfig: {fileID: 11400000, guid: 95e5f6c2b829743e4849daae40267aaf, type: 2}
     - portalId: a63a3ba5-21ca-416d-a0cf-9078e3d8a08a
       position: {x: 9, y: 8}
       link: {fileID: 11400000, guid: 4a34067aadd464396b32688a03988d1c, type: 2}
       isCheckpoint: 0
       isEntrance: 0
+      isEndGame: 0
+      endGameConfig: {fileID: 0}
     playerSpawnPosition: {x: 2, y: 2}
   hiddenAreaLayer:
     isVisible: 1

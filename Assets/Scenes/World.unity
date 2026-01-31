@@ -1244,7 +1244,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1977659779}
   - component: {fileID: 1977659778}
-  - component: {fileID: 1977659777}
   - component: {fileID: 1977659776}
   - component: {fileID: 1977659780}
   m_Layer: 0
@@ -1279,14 +1278,6 @@ MonoBehaviour:
   cameraHeight: 30
   letterboxColor: {r: 0, g: 0, b: 0, a: 1}
   useLetterboxing: 1
---- !u!81 &1977659777
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1977659775}
-  m_Enabled: 1
 --- !u!20 &1977659778
 Camera:
   m_ObjectHideFlags: 0

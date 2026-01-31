@@ -132,7 +132,9 @@ namespace BreakingHue.Editor
                         Position = p.position,
                         IsCheckpoint = p.isCheckpoint,
                         IsEntrance = p.isEntrance,
-                        Link = p.link // Reference to ScriptableObject
+                        Link = p.link, // Reference to ScriptableObject
+                        IsEndGame = p.isEndGame,
+                        EndGameConfig = p.endGameConfig
                     });
                 }
                 
@@ -252,7 +254,9 @@ namespace BreakingHue.Editor
                     position = p.Position,
                     isCheckpoint = p.IsCheckpoint,
                     isEntrance = p.IsEntrance,
-                    link = p.Link
+                    link = p.Link,
+                    isEndGame = p.IsEndGame,
+                    endGameConfig = p.EndGameConfig
                 });
             }
             target.portalLayer.playerSpawnPosition = PlayerSpawnPosition;
@@ -311,6 +315,8 @@ namespace BreakingHue.Editor
         public bool IsCheckpoint { get; set; }
         public bool IsEntrance { get; set; }
         public EntranceExitLink Link { get; set; }
+        public bool IsEndGame { get; set; }
+        public EndGameConfig EndGameConfig { get; set; }
     }
     
     public class HiddenBlockDataSnapshot

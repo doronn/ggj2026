@@ -568,6 +568,10 @@ MonoBehaviour:
       pathData: {fileID: 0}
       inlineWaypoints:
       - {x: 6, y: 15}
+      - {x: 3, y: 15}
+      - {x: 2, y: 11}
+      - {x: 7, y: 11}
+      - {x: 8, y: 14}
       pathMode: 0
   portalLayer:
     isVisible: 1
@@ -577,11 +581,15 @@ MonoBehaviour:
       link: {fileID: 11400000, guid: 4a34067aadd464396b32688a03988d1c, type: 2}
       isCheckpoint: 1
       isEntrance: 0
+      isEndGame: 0
+      endGameConfig: {fileID: 0}
     - portalId: 7eb20c00-29b1-4677-bced-1a563f2f454f
       position: {x: 18, y: 18}
       link: {fileID: 0}
-      isCheckpoint: 1
+      isCheckpoint: 0
       isEntrance: 0
+      isEndGame: 1
+      endGameConfig: {fileID: 11400000, guid: 95e5f6c2b829743e4849daae40267aaf, type: 2}
     playerSpawnPosition: {x: 2, y: 2}
   hiddenAreaLayer:
     isVisible: 1
