@@ -221,11 +221,21 @@ namespace BreakingHue.Save
         /// </summary>
         public void RestoreCheckpoint()
         {
+            // #region agent log
+            System.IO.File.AppendAllText("/Users/doronnacash/RiderProjects/adventure-game/ggj2026/.cursor/debug.log", 
+                $"{{\"hypothesisId\":\"H6\",\"location\":\"CheckpointManager.cs:RestoreCheckpoint\",\"message\":\"RestoreCheckpoint called\",\"data\":{{\"hasCheckpoint\":{(_lastCheckpoint != null).ToString().ToLower()}}},\"timestamp\":{System.DateTimeOffset.Now.ToUnixTimeMilliseconds()}}}\n");
+            // #endregion
+            
             if (_lastCheckpoint == null)
             {
-                Debug.LogWarning("[CheckpointManager] No checkpoint to restore!");
-                // reset the game instead:
+                Debug.LogWarning("[CheckpointManager] No checkpoint to restore - triggering game over!");
+                // #region agent log
+                System.IO.File.AppendAllText("/Users/doronnacash/RiderProjects/adventure-game/ggj2026/.cursor/debug.log", 
+                    $"{{\"hypothesisId\":\"H6\",\"location\":\"CheckpointManager.cs:RestoreCheckpoint\",\"message\":\"NO CHECKPOINT - triggering game over\",\"timestamp\":{System.DateTimeOffset.Now.ToUnixTimeMilliseconds()}}}\n");
+                // #endregion
                 
+                // Reset to initial game state (reload the starting level)
+                TriggerGameOver();
                 return;
             }
 
@@ -298,6 +308,61 @@ namespace BreakingHue.Save
                 File.Delete(_savePath);
             }
         }
+
+        /// <summary>
+        /// Triggers game over state - resets game to initial state.
+        /// Called when player dies with no checkpoint available.
+        /// </summary>
+        private void TriggerGameOver()
+        {
+            Debug.Log("[CheckpointManager] Game Over! Resetting to initial state...");
+            
+            // #region agent log
+            System.IO.File.AppendAllText("/Users/doronnacash/RiderProjects/adventure-game/ggj2026/.cursor/debug.log", 
+                $"{{\"hypothesisId\":\"H6-FIX\",\"location\":\"CheckpointManager.cs:TriggerGameOver\",\"message\":\"Game over triggered, resetting game\",\"timestamp\":{System.DateTimeOffset.Now.ToUnixTimeMilliseconds()}}}\n");
+            // #endregion
+            
+            // Clear any saved checkpoint file
+            if (File.Exists(_savePath))
+            {
+                File.Delete(_savePath);
+            }
+            
+            // Clear player inventory
+            if (_playerInventory != null)
+            {
+                _playerInventory.Reset();
+            }
+            
+            // Clear all level states in LevelManager
+            if (_levelManager != null)
+            {
+                _levelManager.ClearAllLevelStates();
+            }
+            
+            // Reload the starting level
+            if (_levelManager != null)
+            {
+                var startingLevel = _levelManager.EffectiveStartingLevel;
+                if (startingLevel != null)
+                {
+                    _levelManager.LoadLevel(startingLevel);
+                }
+                else
+                {
+                    // Fallback: reload current level
+                    _levelManager.ReloadCurrentLevel();
+                }
+            }
+            
+            // Fire event for UI to show game over message if needed
+            OnGameOver?.Invoke();
+        }
+
+        /// <summary>
+        /// Event fired when game over is triggered (no checkpoint available).
+        /// </summary>
+        public static event Action OnGameOver;
 
         /// <summary>
         /// Checks if there is a checkpoint saved.

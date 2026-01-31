@@ -792,6 +792,9 @@ namespace BreakingHue.Editor
                 // Setup InputManager
                 SetupInputManager(managersObj);
                 
+                // Setup SelfDestructController
+                SetupSelfDestructController(managersObj);
+                
                 // Setup EndGameManager (singleton that persists)
                 SetupEndGameManager(managersObj);
 
@@ -808,6 +811,7 @@ namespace BreakingHue.Editor
                     "• ContextualPromptController with UIDocument\n" +
                     "• PauseMenuController with UIDocument\n" +
                     "• InputManager\n" +
+                    "• SelfDestructController (R key / B button reset)\n" +
                     "• EndGameManager (singleton)",
                     "OK");
             }
@@ -912,6 +916,23 @@ namespace BreakingHue.Editor
             inputManagerObj.transform.SetParent(managersObj.transform);
             inputManagerObj.AddComponent<BreakingHue.Input.InputManager>();
             Log("Added InputManager");
+        }
+
+        private void SetupSelfDestructController(GameObject managersObj)
+        {
+            // Check if SelfDestructController already exists
+            var existingController = Object.FindObjectOfType<BreakingHue.Gameplay.SelfDestructController>();
+            if (existingController != null)
+            {
+                Log("SelfDestructController already exists, skipping");
+                return;
+            }
+
+            // Create SelfDestructController GameObject
+            var selfDestructObj = new GameObject("SelfDestructController");
+            selfDestructObj.transform.SetParent(managersObj.transform);
+            selfDestructObj.AddComponent<BreakingHue.Gameplay.SelfDestructController>();
+            Log("Added SelfDestructController (R key / B button to reset checkpoint)");
         }
 
         private void SetupEndGameManager(GameObject managersObj)
@@ -1034,6 +1055,10 @@ namespace BreakingHue.Editor
             // CheckpointManager
             var checkpointObj = new GameObject("CheckpointManager");
             checkpointObj.AddComponent<BreakingHue.Save.CheckpointManager>();
+
+            // SelfDestructController (for R key / B button checkpoint reset)
+            var selfDestructObj = new GameObject("SelfDestructController");
+            selfDestructObj.AddComponent<BreakingHue.Gameplay.SelfDestructController>();
 
             // Level Container
             var levelContainer = new GameObject("LevelContainer");

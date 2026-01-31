@@ -710,6 +710,15 @@ namespace BreakingHue.Level
         }
 
         /// <summary>
+        /// Clears all saved level states. Used for game over reset.
+        /// </summary>
+        public void ClearAllLevelStates()
+        {
+            _levelStates.Clear();
+            Debug.Log("[LevelManager] All level states cleared");
+        }
+
+        /// <summary>
         /// Reloads the current level from checkpoint data.
         /// </summary>
         public void ReloadCurrentLevel(string spawnPortalId = null)

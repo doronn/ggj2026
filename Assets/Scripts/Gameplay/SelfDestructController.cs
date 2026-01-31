@@ -81,6 +81,11 @@ namespace BreakingHue.Gameplay
 
         private void Start()
         {
+            // #region agent log
+            System.IO.File.AppendAllText("/Users/doronnacash/RiderProjects/adventure-game/ggj2026/.cursor/debug.log", 
+                $"{{\"hypothesisId\":\"H1\",\"location\":\"SelfDestructController.cs:Start\",\"message\":\"SelfDestructController started\",\"timestamp\":{DateTimeOffset.Now.ToUnixTimeMilliseconds()}}}\n");
+            // #endregion
+            
             SetupInput();
             
             // Try to get InputManager if not injected
@@ -88,6 +93,11 @@ namespace BreakingHue.Gameplay
             {
                 _inputManager = InputManager.Instance;
             }
+            
+            // #region agent log
+            System.IO.File.AppendAllText("/Users/doronnacash/RiderProjects/adventure-game/ggj2026/.cursor/debug.log", 
+                $"{{\"hypothesisId\":\"H2,H3\",\"location\":\"SelfDestructController.cs:Start\",\"message\":\"Setup complete\",\"data\":{{\"actionNull\":{(_selfDestructAction == null).ToString().ToLower()},\"actionEnabled\":{(_selfDestructAction?.enabled ?? false).ToString().ToLower()},\"checkpointMgrNull\":{(_checkpointManager == null).ToString().ToLower()}}},\"timestamp\":{DateTimeOffset.Now.ToUnixTimeMilliseconds()}}}\n");
+            // #endregion
         }
 
         private void SetupInput()
@@ -127,9 +137,23 @@ namespace BreakingHue.Gameplay
 
         private void Update()
         {
-            if (_selfDestructAction == null) return;
+            if (_selfDestructAction == null)
+            {
+                // #region agent log
+                if (Time.frameCount % 300 == 0) // Log every 5 seconds at 60fps
+                    System.IO.File.AppendAllText("/Users/doronnacash/RiderProjects/adventure-game/ggj2026/.cursor/debug.log", 
+                        $"{{\"hypothesisId\":\"H2\",\"location\":\"SelfDestructController.cs:Update\",\"message\":\"selfDestructAction is NULL\",\"timestamp\":{DateTimeOffset.Now.ToUnixTimeMilliseconds()}}}\n");
+                // #endregion
+                return;
+            }
             
             bool buttonHeld = _selfDestructAction.IsPressed();
+            
+            // #region agent log
+            if (buttonHeld)
+                System.IO.File.AppendAllText("/Users/doronnacash/RiderProjects/adventure-game/ggj2026/.cursor/debug.log", 
+                    $"{{\"hypothesisId\":\"H4,H5\",\"location\":\"SelfDestructController.cs:Update\",\"message\":\"Button held\",\"data\":{{\"holdTime\":{_holdTime:F2},\"holdDuration\":{holdDuration:F2},\"isHolding\":{_isHolding.ToString().ToLower()},\"hasTriggered\":{_hasTriggered.ToString().ToLower()}}},\"timestamp\":{DateTimeOffset.Now.ToUnixTimeMilliseconds()}}}\n");
+            // #endregion
             
             if (buttonHeld && !_hasTriggered)
             {
@@ -215,6 +239,11 @@ namespace BreakingHue.Gameplay
 
         private void TriggerSelfDestruct()
         {
+            // #region agent log
+            System.IO.File.AppendAllText("/Users/doronnacash/RiderProjects/adventure-game/ggj2026/.cursor/debug.log", 
+                $"{{\"hypothesisId\":\"H3\",\"location\":\"SelfDestructController.cs:TriggerSelfDestruct\",\"message\":\"Self-destruct triggered\",\"data\":{{\"checkpointMgrNull\":{(_checkpointManager == null).ToString().ToLower()}}},\"timestamp\":{DateTimeOffset.Now.ToUnixTimeMilliseconds()}}}\n");
+            // #endregion
+            
             _isHolding = false;
             _hasTriggered = true;
             _holdTime = 0f;
@@ -245,6 +274,10 @@ namespace BreakingHue.Gameplay
             {
                 // Fallback: try to find CheckpointManager
                 var checkpointManager = FindObjectOfType<CheckpointManager>();
+                // #region agent log
+                System.IO.File.AppendAllText("/Users/doronnacash/RiderProjects/adventure-game/ggj2026/.cursor/debug.log", 
+                    $"{{\"hypothesisId\":\"H3\",\"location\":\"SelfDestructController.cs:TriggerSelfDestruct\",\"message\":\"Fallback CheckpointManager search\",\"data\":{{\"found\":{(checkpointManager != null).ToString().ToLower()}}},\"timestamp\":{DateTimeOffset.Now.ToUnixTimeMilliseconds()}}}\n");
+                // #endregion
                 if (checkpointManager != null)
                 {
                     checkpointManager.RestoreCheckpoint();
