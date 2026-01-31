@@ -7,11 +7,10 @@
 
 #HUDContainer {
     position: absolute;
-    bottom: 80px;
-    left: 0;
-    right: 0;
-    flex-direction: column;
-    align-items: center;
+    top: 10px;
+    left: 10px;
+    flex-direction: row;
+    align-items: flex-start;
 }
 
 /* ============================================ */
@@ -25,6 +24,18 @@
     border-radius: 40px;
     background-color: rgb(30, 32, 38);
     border-width: 4px;
+    border-color: rgba(0, 200, 255, 0.5);
+    transition-property: background-color, border-color, scale;
+    transition-duration: 0.3s;
+}
+
+/* Smaller combined color for compact top layout */
+.combined-color-small {
+    width: 48px;
+    height: 48px;
+    border-radius: 24px;
+    background-color: rgb(30, 32, 38);
+    border-width: 3px;
     border-color: rgba(0, 200, 255, 0.5);
     transition-property: background-color, border-color, scale;
     transition-duration: 0.3s;
@@ -45,8 +56,8 @@
     justify-content: center;
     align-items: flex-start;
     background-color: rgba(8, 10, 16, 0.92);
-    padding: 20px 32px 16px 32px;
-    border-radius: 20px;
+    padding: 10px 16px 8px 16px;
+    border-radius: 12px;
     border-width: 2px;
     border-color: rgba(0, 180, 220, 0.35);
     border-top-color: rgba(0, 200, 255, 0.5);
@@ -60,7 +71,7 @@
 .slot-container {
     flex-direction: column;
     align-items: center;
-    margin: 0 12px;
+    margin: 0 6px;
 }
 
 /* ============================================ */
@@ -68,10 +79,10 @@
 /* ============================================ */
 
 .slot-frame {
-    width: 76px;
-    height: 76px;
-    border-radius: 14px;
-    border-width: 3px;
+    width: 56px;
+    height: 56px;
+    border-radius: 10px;
+    border-width: 2px;
     border-color: rgba(50, 55, 70, 0.85);
     border-top-color: rgba(70, 75, 90, 0.9);
     border-bottom-color: rgba(30, 35, 45, 0.95);
@@ -124,13 +135,13 @@
 
 .active-indicator {
     position: absolute;
-    top: -10px;
-    right: -10px;
-    width: 24px;
-    height: 24px;
-    border-radius: 12px;
+    top: -6px;
+    right: -6px;
+    width: 16px;
+    height: 16px;
+    border-radius: 8px;
     background-color: rgb(0, 255, 180);
-    border-width: 3px;
+    border-width: 2px;
     border-color: rgba(255, 255, 255, 1);
     transition-property: scale;
     transition-duration: 0.15s;
@@ -145,16 +156,16 @@
 /* ============================================ */
 
 .hotkey-label {
-    margin-top: 10px;
-    padding: 6px 14px;
-    font-size: 15px;
+    margin-top: 4px;
+    padding: 2px 6px;
+    font-size: 11px;
     color: rgba(160, 175, 200, 0.9);
     -unity-text-align: middle-center;
     -unity-font-style: bold;
     background-color: rgba(30, 35, 48, 0.85);
-    border-radius: 8px;
-    border-width: 2px;
-    border-bottom-width: 3px;
+    border-radius: 5px;
+    border-width: 1px;
+    border-bottom-width: 2px;
     border-color: rgba(50, 58, 75, 0.7);
     border-top-color: rgba(60, 68, 85, 0.8);
     border-bottom-color: rgba(35, 40, 55, 0.9);

@@ -16,8 +16,11 @@ namespace BreakingHue.UI
     public class GameHUDController : MonoBehaviour
     {
         [Header("Settings")]
-        [SerializeField] private int slotSize = 72;
-        [SerializeField] private int spacing = 10;
+        [SerializeField] private int slotSize = 56;
+        [SerializeField] private int spacing = 6;
+        
+        [Header("Mask UI")]
+        [SerializeField] private Texture2D maskTexture;
         
         // Themed colors matching Breaking Hue branding
         private static readonly Color AccentColor = new Color(0f, 0.86f, 0.71f); // Cyan/Teal
@@ -27,7 +30,6 @@ namespace BreakingHue.UI
         
         private UIDocument _uiDocument;
         private VisualElement _slotsContainer;
-        private VisualElement _combinedColorDisplay;
         private VisualElement _dropPrompt;
         private MaskInventory _inventory;
         
@@ -95,41 +97,17 @@ namespace BreakingHue.UI
         {
             var root = _uiDocument.rootVisualElement;
             
-            // Create a container for the HUD
+            // Create a container for the HUD at the TOP LEFT of the screen
             var hudContainer = new VisualElement();
             hudContainer.name = "HUDContainer";
             hudContainer.AddToClassList("hud-container");
             hudContainer.style.position = Position.Absolute;
-            hudContainer.style.bottom = 100;
-            hudContainer.style.left = 0;
-            hudContainer.style.right = 0;
-            hudContainer.style.flexDirection = FlexDirection.Column;
-            hudContainer.style.alignItems = Align.Center;
+            hudContainer.style.top = 10;
+            hudContainer.style.left = 10;
+            hudContainer.style.flexDirection = FlexDirection.Row;
+            hudContainer.style.alignItems = Align.FlexStart;
             
-            // Combined color display - shows result of active masks
-            _combinedColorDisplay = new VisualElement();
-            _combinedColorDisplay.name = "CombinedColor";
-            _combinedColorDisplay.AddToClassList("combined-color");
-            _combinedColorDisplay.style.width = 72;
-            _combinedColorDisplay.style.height = 72;
-            _combinedColorDisplay.style.marginBottom = 12;
-            _combinedColorDisplay.style.borderTopLeftRadius = 36;
-            _combinedColorDisplay.style.borderTopRightRadius = 36;
-            _combinedColorDisplay.style.borderBottomLeftRadius = 36;
-            _combinedColorDisplay.style.borderBottomRightRadius = 36;
-            _combinedColorDisplay.style.backgroundColor = new StyleColor(InactiveColor);
-            _combinedColorDisplay.style.borderTopWidth = 3;
-            _combinedColorDisplay.style.borderBottomWidth = 3;
-            _combinedColorDisplay.style.borderLeftWidth = 3;
-            _combinedColorDisplay.style.borderRightWidth = 3;
-            var accentBorder = new Color(0f, 0.86f, 1f, 0.6f);
-            _combinedColorDisplay.style.borderTopColor = new StyleColor(accentBorder);
-            _combinedColorDisplay.style.borderBottomColor = new StyleColor(accentBorder);
-            _combinedColorDisplay.style.borderLeftColor = new StyleColor(accentBorder);
-            _combinedColorDisplay.style.borderRightColor = new StyleColor(accentBorder);
-            hudContainer.Add(_combinedColorDisplay);
-            
-            // Slots container - main HUD panel
+            // Slots container - main HUD panel (created FIRST, so it's on the left)
             _slotsContainer = new VisualElement();
             _slotsContainer.name = "SlotsContainer";
             _slotsContainer.AddToClassList("slots-container");
@@ -137,14 +115,14 @@ namespace BreakingHue.UI
             _slotsContainer.style.justifyContent = Justify.Center;
             _slotsContainer.style.alignItems = Align.FlexStart;
             _slotsContainer.style.backgroundColor = new StyleColor(new Color(0.06f, 0.07f, 0.1f, 0.85f));
-            _slotsContainer.style.paddingTop = 16;
-            _slotsContainer.style.paddingBottom = 12;
-            _slotsContainer.style.paddingLeft = 24;
-            _slotsContainer.style.paddingRight = 24;
-            _slotsContainer.style.borderTopLeftRadius = 16;
-            _slotsContainer.style.borderTopRightRadius = 16;
-            _slotsContainer.style.borderBottomLeftRadius = 16;
-            _slotsContainer.style.borderBottomRightRadius = 16;
+            _slotsContainer.style.paddingTop = 10;
+            _slotsContainer.style.paddingBottom = 8;
+            _slotsContainer.style.paddingLeft = 16;
+            _slotsContainer.style.paddingRight = 16;
+            _slotsContainer.style.borderTopLeftRadius = 12;
+            _slotsContainer.style.borderTopRightRadius = 12;
+            _slotsContainer.style.borderBottomLeftRadius = 12;
+            _slotsContainer.style.borderBottomRightRadius = 12;
             _slotsContainer.style.borderTopWidth = 2;
             _slotsContainer.style.borderBottomWidth = 2;
             _slotsContainer.style.borderLeftWidth = 2;
@@ -285,14 +263,14 @@ namespace BreakingHue.UI
             slotFrame.AddToClassList("slot-frame");
             slotFrame.style.width = slotSize;
             slotFrame.style.height = slotSize;
-            slotFrame.style.borderTopLeftRadius = 12;
-            slotFrame.style.borderTopRightRadius = 12;
-            slotFrame.style.borderBottomLeftRadius = 12;
-            slotFrame.style.borderBottomRightRadius = 12;
-            slotFrame.style.borderTopWidth = 3;
-            slotFrame.style.borderBottomWidth = 3;
-            slotFrame.style.borderLeftWidth = 3;
-            slotFrame.style.borderRightWidth = 3;
+            slotFrame.style.borderTopLeftRadius = 10;
+            slotFrame.style.borderTopRightRadius = 10;
+            slotFrame.style.borderBottomLeftRadius = 10;
+            slotFrame.style.borderBottomRightRadius = 10;
+            slotFrame.style.borderTopWidth = 2;
+            slotFrame.style.borderBottomWidth = 2;
+            slotFrame.style.borderLeftWidth = 2;
+            slotFrame.style.borderRightWidth = 2;
             var emptyBorder = new Color(0.24f, 0.25f, 0.31f, 0.9f);
             slotFrame.style.borderTopColor = new StyleColor(emptyBorder);
             slotFrame.style.borderBottomColor = new StyleColor(emptyBorder);
@@ -301,20 +279,33 @@ namespace BreakingHue.UI
             slotFrame.style.backgroundColor = new StyleColor(new Color(0.1f, 0.11f, 0.14f, 0.95f));
             _slotFrames[index] = slotFrame;
             
-            // Color block inside the slot
+            // Mask icon inside the slot (uses texture with color tint)
             var colorBlock = new VisualElement();
             colorBlock.name = $"ColorBlock_{index}";
             colorBlock.AddToClassList("color-block");
             colorBlock.style.position = Position.Absolute;
-            colorBlock.style.top = 6;
-            colorBlock.style.left = 6;
-            colorBlock.style.right = 6;
-            colorBlock.style.bottom = 6;
-            colorBlock.style.borderTopLeftRadius = 8;
-            colorBlock.style.borderTopRightRadius = 8;
-            colorBlock.style.borderBottomLeftRadius = 8;
-            colorBlock.style.borderBottomRightRadius = 8;
-            colorBlock.style.backgroundColor = new StyleColor(new Color(0.14f, 0.15f, 0.18f, 0.6f));
+            colorBlock.style.top = 4;
+            colorBlock.style.left = 4;
+            colorBlock.style.right = 4;
+            colorBlock.style.bottom = 4;
+            
+            // Use mask texture if available
+            if (maskTexture != null)
+            {
+                colorBlock.style.backgroundImage = new StyleBackground(maskTexture);
+                colorBlock.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
+                colorBlock.style.unityBackgroundImageTintColor = new StyleColor(new Color(0.3f, 0.3f, 0.35f, 0.4f)); // Empty slot tint
+            }
+            else
+            {
+                // Fallback to plain color block
+                colorBlock.style.borderTopLeftRadius = 8;
+                colorBlock.style.borderTopRightRadius = 8;
+                colorBlock.style.borderBottomLeftRadius = 8;
+                colorBlock.style.borderBottomRightRadius = 8;
+                colorBlock.style.backgroundColor = new StyleColor(new Color(0.14f, 0.15f, 0.18f, 0.6f));
+            }
+            
             slotFrame.Add(colorBlock);
             _slotColorBlocks[index] = colorBlock;
             
@@ -323,19 +314,19 @@ namespace BreakingHue.UI
             activeIndicator.name = $"ActiveIndicator_{index}";
             activeIndicator.AddToClassList("active-indicator");
             activeIndicator.style.position = Position.Absolute;
-            activeIndicator.style.top = -8;
-            activeIndicator.style.right = -8;
-            activeIndicator.style.width = 20;
-            activeIndicator.style.height = 20;
-            activeIndicator.style.borderTopLeftRadius = 10;
-            activeIndicator.style.borderTopRightRadius = 10;
-            activeIndicator.style.borderBottomLeftRadius = 10;
-            activeIndicator.style.borderBottomRightRadius = 10;
+            activeIndicator.style.top = -6;
+            activeIndicator.style.right = -6;
+            activeIndicator.style.width = 16;
+            activeIndicator.style.height = 16;
+            activeIndicator.style.borderTopLeftRadius = 8;
+            activeIndicator.style.borderTopRightRadius = 8;
+            activeIndicator.style.borderBottomLeftRadius = 8;
+            activeIndicator.style.borderBottomRightRadius = 8;
             activeIndicator.style.backgroundColor = new StyleColor(ActiveColor);
-            activeIndicator.style.borderTopWidth = 3;
-            activeIndicator.style.borderBottomWidth = 3;
-            activeIndicator.style.borderLeftWidth = 3;
-            activeIndicator.style.borderRightWidth = 3;
+            activeIndicator.style.borderTopWidth = 2;
+            activeIndicator.style.borderBottomWidth = 2;
+            activeIndicator.style.borderLeftWidth = 2;
+            activeIndicator.style.borderRightWidth = 2;
             activeIndicator.style.borderTopColor = new StyleColor(new Color(1f, 1f, 1f, 0.95f));
             activeIndicator.style.borderBottomColor = new StyleColor(new Color(1f, 1f, 1f, 0.95f));
             activeIndicator.style.borderLeftColor = new StyleColor(new Color(1f, 1f, 1f, 0.95f));
@@ -351,12 +342,12 @@ namespace BreakingHue.UI
             var hotkeyLabel = new Label(InputIconProvider.GetBindingText(actionName));
             hotkeyLabel.name = $"HotkeyLabel_{index}";
             hotkeyLabel.AddToClassList("hotkey-label");
-            hotkeyLabel.style.marginTop = 8;
-            hotkeyLabel.style.paddingTop = 4;
-            hotkeyLabel.style.paddingBottom = 4;
-            hotkeyLabel.style.paddingLeft = 10;
-            hotkeyLabel.style.paddingRight = 10;
-            hotkeyLabel.style.fontSize = 14;
+            hotkeyLabel.style.marginTop = 4;
+            hotkeyLabel.style.paddingTop = 2;
+            hotkeyLabel.style.paddingBottom = 2;
+            hotkeyLabel.style.paddingLeft = 6;
+            hotkeyLabel.style.paddingRight = 6;
+            hotkeyLabel.style.fontSize = 11;
             hotkeyLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
             hotkeyLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
             hotkeyLabel.style.color = new StyleColor(new Color(0.7f, 0.75f, 0.82f, 0.9f));
@@ -388,7 +379,6 @@ namespace BreakingHue.UI
         private void OnMaskToggled(int slotIndex, bool isActive)
         {
             RefreshSlot(slotIndex);
-            UpdateCombinedColorDisplay();
         }
 
         private void RefreshAllSlots()
@@ -400,7 +390,6 @@ namespace BreakingHue.UI
                 RefreshSlot(i);
             }
             
-            UpdateCombinedColorDisplay();
             UpdateDropPromptVisibility();
         }
         
@@ -472,16 +461,32 @@ namespace BreakingHue.UI
             bool isActive = _inventory.IsSlotActive(index);
             bool isEmpty = maskInSlot == ColorType.None;
             
-            // Update color block appearance
-            if (isEmpty)
+            // Update color block appearance (use texture tint if texture is set, otherwise backgroundColor)
+            if (maskTexture != null)
             {
-                colorBlock.style.backgroundColor = new StyleColor(new Color(0.14f, 0.15f, 0.18f, 0.6f));
+                // Use texture with color tint
+                if (isEmpty)
+                {
+                    colorBlock.style.unityBackgroundImageTintColor = new StyleColor(new Color(0.3f, 0.3f, 0.35f, 0.3f)); // Dim empty slot
+                }
+                else
+                {
+                    Color maskColor = maskInSlot.ToColor();
+                    colorBlock.style.unityBackgroundImageTintColor = new StyleColor(maskColor);
+                }
             }
             else
             {
-                // Set color based on mask type (RYB system)
-                Color maskColor = maskInSlot.ToColor();
-                colorBlock.style.backgroundColor = new StyleColor(maskColor);
+                // Fallback to backgroundColor
+                if (isEmpty)
+                {
+                    colorBlock.style.backgroundColor = new StyleColor(new Color(0.14f, 0.15f, 0.18f, 0.6f));
+                }
+                else
+                {
+                    Color maskColor = maskInSlot.ToColor();
+                    colorBlock.style.backgroundColor = new StyleColor(maskColor);
+                }
             }
             
             // Update active indicator
@@ -550,33 +555,6 @@ namespace BreakingHue.UI
                     _slotLabels[index].style.borderRightColor = new StyleColor(emptyLabelBorder);
                 }
             }
-        }
-
-        private void UpdateCombinedColorDisplay()
-        {
-            if (_combinedColorDisplay == null || _inventory == null) return;
-            
-            ColorType combined = _inventory.GetCombinedActiveColor();
-            bool hasActiveColor = combined != ColorType.None;
-            
-            Color displayColor = hasActiveColor ? combined.ToColor() : InactiveColor;
-            _combinedColorDisplay.style.backgroundColor = new StyleColor(displayColor);
-            
-            // Update border glow when active
-            var borderColor = hasActiveColor 
-                ? new Color(0f, 1f, 0.78f, 0.9f) 
-                : new Color(0f, 0.86f, 1f, 0.6f);
-            _combinedColorDisplay.style.borderTopColor = new StyleColor(borderColor);
-            _combinedColorDisplay.style.borderBottomColor = new StyleColor(borderColor);
-            _combinedColorDisplay.style.borderLeftColor = new StyleColor(borderColor);
-            _combinedColorDisplay.style.borderRightColor = new StyleColor(borderColor);
-            
-            // Slightly larger border when active
-            int borderWidth = hasActiveColor ? 4 : 3;
-            _combinedColorDisplay.style.borderTopWidth = borderWidth;
-            _combinedColorDisplay.style.borderBottomWidth = borderWidth;
-            _combinedColorDisplay.style.borderLeftWidth = borderWidth;
-            _combinedColorDisplay.style.borderRightWidth = borderWidth;
         }
 
         private string GetColorClass(ColorType color)
