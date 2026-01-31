@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 using BreakingHue.Core;
+using BreakingHue.Audio;
 
 namespace BreakingHue.UI
 {
@@ -20,7 +21,11 @@ namespace BreakingHue.UI
         [SerializeField] private string fallbackMessage = "You have completed the game!\n\nThank you for playing!";
         
         [Header("Audio")]
+        [Tooltip("Local AudioSource for one-shot sounds (completion sound)")]
         [SerializeField] private AudioSource audioSource;
+        
+        [Tooltip("Use BackgroundMusicManager for end screen music instead of local AudioSource")]
+        [SerializeField] private bool useGlobalMusicManager = true;
         
         private UIDocument _uiDocument;
         private VisualElement _root;
@@ -31,6 +36,17 @@ namespace BreakingHue.UI
         private void Awake()
         {
             _uiDocument = GetComponent<UIDocument>();
+            
+            // Auto-create AudioSource if not assigned
+            if (audioSource == null)
+            {
+                audioSource = GetComponent<AudioSource>();
+                if (audioSource == null)
+                {
+                    audioSource = gameObject.AddComponent<AudioSource>();
+                    audioSource.playOnAwake = false;
+                }
+            }
         }
 
         private void Start()
@@ -44,18 +60,27 @@ namespace BreakingHue.UI
             {
                 SetContent(config.completionTitle, config.completionText);
                 
-                // Play completion sound if available
+                // Play completion sound if available (one-shot, uses local AudioSource)
                 if (audioSource != null && config.completionSound != null)
                 {
                     audioSource.PlayOneShot(config.completionSound);
                 }
                 
                 // Play background music if available
-                if (audioSource != null && config.endScreenMusic != null)
+                if (config.endScreenMusic != null)
                 {
-                    audioSource.clip = config.endScreenMusic;
-                    audioSource.loop = true;
-                    audioSource.Play();
+                    // Use global BackgroundMusicManager if available and enabled
+                    if (useGlobalMusicManager && BackgroundMusicManager.Instance != null)
+                    {
+                        BackgroundMusicManager.Instance.ChangeTrack(config.endScreenMusic, 0.5f);
+                    }
+                    else if (audioSource != null)
+                    {
+                        // Fallback to local AudioSource
+                        audioSource.clip = config.endScreenMusic;
+                        audioSource.loop = true;
+                        audioSource.Play();
+                    }
                 }
             }
             else

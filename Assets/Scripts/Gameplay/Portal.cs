@@ -246,6 +246,22 @@ namespace BreakingHue.Gameplay
                 portalVFX.Play();
             }
 
+            // End game portals don't need a link - they trigger the end game directly
+            // Check for end game BEFORE checking link
+            if (isEndGame && endGameConfig != null)
+            {
+                // Delay the end game transition for visual effect
+                if (transitionDelay > 0)
+                {
+                    Invoke(nameof(ExecuteTransition), transitionDelay);
+                }
+                else
+                {
+                    ExecuteTransition();
+                }
+                return;
+            }
+
             // If no link, handle checkpoint immediately and return
             if (link == null)
             {

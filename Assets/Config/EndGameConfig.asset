@@ -22,4 +22,4 @@ MonoBehaviour:
   autoResetProgress: 1
   displayDelay: 0.5
   completionSound: {fileID: 8300000, guid: 92741dc3ff8f5764799adf58c2cee497, type: 3}
-  endScreenMusic: {fileID: 8300000, guid: e2670582b016c45b4b90185ccf5813ae, type: 3}
+  endScreenMusic: {fileID: 0}
