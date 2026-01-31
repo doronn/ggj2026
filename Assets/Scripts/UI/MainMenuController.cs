@@ -87,6 +87,15 @@ namespace BreakingHue.UI
             {
                 CreateDynamicUI(root);
             }
+            else
+            {
+                // FIX: Apply interactive styles to UXML-based buttons
+                ApplyButtonInteractiveStyles(_playButton, new Color(0.24f, 0.47f, 0.78f));
+                if (_resetButton != null) ApplyButtonInteractiveStyles(_resetButton, new Color(0.6f, 0.3f, 0.3f));
+                if (_quitButton != null) ApplyButtonInteractiveStyles(_quitButton, new Color(0.3f, 0.3f, 0.3f));
+                if (_confirmYesButton != null) ApplyButtonInteractiveStyles(_confirmYesButton, new Color(0.7f, 0.2f, 0.2f));
+                if (_confirmNoButton != null) ApplyButtonInteractiveStyles(_confirmNoButton, new Color(0.3f, 0.3f, 0.35f));
+            }
             
             // Setup callbacks
             if (_playButton != null) _playButton.clicked += OnPlayClicked;
@@ -103,6 +112,12 @@ namespace BreakingHue.UI
             
             // Update controls display
             UpdateControlsDisplay();
+            
+            // Set initial focus on Play button for keyboard/controller navigation
+            if (_playButton != null)
+            {
+                _playButton.schedule.Execute(() => _playButton.Focus()).ExecuteLater(100);
+            }
         }
 
         private void CreateDynamicUI(VisualElement root)
@@ -236,37 +251,13 @@ namespace BreakingHue.UI
             _confirmYesButton = new Button();
             _confirmYesButton.name = "ConfirmYesButton";
             _confirmYesButton.text = "Yes, Reset";
-            _confirmYesButton.style.width = 120;
-            _confirmYesButton.style.height = 45;
-            _confirmYesButton.style.fontSize = 16;
-            _confirmYesButton.style.backgroundColor = new Color(0.7f, 0.2f, 0.2f);
-            _confirmYesButton.style.color = Color.white;
-            _confirmYesButton.style.borderTopLeftRadius = 8;
-            _confirmYesButton.style.borderTopRightRadius = 8;
-            _confirmYesButton.style.borderBottomLeftRadius = 8;
-            _confirmYesButton.style.borderBottomRightRadius = 8;
-            _confirmYesButton.style.borderTopWidth = 0;
-            _confirmYesButton.style.borderBottomWidth = 0;
-            _confirmYesButton.style.borderLeftWidth = 0;
-            _confirmYesButton.style.borderRightWidth = 0;
+            StyleDialogButton(_confirmYesButton, new Color(0.7f, 0.2f, 0.2f));
             _confirmYesButton.style.marginRight = 15;
             
             _confirmNoButton = new Button();
             _confirmNoButton.name = "ConfirmNoButton";
             _confirmNoButton.text = "Cancel";
-            _confirmNoButton.style.width = 120;
-            _confirmNoButton.style.height = 45;
-            _confirmNoButton.style.fontSize = 16;
-            _confirmNoButton.style.backgroundColor = new Color(0.3f, 0.3f, 0.35f);
-            _confirmNoButton.style.color = Color.white;
-            _confirmNoButton.style.borderTopLeftRadius = 8;
-            _confirmNoButton.style.borderTopRightRadius = 8;
-            _confirmNoButton.style.borderBottomLeftRadius = 8;
-            _confirmNoButton.style.borderBottomRightRadius = 8;
-            _confirmNoButton.style.borderTopWidth = 0;
-            _confirmNoButton.style.borderBottomWidth = 0;
-            _confirmNoButton.style.borderLeftWidth = 0;
-            _confirmNoButton.style.borderRightWidth = 0;
+            StyleDialogButton(_confirmNoButton, new Color(0.3f, 0.3f, 0.35f));
             
             buttonsRow.Add(_confirmYesButton);
             buttonsRow.Add(_confirmNoButton);
@@ -299,6 +290,84 @@ namespace BreakingHue.UI
             {
                 button.style.unityFontStyleAndWeight = FontStyle.Bold;
             }
+            
+            // Apply interactive styles (same as pause menu)
+            ApplyButtonInteractiveStyles(button, backgroundColor);
+        }
+        
+        private void StyleDialogButton(Button button, Color backgroundColor)
+        {
+            button.style.width = 120;
+            button.style.height = 45;
+            button.style.fontSize = 16;
+            button.style.backgroundColor = backgroundColor;
+            button.style.color = Color.white;
+            button.style.borderTopLeftRadius = 8;
+            button.style.borderTopRightRadius = 8;
+            button.style.borderBottomLeftRadius = 8;
+            button.style.borderBottomRightRadius = 8;
+            button.style.borderTopWidth = 0;
+            button.style.borderBottomWidth = 0;
+            button.style.borderLeftWidth = 0;
+            button.style.borderRightWidth = 0;
+            
+            // Apply interactive styles
+            ApplyButtonInteractiveStyles(button, backgroundColor);
+        }
+        
+        private void ApplyButtonInteractiveStyles(Button button, Color backgroundColor)
+        {
+            button.focusable = true;
+            button.pickingMode = PickingMode.Position;
+            
+            Color originalBg = backgroundColor;
+            
+            // Focus effect: WHITE background with CYAN border (matches pause menu)
+            button.RegisterCallback<FocusInEvent>(evt => {
+                button.style.borderTopWidth = 6;
+                button.style.borderBottomWidth = 6;
+                button.style.borderLeftWidth = 6;
+                button.style.borderRightWidth = 6;
+                button.style.borderTopColor = new Color(0f, 1f, 1f, 1f); // Cyan
+                button.style.borderBottomColor = new Color(0f, 1f, 1f, 1f);
+                button.style.borderLeftColor = new Color(0f, 1f, 1f, 1f);
+                button.style.borderRightColor = new Color(0f, 1f, 1f, 1f);
+                button.style.scale = new Scale(new Vector3(1.15f, 1.15f, 1f));
+                button.style.backgroundColor = new Color(1f, 1f, 1f, 1f); // White
+                button.style.color = Color.black;
+            });
+            
+            button.RegisterCallback<FocusOutEvent>(evt => {
+                button.style.borderTopWidth = 0;
+                button.style.borderBottomWidth = 0;
+                button.style.borderLeftWidth = 0;
+                button.style.borderRightWidth = 0;
+                button.style.scale = new Scale(Vector3.one);
+                button.style.backgroundColor = originalBg;
+                button.style.color = Color.white;
+            });
+            
+            // Hover effect for mouse
+            button.RegisterCallback<MouseEnterEvent>(evt => {
+                if (button.focusController?.focusedElement != button)
+                {
+                    button.style.scale = new Scale(new Vector3(1.05f, 1.05f, 1f));
+                    button.style.backgroundColor = new Color(
+                        Mathf.Min(1f, originalBg.r + 0.15f),
+                        Mathf.Min(1f, originalBg.g + 0.15f),
+                        Mathf.Min(1f, originalBg.b + 0.15f),
+                        1f
+                    );
+                }
+            });
+            
+            button.RegisterCallback<MouseLeaveEvent>(evt => {
+                if (button.focusController?.focusedElement != button)
+                {
+                    button.style.scale = new Scale(Vector3.one);
+                    button.style.backgroundColor = originalBg;
+                }
+            });
         }
 
         private void UpdateControlsDisplay()

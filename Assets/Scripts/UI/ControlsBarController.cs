@@ -100,6 +100,9 @@ namespace BreakingHue.UI
                 return;
             }
             
+            // FIX H7: Make root pass through mouse events so pause menu can receive clicks
+            _root.pickingMode = PickingMode.Ignore;
+            
             // Try to find elements from UXML
             _controlsContainer = _root.Q<VisualElement>("ControlsContainer");
             _progressBarContainer = _root.Q<VisualElement>("ProgressBarContainer");
@@ -118,6 +121,9 @@ namespace BreakingHue.UI
             
             _root = uiDocument.rootVisualElement;
             _root.Clear();
+            
+            // FIX H7: Make root pass through mouse events
+            _root.pickingMode = PickingMode.Ignore;
             
             // Main container at bottom
             var mainContainer = new VisualElement();

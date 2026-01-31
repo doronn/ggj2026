@@ -208,6 +208,9 @@ namespace BreakingHue.Camera
 
         private void UpdateThirdPersonCamera()
         {
+            // Don't process camera input when game is paused
+            if (Time.timeScale == 0f) return;
+            
             // Read look input
             if (_lookAction != null)
             {
