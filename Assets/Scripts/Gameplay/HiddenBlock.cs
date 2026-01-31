@@ -28,6 +28,9 @@ namespace BreakingHue.Gameplay
         private bool _isRevealed;
         private float _fadeTimer;
         private Color _originalColor;
+        
+        // Shader property ID for dissolve effect
+        private static readonly int DissolveAmountProperty = Shader.PropertyToID("_DissolveAmount");
 
         /// <summary>
         /// Unique ID for this hidden block (for save/load).
@@ -63,17 +66,31 @@ namespace BreakingHue.Gameplay
 
         private void Update()
         {
-            // Handle fade out animation
+            // Handle dissolve/fade out animation
             if (_isRevealed && fadeOutDuration > 0 && _fadeTimer < fadeOutDuration)
             {
                 _fadeTimer += Time.deltaTime;
-                float t = _fadeTimer / fadeOutDuration;
+                float t = Mathf.Clamp01(_fadeTimer / fadeOutDuration);
+                
+                // Use smooth step for nicer dissolve animation
+                float smoothT = t * t * (3f - 2f * t);
                 
                 if (_renderer != null)
                 {
-                    Color color = _originalColor;
-                    color.a = Mathf.Lerp(1f, 0f, t);
-                    _renderer.material.color = color;
+                    var mat = _renderer.material;
+                    
+                    // Use dissolve shader property if available
+                    if (mat.HasProperty(DissolveAmountProperty))
+                    {
+                        mat.SetFloat(DissolveAmountProperty, smoothT);
+                    }
+                    else
+                    {
+                        // Fallback: use alpha
+                        Color color = _originalColor;
+                        color.a = Mathf.Lerp(1f, 0f, t);
+                        mat.color = color;
+                    }
                 }
                 
                 if (t >= 1f)
@@ -152,7 +169,15 @@ namespace BreakingHue.Gameplay
             if (_renderer != null)
             {
                 _renderer.enabled = true;
-                _renderer.material.color = hiddenColor;
+                
+                var mat = _renderer.material;
+                mat.color = hiddenColor;
+                
+                // Reset dissolve amount if using dissolve shader
+                if (mat.HasProperty(DissolveAmountProperty))
+                {
+                    mat.SetFloat(DissolveAmountProperty, 0f);
+                }
             }
             
             if (_triggerCollider != null)

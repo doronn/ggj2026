@@ -70,8 +70,9 @@ namespace BreakingHue.Save
             // Subscribe to checkpoint portal events
             Portal.OnCheckpointReached += OnPortalCheckpoint;
             
-            // Subscribe to player death events
-            ExplodingBarrel.OnPlayerExploded += OnPlayerDeath;
+            // NOTE: Player death is now handled by DeathEffectController which manages
+            // the death sequence (explosion VFX, white-out effect) and then calls RestoreCheckpoint.
+            // This ensures proper visual effects before the level resets.
             
             // Load checkpoint from file early (before LevelManager.Start loads the level)
             if (autoSaveToFile)
@@ -83,7 +84,6 @@ namespace BreakingHue.Save
         private void OnDestroy()
         {
             Portal.OnCheckpointReached -= OnPortalCheckpoint;
-            ExplodingBarrel.OnPlayerExploded -= OnPlayerDeath;
         }
 
         private void Start()
@@ -145,14 +145,6 @@ namespace BreakingHue.Save
         private void OnPortalCheckpoint(Portal portal)
         {
             CaptureCheckpoint(portal.PortalId);
-        }
-
-        /// <summary>
-        /// Called when player dies (barrel explosion).
-        /// </summary>
-        private void OnPlayerDeath()
-        {
-            RestoreCheckpoint();
         }
 
         /// <summary>

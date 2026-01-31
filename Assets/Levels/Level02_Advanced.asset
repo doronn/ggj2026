@@ -574,7 +574,7 @@ MonoBehaviour:
     portals:
     - portalId: 26cc2507-db8f-49f3-8ad1-32a8863537c3
       position: {x: 5, y: 10}
-      link: {fileID: 0}
+      link: {fileID: 11400000, guid: 4a34067aadd464396b32688a03988d1c, type: 2}
       isCheckpoint: 1
       isEntrance: 0
     - portalId: 7eb20c00-29b1-4677-bced-1a563f2f454f

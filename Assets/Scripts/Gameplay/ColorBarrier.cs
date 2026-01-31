@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using Zenject;
 using BreakingHue.Core;
@@ -31,12 +32,22 @@ namespace BreakingHue.Gameplay
         [Header("Visual Feedback")]
         [SerializeField] private float phasingAlpha = 0.3f;
         [SerializeField] private float normalAlpha = 1f;
+        [SerializeField] private float phaseTransitionDuration = 0.3f;
 
         private MaskInventory _inventory;
         private Renderer _renderer;
         private bool _isPhasing;
         private GameObject _phasingEntity;
         private Color _originalColor;
+        
+        // Shader property IDs for better performance
+        private static readonly int PhaseAmountProperty = Shader.PropertyToID("_PhaseAmount");
+        private static readonly int BaseColorProperty = Shader.PropertyToID("_BaseColor");
+        private static readonly int EmissionColorProperty = Shader.PropertyToID("_EmissionColor");
+        
+        // Current phase animation state
+        private Coroutine _phaseCoroutine;
+        private float _currentPhaseAmount;
         
         // Interface for bot inventory access
         private IColorInventory _entityInventory;
@@ -197,16 +208,32 @@ namespace BreakingHue.Gameplay
             {
                 Color visualColor = requiredColor.ToColor();
                 visualColor.a = normalAlpha;
+                
+                // HDR emission color (brighter for glow)
+                Color emissionColor = visualColor * 2f;
+                
 #if UNITY_EDITOR
                 if (!Application.isPlaying)
                 {
                     // Use sharedMaterial in editor to avoid creating material instances on prefabs
-                    _renderer.sharedMaterial.color = visualColor;
+                    var mat = _renderer.sharedMaterial;
+                    mat.color = visualColor;
+                    if (mat.HasProperty(BaseColorProperty))
+                    {
+                        mat.SetColor(BaseColorProperty, visualColor);
+                        mat.SetColor(EmissionColorProperty, emissionColor);
+                    }
                 }
                 else
 #endif
                 {
-                    _renderer.material.color = visualColor;
+                    var mat = _renderer.material;
+                    mat.color = visualColor;
+                    if (mat.HasProperty(BaseColorProperty))
+                    {
+                        mat.SetColor(BaseColorProperty, visualColor);
+                        mat.SetColor(EmissionColorProperty, emissionColor);
+                    }
                 }
                 _originalColor = visualColor;
             }
@@ -290,8 +317,8 @@ namespace BreakingHue.Gameplay
                 solidCollider.enabled = false;
             }
             
-            // Visual feedback - make semi-transparent
-            SetAlpha(phasingAlpha);
+            // Visual feedback - animate to semi-transparent (phase amount 1 = transparent)
+            SetPhaseAmount(1f);
             
             string entityType = isPlayer ? "Player" : "Bot";
             Debug.Log($"[ColorBarrier] {entityType} phasing through {requiredColor.GetDisplayName()} barrier");
@@ -318,8 +345,8 @@ namespace BreakingHue.Gameplay
                 _inventory.ApplyBarrierSubtractionFromSlots(requiredColor, _phasingActiveSlots);
             }
             
-            // Restore visual
-            SetAlpha(normalAlpha);
+            // Restore visual - animate back to solid (phase amount 0 = solid)
+            SetPhaseAmount(0f);
             
             _isPhasing = false;
             _phasingEntity = null;
@@ -329,13 +356,68 @@ namespace BreakingHue.Gameplay
             Debug.Log($"[ColorBarrier] {requiredColor.GetDisplayName()} colors consumed (residue may remain)");
         }
 
-        private void SetAlpha(float alpha)
+        private void SetPhaseAmount(float targetPhase, bool animate = true)
         {
             if (_renderer == null) return;
             
-            Color color = _renderer.material.color;
-            color.a = alpha;
-            _renderer.material.color = color;
+            // Stop any existing phase animation
+            if (_phaseCoroutine != null)
+            {
+                StopCoroutine(_phaseCoroutine);
+                _phaseCoroutine = null;
+            }
+            
+            if (animate && phaseTransitionDuration > 0)
+            {
+                _phaseCoroutine = StartCoroutine(AnimatePhaseAmount(targetPhase));
+            }
+            else
+            {
+                ApplyPhaseAmount(targetPhase);
+            }
+        }
+        
+        private IEnumerator AnimatePhaseAmount(float targetPhase)
+        {
+            float startPhase = _currentPhaseAmount;
+            float elapsed = 0f;
+            
+            while (elapsed < phaseTransitionDuration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / phaseTransitionDuration);
+                
+                // Use smooth step for nicer animation
+                t = t * t * (3f - 2f * t);
+                
+                float newPhase = Mathf.Lerp(startPhase, targetPhase, t);
+                ApplyPhaseAmount(newPhase);
+                
+                yield return null;
+            }
+            
+            ApplyPhaseAmount(targetPhase);
+            _phaseCoroutine = null;
+        }
+        
+        private void ApplyPhaseAmount(float phaseAmount)
+        {
+            _currentPhaseAmount = phaseAmount;
+            
+            var mat = _renderer.material;
+            
+            // Use the shader property if available (new barrier shader)
+            if (mat.HasProperty(PhaseAmountProperty))
+            {
+                mat.SetFloat(PhaseAmountProperty, phaseAmount);
+            }
+            else
+            {
+                // Fallback for standard shader - use alpha
+                Color color = mat.color;
+                color.a = Mathf.Lerp(normalAlpha, phasingAlpha, phaseAmount);
+                mat.color = color;
+            }
         }
 
         /// <summary>
