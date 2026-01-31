@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6eb5991fcb4ed4144a18392edcf8a52d, type: 3}
-  m_Name: Link_Tutorial_to_Level 1 - Basics
+  m_Name: Link_Level_1_to_Level_2
   m_EditorClassIdentifier: Assembly-CSharp::BreakingHue.Level.Data.EntranceExitLink
-  linkId: 1ab636b0-0fa5-4c9d-859a-057787e4485e
-  displayName: Tutorial <-> Level 1 - Basics
-  levelA: {fileID: 11400000, guid: 294d278df2ee941df947da93b4fe2220, type: 2}
-  portalIdA: 72ee4caf-6056-4354-8c35-e64b146d6ff6
-  levelB: {fileID: 11400000, guid: 60b5000236a4c4e54ba85a4318f70451, type: 2}
-  portalIdB: ea689e0a-cfe6-4a8d-ad05-53c57d026aad
+  linkId: 7c1553ae-e2c3-457e-b5d0-40c6fb98bd55
+  displayName: Level_1 <-> Level_2
+  levelA: {fileID: 11400000, guid: 6749df9d164c7445ba22f8bb8bb5c12d, type: 2}
+  portalIdA: dc96b965-6816-4f8f-9e82-678888f0ee80
+  levelB: {fileID: 11400000, guid: f6ab98d91cc65408099aad32be999f58, type: 2}
+  portalIdB: 976da82d-b593-4b90-a6c7-5138c64e11be
   isCheckpointA: 0
   isCheckpointB: 1

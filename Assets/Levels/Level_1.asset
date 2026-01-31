@@ -1,0 +1,333 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c73d28e0b4d8d4cafbf66be9e6e01cc5, type: 3}
+  m_Name: Level_1
+  m_EditorClassIdentifier: Assembly-CSharp::BreakingHue.Level.Data.LevelData
+  levelName: Level_1
+  levelId: d0b33808-69f2-4c95-be01-c93148b72c7e
+  levelIndex: 0
+  cellSize: 1
+  groundLayer:
+    isVisible: 1
+    floorTiles:
+    - {x: 14, y: 15}
+    - {x: 14, y: 16}
+    - {x: 14, y: 17}
+    - {x: 14, y: 18}
+    - {x: 14, y: 19}
+    - {x: 14, y: 20}
+    - {x: 14, y: 21}
+    - {x: 15, y: 15}
+    - {x: 15, y: 16}
+    - {x: 15, y: 17}
+    - {x: 15, y: 18}
+    - {x: 15, y: 19}
+    - {x: 15, y: 20}
+    - {x: 15, y: 21}
+    - {x: 16, y: 15}
+    - {x: 16, y: 16}
+    - {x: 16, y: 17}
+    - {x: 16, y: 18}
+    - {x: 16, y: 19}
+    - {x: 16, y: 20}
+    - {x: 16, y: 21}
+    - {x: 17, y: 15}
+    - {x: 17, y: 16}
+    - {x: 17, y: 17}
+    - {x: 17, y: 18}
+    - {x: 17, y: 19}
+    - {x: 17, y: 20}
+    - {x: 17, y: 21}
+    - {x: 18, y: 15}
+    - {x: 18, y: 16}
+    - {x: 18, y: 17}
+    - {x: 18, y: 18}
+    - {x: 18, y: 19}
+    - {x: 18, y: 20}
+    - {x: 18, y: 21}
+    - {x: 19, y: 15}
+    - {x: 19, y: 16}
+    - {x: 19, y: 17}
+    - {x: 19, y: 18}
+    - {x: 19, y: 19}
+    - {x: 19, y: 20}
+    - {x: 19, y: 21}
+    - {x: 12, y: 14}
+    - {x: 12, y: 15}
+    - {x: 12, y: 16}
+    - {x: 12, y: 17}
+    - {x: 12, y: 18}
+    - {x: 12, y: 19}
+    - {x: 12, y: 20}
+    - {x: 12, y: 21}
+    - {x: 12, y: 22}
+    - {x: 13, y: 14}
+    - {x: 13, y: 15}
+    - {x: 13, y: 16}
+    - {x: 13, y: 17}
+    - {x: 13, y: 18}
+    - {x: 13, y: 19}
+    - {x: 13, y: 20}
+    - {x: 13, y: 21}
+    - {x: 13, y: 22}
+    - {x: 14, y: 14}
+    - {x: 14, y: 22}
+    - {x: 15, y: 14}
+    - {x: 15, y: 22}
+    - {x: 16, y: 14}
+    - {x: 16, y: 22}
+    - {x: 17, y: 22}
+    - {x: 18, y: 14}
+    - {x: 18, y: 22}
+    - {x: 19, y: 14}
+    - {x: 19, y: 22}
+    - {x: 20, y: 14}
+    - {x: 20, y: 15}
+    - {x: 20, y: 16}
+    - {x: 20, y: 17}
+    - {x: 20, y: 18}
+    - {x: 20, y: 19}
+    - {x: 20, y: 20}
+    - {x: 20, y: 21}
+    - {x: 20, y: 22}
+    - {x: 21, y: 14}
+    - {x: 21, y: 15}
+    - {x: 21, y: 16}
+    - {x: 21, y: 17}
+    - {x: 21, y: 18}
+    - {x: 21, y: 19}
+    - {x: 21, y: 20}
+    - {x: 21, y: 21}
+    - {x: 21, y: 22}
+    - {x: 16, y: 23}
+    - {x: 17, y: 14}
+    - {x: 17, y: 23}
+    - {x: 18, y: 23}
+    - {x: 15, y: 12}
+    - {x: 15, y: 13}
+    - {x: 16, y: 12}
+    - {x: 16, y: 13}
+    - {x: 17, y: 12}
+    - {x: 17, y: 13}
+    - {x: 18, y: 12}
+    - {x: 18, y: 13}
+  wallLayer:
+    isVisible: 1
+    wallTiles:
+    - {x: 12, y: 14}
+    - {x: 12, y: 15}
+    - {x: 12, y: 16}
+    - {x: 12, y: 17}
+    - {x: 12, y: 18}
+    - {x: 12, y: 19}
+    - {x: 12, y: 20}
+    - {x: 12, y: 21}
+    - {x: 12, y: 22}
+    - {x: 13, y: 14}
+    - {x: 13, y: 15}
+    - {x: 13, y: 16}
+    - {x: 13, y: 17}
+    - {x: 13, y: 18}
+    - {x: 13, y: 19}
+    - {x: 13, y: 20}
+    - {x: 13, y: 21}
+    - {x: 13, y: 22}
+    - {x: 14, y: 14}
+    - {x: 14, y: 15}
+    - {x: 14, y: 16}
+    - {x: 14, y: 17}
+    - {x: 14, y: 18}
+    - {x: 14, y: 19}
+    - {x: 14, y: 20}
+    - {x: 14, y: 21}
+    - {x: 14, y: 22}
+    - {x: 15, y: 14}
+    - {x: 15, y: 15}
+    - {x: 15, y: 16}
+    - {x: 15, y: 17}
+    - {x: 15, y: 18}
+    - {x: 15, y: 19}
+    - {x: 15, y: 20}
+    - {x: 15, y: 21}
+    - {x: 15, y: 22}
+    - {x: 16, y: 14}
+    - {x: 16, y: 15}
+    - {x: 16, y: 16}
+    - {x: 16, y: 17}
+    - {x: 16, y: 18}
+    - {x: 16, y: 19}
+    - {x: 16, y: 20}
+    - {x: 16, y: 21}
+    - {x: 16, y: 22}
+    - {x: 18, y: 14}
+    - {x: 18, y: 15}
+    - {x: 18, y: 16}
+    - {x: 18, y: 17}
+    - {x: 18, y: 18}
+    - {x: 18, y: 19}
+    - {x: 18, y: 20}
+    - {x: 18, y: 21}
+    - {x: 18, y: 22}
+    - {x: 19, y: 14}
+    - {x: 19, y: 15}
+    - {x: 19, y: 16}
+    - {x: 19, y: 17}
+    - {x: 19, y: 18}
+    - {x: 19, y: 19}
+    - {x: 19, y: 20}
+    - {x: 19, y: 21}
+    - {x: 19, y: 22}
+    - {x: 20, y: 14}
+    - {x: 20, y: 15}
+    - {x: 20, y: 16}
+    - {x: 20, y: 17}
+    - {x: 20, y: 18}
+    - {x: 20, y: 19}
+    - {x: 20, y: 20}
+    - {x: 20, y: 21}
+    - {x: 20, y: 22}
+    - {x: 21, y: 14}
+    - {x: 21, y: 15}
+    - {x: 21, y: 16}
+    - {x: 21, y: 17}
+    - {x: 21, y: 18}
+    - {x: 21, y: 19}
+    - {x: 21, y: 20}
+    - {x: 21, y: 21}
+    - {x: 21, y: 22}
+    - {x: 22, y: 14}
+    - {x: 22, y: 15}
+    - {x: 22, y: 16}
+    - {x: 22, y: 17}
+    - {x: 22, y: 18}
+    - {x: 22, y: 19}
+    - {x: 22, y: 20}
+    - {x: 22, y: 21}
+    - {x: 22, y: 22}
+    - {x: 12, y: 23}
+    - {x: 12, y: 24}
+    - {x: 12, y: 25}
+    - {x: 13, y: 23}
+    - {x: 13, y: 24}
+    - {x: 13, y: 25}
+    - {x: 14, y: 23}
+    - {x: 14, y: 24}
+    - {x: 14, y: 25}
+    - {x: 15, y: 23}
+    - {x: 15, y: 24}
+    - {x: 15, y: 25}
+    - {x: 16, y: 23}
+    - {x: 16, y: 24}
+    - {x: 16, y: 25}
+    - {x: 17, y: 23}
+    - {x: 17, y: 24}
+    - {x: 17, y: 25}
+    - {x: 18, y: 23}
+    - {x: 18, y: 24}
+    - {x: 18, y: 25}
+    - {x: 19, y: 23}
+    - {x: 19, y: 24}
+    - {x: 19, y: 25}
+    - {x: 20, y: 23}
+    - {x: 20, y: 24}
+    - {x: 20, y: 25}
+    - {x: 21, y: 23}
+    - {x: 21, y: 24}
+    - {x: 21, y: 25}
+    - {x: 22, y: 23}
+    - {x: 22, y: 24}
+    - {x: 22, y: 25}
+    - {x: 12, y: 11}
+    - {x: 12, y: 12}
+    - {x: 12, y: 13}
+    - {x: 13, y: 11}
+    - {x: 13, y: 12}
+    - {x: 13, y: 13}
+    - {x: 14, y: 11}
+    - {x: 14, y: 12}
+    - {x: 14, y: 13}
+    - {x: 15, y: 11}
+    - {x: 15, y: 12}
+    - {x: 15, y: 13}
+    - {x: 16, y: 11}
+    - {x: 16, y: 12}
+    - {x: 16, y: 13}
+    - {x: 17, y: 11}
+    - {x: 17, y: 12}
+    - {x: 17, y: 13}
+    - {x: 18, y: 11}
+    - {x: 18, y: 12}
+    - {x: 18, y: 13}
+    - {x: 19, y: 11}
+    - {x: 19, y: 12}
+    - {x: 19, y: 13}
+    - {x: 20, y: 11}
+    - {x: 20, y: 12}
+    - {x: 20, y: 13}
+    - {x: 21, y: 11}
+    - {x: 21, y: 12}
+    - {x: 21, y: 13}
+    - {x: 22, y: 11}
+    - {x: 22, y: 12}
+    - {x: 22, y: 13}
+  barrierLayer:
+    isVisible: 1
+    barriers:
+    - position: {x: 17, y: 20}
+      color: 5
+  pickupLayer:
+    isVisible: 1
+    pickups:
+    - position: {x: 17, y: 16}
+      color: 1
+      pickupId: e2cc4486-5e0f-4ac3-b000-f8db427409b5
+    - position: {x: 17, y: 18}
+      color: 4
+      pickupId: d5194fc8-fe29-4187-b280-a5e049776e88
+  barrelLayer:
+    isVisible: 1
+    barrels: []
+  botLayer:
+    isVisible: 1
+    bots: []
+  portalLayer:
+    isVisible: 1
+    portals:
+    - portalId: 08599635-cb78-4ae5-b805-1b17708629ca
+      position: {x: 17, y: 14}
+      link: {fileID: 11400000, guid: bb8bd84f035f84e3294eae12863dea30, type: 2}
+      isCheckpoint: 0
+      isEntrance: 0
+      isEndGame: 0
+      endGameConfig: {fileID: 0}
+    - portalId: dc96b965-6816-4f8f-9e82-678888f0ee80
+      position: {x: 17, y: 22}
+      link: {fileID: 11400000, guid: 0f644913b753e4780b371670817ae04e, type: 2}
+      isCheckpoint: 0
+      isEntrance: 0
+      isEndGame: 0
+      endGameConfig: {fileID: 0}
+    playerSpawnPosition: {x: 17, y: 14}
+  hiddenAreaLayer:
+    isVisible: 1
+    hiddenBlocks: []
+  prefabs:
+    floorPrefab: {fileID: 0}
+    wallPrefab: {fileID: 0}
+    barrierPrefab: {fileID: 0}
+    pickupPrefab: {fileID: 0}
+    barrelPrefab: {fileID: 0}
+    botPrefab: {fileID: 0}
+    portalPrefab: {fileID: 0}
+    hiddenBlockPrefab: {fileID: 0}
+    droppedMaskPrefab: {fileID: 0}
+    playerPrefab: {fileID: 0}

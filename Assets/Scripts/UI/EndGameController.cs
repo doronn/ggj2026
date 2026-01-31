@@ -179,12 +179,39 @@ namespace BreakingHue.UI
             _menuButton.style.borderRightColor = new StyleColor(buttonBorderColor);
             
             _menuButton.RegisterCallback<ClickEvent>(OnMenuButtonClicked);
+            
+            // NavigationSubmitEvent for controller/keyboard submit (A button, Enter, Space)
+            _menuButton.RegisterCallback<NavigationSubmitEvent>(evt => OnMenuButtonClicked(null));
             _menuButton.RegisterCallback<MouseEnterEvent>(evt => {
                 _menuButton.style.backgroundColor = new StyleColor(new Color(0f, 0.8f, 0.95f, 0.95f));
             });
             _menuButton.RegisterCallback<MouseLeaveEvent>(evt => {
                 _menuButton.style.backgroundColor = new StyleColor(new Color(0f, 0.7f, 0.86f, 0.9f));
             });
+            
+            // Focus styling for controller navigation
+            _menuButton.RegisterCallback<FocusInEvent>(evt => {
+                _menuButton.style.backgroundColor = new StyleColor(new Color(1f, 1f, 1f, 1f));
+                _menuButton.style.color = new StyleColor(Color.black);
+                _menuButton.style.borderTopColor = new StyleColor(new Color(0f, 1f, 1f, 1f));
+                _menuButton.style.borderBottomColor = new StyleColor(new Color(0f, 1f, 1f, 1f));
+                _menuButton.style.borderLeftColor = new StyleColor(new Color(0f, 1f, 1f, 1f));
+                _menuButton.style.borderRightColor = new StyleColor(new Color(0f, 1f, 1f, 1f));
+            });
+            _menuButton.RegisterCallback<FocusOutEvent>(evt => {
+                _menuButton.style.backgroundColor = new StyleColor(new Color(0f, 0.7f, 0.86f, 0.9f));
+                _menuButton.style.color = new StyleColor(Color.white);
+                _menuButton.style.borderTopColor = new StyleColor(buttonBorderColor);
+                _menuButton.style.borderBottomColor = new StyleColor(buttonBorderColor);
+                _menuButton.style.borderLeftColor = new StyleColor(buttonBorderColor);
+                _menuButton.style.borderRightColor = new StyleColor(buttonBorderColor);
+            });
+            
+            // Make button focusable for controller support
+            _menuButton.focusable = true;
+            
+            // Set focus after a short delay to ensure UI is ready
+            _menuButton.schedule.Execute(() => _menuButton.Focus()).ExecuteLater(100);
             
             container.Add(_menuButton);
             

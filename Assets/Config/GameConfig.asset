@@ -23,11 +23,7 @@ MonoBehaviour:
     hiddenBlockPrefab: {fileID: 2463891353458770857, guid: 87e6f156182b24513bd99f94bd49bddc, type: 3}
     droppedMaskPrefab: {fileID: 5837938775444079518, guid: 00209dd2e1b9e42879b2e9d9c3fa385c, type: 3}
     playerPrefab: {fileID: 3010117779049158797, guid: 20540361f8e54426284672a65ce94914, type: 3}
-  startingLevel: {fileID: 11400000, guid: ae29ac174230c42d28100c1158091ff2, type: 2}
+  startingLevel: {fileID: 11400000, guid: 23498859267cc4db1b81e744cdd83499, type: 2}
   allLevels:
-  - {fileID: 11400000, guid: 60b5000236a4c4e54ba85a4318f70451, type: 2}
-  - {fileID: 11400000, guid: ae29ac174230c42d28100c1158091ff2, type: 2}
-  - {fileID: 11400000, guid: 294d278df2ee941df947da93b4fe2220, type: 2}
-  portalLinks:
-  - {fileID: 11400000, guid: daadba176cd2d4d4c8b45bf9b239b557, type: 2}
-  - {fileID: 11400000, guid: 7fc80298d017c422487e1f7d04deee9c, type: 2}
+  - {fileID: 11400000, guid: 23498859267cc4db1b81e744cdd83499, type: 2}
+  portalLinks: []

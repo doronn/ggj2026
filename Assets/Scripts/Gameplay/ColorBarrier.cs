@@ -107,6 +107,36 @@ namespace BreakingHue.Gameplay
                 }
             }
 
+            // Subscribe to mask toggle events to re-evaluate collision when mask changes
+            if (_inventory != null)
+            {
+                _inventory.OnMaskToggled += OnMaskToggled;
+            }
+        }
+
+        /// <summary>
+        /// Called when player toggles a mask. Re-evaluates collision if player is inside trigger zone.
+        /// </summary>
+        private void OnMaskToggled(int slotIndex, bool isActive)
+        {
+            // If player is inside the trigger zone and not already phasing, re-evaluate
+            if (_playerInTriggerZone != null && !_isPhasing)
+            {
+                if (_inventory != null && _inventory.CanPassThrough(requiredColor))
+                {
+                    _entityInventory = null; // Use injected player inventory
+                    StartPhasing(_playerInTriggerZone, isPlayer: true);
+                }
+            }
+        }
+
+        private void OnDestroy()
+        {
+            // Unsubscribe from events
+            if (_inventory != null)
+            {
+                _inventory.OnMaskToggled -= OnMaskToggled;
+            }
         }
 
         private void SetupColliders()
@@ -239,6 +269,9 @@ namespace BreakingHue.Gameplay
             }
         }
 
+        // Track player presence in trigger zone for mask toggle re-evaluation
+        private GameObject _playerInTriggerZone;
+
         private void OnTriggerEnter(Collider other)
         {
             // Already phasing? Ignore
@@ -247,6 +280,8 @@ namespace BreakingHue.Gameplay
             // Check for player
             if (other.CompareTag("Player"))
             {
+                _playerInTriggerZone = other.gameObject;
+
                 // Fire proximity event for contextual prompts/tutorials
                 if (!_playerNearby)
                 {
@@ -288,6 +323,7 @@ namespace BreakingHue.Gameplay
             if (other.CompareTag("Player") && _playerNearby)
             {
                 _playerNearby = false;
+                _playerInTriggerZone = null;
                 OnPlayerLeftBarrier?.Invoke();
             }
             

@@ -1,0 +1,129 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c73d28e0b4d8d4cafbf66be9e6e01cc5, type: 3}
+  m_Name: Level_0
+  m_EditorClassIdentifier: Assembly-CSharp::BreakingHue.Level.Data.LevelData
+  levelName: Level_0
+  levelId: 3f88344c-391e-4bc1-8d78-1fb8ef95e910
+  levelIndex: 0
+  cellSize: 1
+  groundLayer:
+    isVisible: 1
+    floorTiles:
+    - {x: 16, y: 21}
+    - {x: 16, y: 20}
+    - {x: 16, y: 19}
+    - {x: 16, y: 18}
+    - {x: 16, y: 17}
+    - {x: 16, y: 16}
+  wallLayer:
+    isVisible: 1
+    wallTiles:
+    - {x: 19, y: 23}
+    - {x: 18, y: 23}
+    - {x: 17, y: 23}
+    - {x: 16, y: 23}
+    - {x: 15, y: 23}
+    - {x: 14, y: 23}
+    - {x: 13, y: 23}
+    - {x: 13, y: 22}
+    - {x: 13, y: 21}
+    - {x: 13, y: 20}
+    - {x: 13, y: 19}
+    - {x: 13, y: 18}
+    - {x: 13, y: 17}
+    - {x: 19, y: 22}
+    - {x: 19, y: 21}
+    - {x: 19, y: 20}
+    - {x: 19, y: 19}
+    - {x: 19, y: 18}
+    - {x: 19, y: 17}
+    - {x: 19, y: 16}
+    - {x: 19, y: 15}
+    - {x: 18, y: 15}
+    - {x: 17, y: 15}
+    - {x: 16, y: 15}
+    - {x: 15, y: 15}
+    - {x: 14, y: 15}
+    - {x: 13, y: 15}
+    - {x: 13, y: 16}
+    - {x: 14, y: 22}
+    - {x: 14, y: 21}
+    - {x: 14, y: 20}
+    - {x: 14, y: 19}
+    - {x: 14, y: 18}
+    - {x: 14, y: 17}
+    - {x: 14, y: 16}
+    - {x: 15, y: 22}
+    - {x: 16, y: 22}
+    - {x: 17, y: 22}
+    - {x: 17, y: 21}
+    - {x: 18, y: 22}
+    - {x: 18, y: 21}
+    - {x: 18, y: 20}
+    - {x: 18, y: 19}
+    - {x: 18, y: 18}
+    - {x: 18, y: 17}
+    - {x: 18, y: 16}
+    - {x: 17, y: 20}
+    - {x: 17, y: 19}
+    - {x: 17, y: 18}
+    - {x: 17, y: 17}
+    - {x: 17, y: 16}
+    - {x: 15, y: 21}
+    - {x: 15, y: 20}
+    - {x: 15, y: 19}
+    - {x: 15, y: 18}
+    - {x: 15, y: 17}
+    - {x: 15, y: 16}
+  barrierLayer:
+    isVisible: 1
+    barriers:
+    - position: {x: 16, y: 20}
+      color: 1
+  pickupLayer:
+    isVisible: 1
+    pickups:
+    - position: {x: 16, y: 18}
+      color: 1
+      pickupId: 9765f13e-6eba-4929-8924-fff870935b40
+  barrelLayer:
+    isVisible: 1
+    barrels: []
+  botLayer:
+    isVisible: 1
+    bots: []
+  portalLayer:
+    isVisible: 1
+    portals:
+    - portalId: e986f15d-79a3-41d9-b01e-edd5da82e84f
+      position: {x: 16, y: 21}
+      link: {fileID: 11400000, guid: bb8bd84f035f84e3294eae12863dea30, type: 2}
+      isCheckpoint: 0
+      isEntrance: 0
+      isEndGame: 0
+      endGameConfig: {fileID: 0}
+    playerSpawnPosition: {x: 16, y: 16}
+  hiddenAreaLayer:
+    isVisible: 1
+    hiddenBlocks: []
+  prefabs:
+    floorPrefab: {fileID: 0}
+    wallPrefab: {fileID: 0}
+    barrierPrefab: {fileID: 0}
+    pickupPrefab: {fileID: 0}
+    barrelPrefab: {fileID: 0}
+    botPrefab: {fileID: 0}
+    portalPrefab: {fileID: 0}
+    hiddenBlockPrefab: {fileID: 0}
+    droppedMaskPrefab: {fileID: 0}
+    playerPrefab: {fileID: 0}

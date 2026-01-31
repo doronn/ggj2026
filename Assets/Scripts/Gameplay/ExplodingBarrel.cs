@@ -77,6 +77,9 @@ namespace BreakingHue.Gameplay
             }
         }
 
+        // Track player presence in trigger zone for mask toggle re-evaluation
+        private bool _playerInTriggerZone;
+
         private void Start()
         {
             // Fallback: If Zenject injection didn't happen (e.g., instantiated via Instantiate()),
@@ -93,6 +96,32 @@ namespace BreakingHue.Gameplay
             if (_playerInventory == null)
             {
                 Debug.LogWarning($"[ExplodingBarrel] Failed to resolve MaskInventory for barrel at {transform.position}");
+            }
+
+            // Subscribe to mask toggle events to re-evaluate when mask changes
+            if (_playerInventory != null)
+            {
+                _playerInventory.OnMaskToggled += OnMaskToggled;
+            }
+        }
+
+        /// <summary>
+        /// Called when player toggles a mask. Re-evaluates if player is inside trigger zone.
+        /// </summary>
+        private void OnMaskToggled(int slotIndex, bool isActive)
+        {
+            // If player is inside the trigger zone and barrel hasn't exploded, re-evaluate
+            if (_playerInTriggerZone && !_hasExploded)
+            {
+                HandlePlayerContact();
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (_playerInventory != null)
+            {
+                _playerInventory.OnMaskToggled -= OnMaskToggled;
             }
         }
 
@@ -202,6 +231,7 @@ namespace BreakingHue.Gameplay
             // Check for player
             if (other.CompareTag("Player"))
             {
+                _playerInTriggerZone = true;
                 HandlePlayerContact();
                 return;
             }
@@ -211,6 +241,14 @@ namespace BreakingHue.Gameplay
             if (botInventory != null)
             {
                 HandleBotContact(other.gameObject, botInventory);
+            }
+        }
+
+        private void OnTriggerExit(Collider other)
+        {
+            if (other.CompareTag("Player"))
+            {
+                _playerInTriggerZone = false;
             }
         }
 
