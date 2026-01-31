@@ -1,9 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
     <ui:VisualElement name="Root" style="flex-grow: 1;">
-        <ui:VisualElement name="HUDContainer" style="position: absolute; bottom: 80px; left: 0; right: 0; flex-direction: column; align-items: center;">
-            <ui:VisualElement name="CombinedColor" class="combined-color" />
-            <ui:VisualElement name="SlotsContainer" style="flex-direction: row; justify-content: center;">
-            </ui:VisualElement>
+        <ui:VisualElement name="SlotsContainer" style="position: absolute; bottom: 20px; left: 0; right: 0; flex-direction: row; justify-content: center;">
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

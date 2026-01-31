@@ -7,6 +7,7 @@ using BreakingHue.Core;
 using BreakingHue.Gameplay;
 using BreakingHue.Level;
 using BreakingHue.Level.Data;
+using BreakingHue.Tutorial;
 
 namespace BreakingHue.Save
 {
@@ -124,6 +125,17 @@ namespace BreakingHue.Save
             // (we want normal save behavior after applying checkpoint states)
             _levelManager.ResetSkipSaveFlag();
             
+            // Restore tutorial progress on startup
+            if (TutorialManager.Instance != null && _lastCheckpoint.completedTutorials != null)
+            {
+                var tutorialState = new TutorialSaveData
+                {
+                    completedTutorials = new List<string>(_lastCheckpoint.completedTutorials)
+                };
+                TutorialManager.Instance.LoadState(tutorialState);
+                Debug.Log($"[CheckpointManager] Applied tutorial states on startup ({tutorialState.completedTutorials.Count} completed)");
+            }
+            
             Debug.Log($"[CheckpointManager] Applied checkpoint level states on startup ({statesToApply.Count} levels)");
         }
 
@@ -185,6 +197,13 @@ namespace BreakingHue.Save
             {
                 _lastCheckpoint.levelStates.Add(kvp.Value.Clone());
             }
+            
+            // Capture tutorial progress
+            if (TutorialManager.Instance != null)
+            {
+                var tutorialState = TutorialManager.Instance.GetStateForSave();
+                _lastCheckpoint.completedTutorials = new List<string>(tutorialState.completedTutorials);
+            }
 
             Debug.Log($"[CheckpointManager] Checkpoint captured at {_lastCheckpoint.checkpointLevelId}, portal: {portalId}");
             
@@ -205,6 +224,8 @@ namespace BreakingHue.Save
             if (_lastCheckpoint == null)
             {
                 Debug.LogWarning("[CheckpointManager] No checkpoint to restore!");
+                // reset the game instead:
+                
                 return;
             }
 
@@ -228,6 +249,16 @@ namespace BreakingHue.Save
                 restoredStates[levelState.levelId] = levelState.Clone();
             }
             _levelManager.RestoreAllLevelStates(restoredStates);
+            
+            // Restore tutorial progress
+            if (TutorialManager.Instance != null && _lastCheckpoint.completedTutorials != null)
+            {
+                var tutorialState = new TutorialSaveData
+                {
+                    completedTutorials = new List<string>(_lastCheckpoint.completedTutorials)
+                };
+                TutorialManager.Instance.LoadState(tutorialState);
+            }
 
             // Reload the checkpoint level
             var checkpointLevel = FindLevelById(_lastCheckpoint.checkpointLevelId);
@@ -362,8 +393,26 @@ namespace BreakingHue.Save
         /// </summary>
         private LevelData FindLevelById(string levelId)
         {
-            // Try to get from LevelManager's level list via reflection or find in project
-            // For now, just return null and let the system reload current
+            if (string.IsNullOrEmpty(levelId)) return null;
+            
+            // Try GameConfig first (preferred source)
+            if (_levelManager?.GameConfig != null)
+            {
+                var level = _levelManager.GameConfig.FindLevelById(levelId);
+                if (level != null) return level;
+            }
+            
+            // Fall back to LevelManager's effective levels list
+            if (_levelManager != null)
+            {
+                foreach (var level in _levelManager.EffectiveLevels)
+                {
+                    if (level != null && level.levelId == levelId)
+                        return level;
+                }
+            }
+            
+            Debug.LogWarning($"[CheckpointManager] Could not find level with ID: {levelId}");
             return null;
         }
 

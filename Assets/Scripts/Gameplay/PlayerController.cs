@@ -5,6 +5,7 @@ using Zenject;
 using BreakingHue.Core;
 using BreakingHue.Input;
 using BreakingHue.Camera;
+using BreakingHue.Level;
 
 namespace BreakingHue.Gameplay
 {
@@ -32,8 +33,9 @@ namespace BreakingHue.Gameplay
         [SerializeField] private Transform visualTransform;
         
         [Header("Mask Drop Settings")]
-        [SerializeField] private GameObject droppedMaskPrefab;
         [SerializeField] private float gridCellSize = 1f;
+        
+        private LevelManager _levelManager;
 
         private Rigidbody _rigidbody;
         private MaskInventory _inventory;
@@ -61,10 +63,11 @@ namespace BreakingHue.Gameplay
         public static event Action<Vector3, ColorType> OnMaskDropRequested;
 
         [Inject]
-        public void Construct(MaskInventory inventory, GameCamera gameCamera)
+        public void Construct(MaskInventory inventory, GameCamera gameCamera, LevelManager levelManager)
         {
             _inventory = inventory;
             _gameCamera = gameCamera;
+            _levelManager = levelManager;
         }
 
         private void Awake()
@@ -89,13 +92,20 @@ namespace BreakingHue.Gameplay
 
         private void Start()
         {
+            Debug.Log("[PlayerController] Starting initialization...");
+            
             // Fallback: If Zenject injection didn't happen, try to resolve manually
             if (_inventory == null)
             {
+                Debug.Log("[PlayerController] Inventory not injected, trying to find via SceneContext...");
                 var sceneContext = FindObjectOfType<Zenject.SceneContext>();
                 if (sceneContext != null && sceneContext.Container != null)
                 {
                     _inventory = sceneContext.Container.TryResolve<MaskInventory>();
+                    if (_inventory != null)
+                    {
+                        Debug.Log("[PlayerController] Found inventory via SceneContext");
+                    }
                 }
             }
             
@@ -103,6 +113,20 @@ namespace BreakingHue.Gameplay
             if (_gameCamera == null)
             {
                 _gameCamera = FindObjectOfType<GameCamera>();
+                if (_gameCamera == null && useCameraRelativeMovement)
+                {
+                    Debug.LogWarning("[PlayerController] GameCamera not found! Movement will use world-relative direction.");
+                }
+            }
+            
+            // Fallback for LevelManager
+            if (_levelManager == null)
+            {
+                _levelManager = FindObjectOfType<LevelManager>();
+                if (_levelManager != null)
+                {
+                    Debug.Log("[PlayerController] Found LevelManager via FindObjectOfType");
+                }
             }
 
             // Subscribe to inventory events for visual updates
@@ -119,19 +143,12 @@ namespace BreakingHue.Gameplay
                 Debug.LogError("[PlayerController] Failed to resolve MaskInventory!");
             }
             
-            // Fallback: If droppedMaskPrefab not assigned, try to find one
-            if (droppedMaskPrefab == null)
-            {
-                droppedMaskPrefab = Resources.Load<GameObject>("DroppedMask");
-                if (droppedMaskPrefab == null)
-                {
-                    var existingMask = FindObjectOfType<DroppedMask>(true);
-                    if (existingMask != null)
-                    {
-                        droppedMaskPrefab = existingMask.gameObject;
-                    }
-                }
-            }
+            // Log initialization status
+            Debug.Log($"[PlayerController] Initialized - Inventory: {(_inventory != null ? "OK" : "MISSING")}, " +
+                      $"GameCamera: {(_gameCamera != null ? "OK" : "MISSING")}, " +
+                      $"LevelManager: {(_levelManager != null ? "OK" : "MISSING")}, " +
+                      $"MoveAction: {(_moveAction != null ? "OK" : "MISSING")}, " +
+                      $"Rigidbody: {(_rigidbody != null ? "OK" : "MISSING")}");
         }
 
         private void OnDestroy()
@@ -164,21 +181,38 @@ namespace BreakingHue.Gameplay
 
         private void SetupInput()
         {
-            // Priority 1: Try InputManager
-            if (InputManager.Instance != null)
+            // Priority 1: Try InputManager (only if it has valid actions)
+            if (InputManager.Instance != null && InputManager.Instance.InputActions != null)
             {
-                SetupInputFromManager();
-                return;
+                var moveAction = InputManager.Instance.GetPlayerAction("Move");
+                if (moveAction != null)
+                {
+                    SetupInputFromManager();
+                    return;
+                }
+                else
+                {
+                    Debug.LogWarning("[PlayerController] InputManager exists but has no Move action configured");
+                }
             }
             
             // Priority 2: Try PlayerInput component
             if (_playerInput != null && _playerInput.actions != null)
             {
-                SetupInputFromPlayerInput();
-                return;
+                var moveAction = _playerInput.actions.FindAction("Move");
+                if (moveAction != null)
+                {
+                    SetupInputFromPlayerInput();
+                    return;
+                }
+                else
+                {
+                    Debug.LogWarning("[PlayerController] PlayerInput exists but has no Move action");
+                }
             }
             
-            // Priority 3: Manual fallback
+            // Priority 3: Manual fallback (always works)
+            Debug.Log("[PlayerController] Falling back to manual input setup");
             SetupManualInput();
         }
 
@@ -232,6 +266,8 @@ namespace BreakingHue.Gameplay
         {
             _usingManualInput = true;
             
+            Debug.Log("[PlayerController] Creating manual input actions...");
+            
             // Create a simple move action for WASD/Arrow keys
             _moveAction = new InputAction("Move", InputActionType.Value);
             
@@ -256,7 +292,7 @@ namespace BreakingHue.Gameplay
             
             SetupMaskInputManually();
             
-            Debug.Log("[PlayerController] Using manual input setup (fallback)");
+            Debug.Log($"[PlayerController] Manual input setup complete. MoveAction enabled: {_moveAction.enabled}");
         }
 
         private void SetupMaskInputManually()
@@ -328,7 +364,19 @@ namespace BreakingHue.Gameplay
         private void Update()
         {
             // Read input
-            _inputDirection = _moveAction?.ReadValue<Vector2>() ?? Vector2.zero;
+            if (_moveAction != null)
+            {
+                _inputDirection = _moveAction.ReadValue<Vector2>();
+            }
+            else
+            {
+                _inputDirection = Vector2.zero;
+                // Only log once per second to avoid spam
+                if (Time.frameCount % 60 == 0)
+                {
+                    Debug.LogWarning("[PlayerController] Move action is null - input not working!");
+                }
+            }
         }
 
         private void FixedUpdate()
@@ -418,7 +466,7 @@ namespace BreakingHue.Gameplay
                     if (rend.material.HasProperty("_EmissionColor"))
                     {
                         rend.material.EnableKeyword("_EMISSION");
-                        rend.material.SetColor("_EmissionColor", playerColor * 1.5f);
+                        rend.material.SetColor("_EmissionColor", playerColor * .75f);
                     }
                 }
             }
@@ -500,12 +548,14 @@ namespace BreakingHue.Gameplay
             OnMaskDropRequested?.Invoke(dropPosition, colorToDrop);
             
             DroppedMask dropped = null;
+            var droppedMaskPrefab = _levelManager?.EffectivePrefabs?.droppedMaskPrefab;
             if (droppedMaskPrefab != null)
             {
                 dropped = DroppedMask.Spawn(droppedMaskPrefab, dropPosition, colorToDrop);
             }
             else
             {
+                Debug.LogWarning("[PlayerController] droppedMaskPrefab not found in LevelManager.EffectivePrefabs, creating at runtime");
                 dropped = CreateDroppedMaskAtRuntime(dropPosition, colorToDrop);
             }
             

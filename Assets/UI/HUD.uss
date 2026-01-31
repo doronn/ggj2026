@@ -1,4 +1,5 @@
-/* HUD Styles - Bold Modern Design */
+/* HUD Styles - Breaking Hue Themed Design */
+/* Enhanced visual design with better contrast, glow effects, and polish */
 
 #Root {
     flex-grow: 1;
@@ -13,116 +14,345 @@
     align-items: center;
 }
 
+/* ============================================ */
+/* Combined Color Display                       */
+/* ============================================ */
+
 .combined-color {
-    width: 90px;
-    height: 90px;
-    margin-bottom: 15px;
-    border-radius: 45px;
-    background-color: rgb(100, 100, 100);
+    width: 80px;
+    height: 80px;
+    margin-bottom: 16px;
+    border-radius: 40px;
+    background-color: rgb(30, 32, 38);
     border-width: 4px;
-    border-color: rgba(255, 255, 255, 0.8);
-    transition-property: background-color;
-    transition-duration: 0.2s;
+    border-color: rgba(0, 200, 255, 0.5);
+    transition-property: background-color, border-color, scale;
+    transition-duration: 0.3s;
 }
+
+.combined-color-active {
+    border-color: rgba(0, 255, 200, 1);
+    border-width: 5px;
+    scale: 1.05;
+}
+
+/* ============================================ */
+/* Slots Container - Main HUD Panel             */
+/* ============================================ */
 
 #SlotsContainer {
     flex-direction: row;
     justify-content: center;
-    background-color: rgba(0, 0, 0, 0.5);
-    padding: 10px 20px;
-    border-radius: 12px;
+    align-items: flex-start;
+    background-color: rgba(8, 10, 16, 0.92);
+    padding: 20px 32px 16px 32px;
+    border-radius: 20px;
+    border-width: 2px;
+    border-color: rgba(0, 180, 220, 0.35);
+    border-top-color: rgba(0, 200, 255, 0.5);
+    border-bottom-color: rgba(0, 120, 160, 0.25);
 }
+
+/* ============================================ */
+/* Individual Slot Container                    */
+/* ============================================ */
 
 .slot-container {
     flex-direction: column;
     align-items: center;
-    margin: 0 8px;
+    margin: 0 12px;
 }
+
+/* ============================================ */
+/* Slot Frame - The Outer Box                   */
+/* ============================================ */
 
 .slot-frame {
-    width: 70px;
-    height: 70px;
-    border-radius: 10px;
+    width: 76px;
+    height: 76px;
+    border-radius: 14px;
     border-width: 3px;
-    border-color: rgba(100, 100, 100, 0.8);
-    background-color: rgba(30, 30, 35, 0.95);
-    transition-property: border-color, scale;
-    transition-duration: 0.15s;
-}
-
-.slot-frame:hover {
-    scale: 1.05;
-}
-
-.slot-frame-active {
-    border-color: rgb(0, 255, 80);
-}
-
-.color-block {
-    position: absolute;
-    top: 5px;
-    left: 5px;
-    right: 5px;
-    bottom: 5px;
-    border-radius: 6px;
-    background-color: rgba(50, 50, 55, 0.6);
-    transition-property: background-color;
+    border-color: rgba(50, 55, 70, 0.85);
+    border-top-color: rgba(70, 75, 90, 0.9);
+    border-bottom-color: rgba(30, 35, 45, 0.95);
+    background-color: rgba(18, 20, 28, 0.98);
+    transition-property: border-color, scale, background-color;
     transition-duration: 0.2s;
 }
 
-.active-indicator {
-    position: absolute;
-    top: -6px;
-    right: -6px;
-    width: 18px;
-    height: 18px;
-    border-radius: 9px;
-    background-color: rgb(0, 255, 80);
-    border-width: 2px;
-    border-color: rgba(255, 255, 255, 0.9);
+.slot-frame:hover {
+    scale: 1.06;
+    border-color: rgba(100, 110, 140, 1);
+    background-color: rgba(25, 28, 38, 0.98);
 }
 
+.slot-frame-active {
+    border-color: rgb(0, 255, 200);
+    border-top-color: rgb(80, 255, 220);
+    border-bottom-color: rgb(0, 180, 140);
+    background-color: rgba(0, 50, 40, 0.4);
+}
+
+.slot-frame-filled {
+    border-color: rgba(80, 90, 120, 0.9);
+    border-top-color: rgba(100, 110, 140, 0.9);
+}
+
+/* ============================================ */
+/* Color Block - Inside the Slot                */
+/* ============================================ */
+
+.color-block {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    border-radius: 10px;
+    background-color: rgba(28, 30, 38, 0.7);
+    transition-property: background-color, scale;
+    transition-duration: 0.25s;
+}
+
+.color-block-active {
+    scale: 1.02;
+}
+
+/* ============================================ */
+/* Active Indicator - Glowing Dot               */
+/* ============================================ */
+
+.active-indicator {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 24px;
+    height: 24px;
+    border-radius: 12px;
+    background-color: rgb(0, 255, 180);
+    border-width: 3px;
+    border-color: rgba(255, 255, 255, 1);
+    transition-property: scale;
+    transition-duration: 0.15s;
+}
+
+.active-indicator:hover {
+    scale: 1.2;
+}
+
+/* ============================================ */
+/* Hotkey Labels - Below Slots                  */
+/* ============================================ */
+
 .hotkey-label {
-    margin-top: 6px;
-    font-size: 16px;
-    color: rgba(255, 255, 255, 0.9);
+    margin-top: 10px;
+    padding: 6px 14px;
+    font-size: 15px;
+    color: rgba(160, 175, 200, 0.9);
     -unity-text-align: middle-center;
     -unity-font-style: bold;
+    background-color: rgba(30, 35, 48, 0.85);
+    border-radius: 8px;
+    border-width: 2px;
+    border-bottom-width: 3px;
+    border-color: rgba(50, 58, 75, 0.7);
+    border-top-color: rgba(60, 68, 85, 0.8);
+    border-bottom-color: rgba(35, 40, 55, 0.9);
+    transition-property: color, background-color, border-color, scale;
+    transition-duration: 0.2s;
 }
 
 .hotkey-label-active {
-    color: rgb(0, 255, 80);
+    color: rgb(0, 255, 200);
+    background-color: rgba(0, 50, 45, 0.85);
+    border-color: rgba(0, 150, 120, 0.7);
+    border-top-color: rgba(0, 180, 150, 0.8);
+    border-bottom-color: rgba(0, 100, 80, 0.9);
+    scale: 1.05;
 }
 
-/* RYB Color Classes */
+.hotkey-label-filled {
+    color: rgba(230, 235, 250, 0.98);
+    background-color: rgba(40, 45, 60, 0.85);
+}
+
+/* ============================================ */
+/* RYB Color Classes - Vibrant and Saturated    */
+/* ============================================ */
+
 .color-red {
-    background-color: rgb(220, 50, 50);
+    background-color: rgb(235, 50, 50);
 }
 
 .color-yellow {
-    background-color: rgb(240, 220, 50);
+    background-color: rgb(255, 220, 30);
 }
 
 .color-blue {
-    background-color: rgb(50, 100, 220);
+    background-color: rgb(45, 100, 235);
 }
 
 .color-orange {
-    background-color: rgb(240, 140, 40);
+    background-color: rgb(255, 140, 20);
 }
 
 .color-green {
-    background-color: rgb(50, 180, 80);
+    background-color: rgb(35, 200, 85);
 }
 
 .color-purple {
-    background-color: rgb(150, 50, 180);
+    background-color: rgb(165, 50, 210);
 }
 
 .color-black {
-    background-color: rgb(30, 30, 35);
+    background-color: rgb(20, 20, 25);
 }
 
 .color-none {
-    background-color: rgba(50, 50, 55, 0.6);
+    background-color: rgba(28, 30, 38, 0.7);
+}
+
+/* ============================================ */
+/* Contextual Prompt Styles                     */
+/* ============================================ */
+
+.contextual-prompt {
+    position: absolute;
+    flex-direction: row;
+    align-items: center;
+    padding: 10px 18px;
+    background-color: rgba(8, 10, 16, 0.95);
+    border-radius: 12px;
+    border-width: 2px;
+    border-color: rgba(0, 200, 255, 0.6);
+    border-top-color: rgba(0, 220, 255, 0.7);
+    border-bottom-color: rgba(0, 150, 200, 0.5);
+    transition-property: opacity, translate, scale;
+    transition-duration: 0.3s;
+}
+
+.contextual-prompt:hover {
+    scale: 1.02;
+    border-color: rgba(0, 230, 255, 0.8);
+}
+
+.contextual-prompt-key {
+    padding: 8px 14px;
+    margin-right: 12px;
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: rgb(255, 255, 255);
+    background-color: rgba(0, 150, 200, 0.9);
+    border-radius: 8px;
+    border-width: 2px;
+    border-bottom-width: 4px;
+    border-color: rgba(0, 110, 160, 1);
+    border-top-color: rgba(0, 180, 220, 0.9);
+}
+
+.contextual-prompt-action {
+    font-size: 15px;
+    color: rgba(220, 230, 250, 0.98);
+    -unity-font-style: normal;
+}
+
+/* Drop prompt positioned above slots */
+.drop-prompt {
+    bottom: 200px;
+}
+
+/* ============================================ */
+/* Device-Specific Button Styles                */
+/* ============================================ */
+
+.device-keyboard {
+    background-color: rgba(35, 40, 55, 0.95);
+    border-color: rgba(25, 30, 40, 1);
+}
+
+.device-xbox {
+    background-color: rgba(20, 130, 20, 0.95);
+    border-color: rgba(10, 90, 10, 1);
+}
+
+.device-playstation {
+    background-color: rgba(30, 50, 140, 0.95);
+    border-color: rgba(20, 35, 100, 1);
+}
+
+.device-gamepad {
+    background-color: rgba(60, 60, 70, 0.95);
+    border-color: rgba(45, 45, 55, 1);
+}
+
+/* ============================================ */
+/* Styled Button (from InputIconProvider)       */
+/* ============================================ */
+
+.styled-button {
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+    transition-property: scale, background-color;
+    transition-duration: 0.15s;
+}
+
+.styled-button:hover {
+    scale: 1.08;
+}
+
+/* ============================================ */
+/* Button Prompt Container                      */
+/* ============================================ */
+
+.button-prompt {
+    flex-direction: row;
+    align-items: center;
+}
+
+.prompt-action-text {
+    color: rgba(200, 210, 230, 0.95);
+}
+
+/* ============================================ */
+/* Animation Classes                            */
+/* ============================================ */
+
+.pulse-glow {
+    transition-property: border-color;
+    transition-duration: 0.5s;
+}
+
+.fade-in {
+    transition-property: opacity;
+    transition-duration: 0.3s;
+}
+
+.slide-up {
+    transition-property: translate;
+    transition-duration: 0.3s;
+}
+
+/* ============================================ */
+/* Tutorial Prompt Styles                       */
+/* ============================================ */
+
+.tutorial-prompt {
+    background-color: rgba(5, 8, 15, 0.96);
+    border-color: rgba(0, 200, 255, 0.75);
+    border-width: 3px;
+    border-radius: 16px;
+    padding: 24px 32px;
+}
+
+.tutorial-title {
+    font-size: 24px;
+    -unity-font-style: bold;
+    color: rgb(0, 230, 200);
+    margin-bottom: 16px;
+}
+
+.tutorial-message {
+    font-size: 16px;
+    color: rgba(220, 230, 250, 0.95);
+    -unity-text-align: middle-center;
 }

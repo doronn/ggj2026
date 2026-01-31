@@ -1,0 +1,87 @@
+/* End Game Scene Styles - Breaking Hue Themed */
+
+#Root {
+    flex-grow: 1;
+    background-color: rgb(10, 12, 20);
+    justify-content: center;
+    align-items: center;
+}
+
+#EndGameContainer {
+    flex-direction: column;
+    align-items: center;
+    padding: 60px 80px;
+    max-width: 700px;
+    background-color: rgba(15, 18, 25, 0.95);
+    border-radius: 20px;
+    border-width: 3px;
+    border-color: rgba(0, 200, 255, 0.6);
+}
+
+#Title {
+    font-size: 42px;
+    -unity-font-style: bold;
+    color: rgb(0, 230, 200);
+    margin-bottom: 40px;
+    -unity-text-align: middle-center;
+}
+
+#Message {
+    font-size: 20px;
+    color: rgba(215, 225, 240, 0.95);
+    margin-bottom: 50px;
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+#MenuButton {
+    padding: 16px 40px;
+    font-size: 20px;
+    -unity-font-style: bold;
+    color: white;
+    background-color: rgba(0, 180, 220, 0.9);
+    border-radius: 12px;
+    border-width: 2px;
+    border-bottom-width: 4px;
+    border-color: rgba(0, 140, 180, 1);
+    transition-property: background-color, translate;
+    transition-duration: 0.15s;
+}
+
+#MenuButton:hover {
+    background-color: rgba(0, 200, 240, 0.95);
+    translate: 0 -2px;
+}
+
+#MenuButton:active {
+    background-color: rgba(0, 160, 200, 0.9);
+    translate: 0 2px;
+    border-bottom-width: 2px;
+}
+
+/* Credits section (optional) */
+.credits-container {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top-width: 1px;
+    border-color: rgba(100, 110, 130, 0.3);
+}
+
+.credits-text {
+    font-size: 14px;
+    color: rgba(150, 160, 180, 0.8);
+    -unity-text-align: middle-center;
+}
+
+/* Animation classes */
+.fade-in {
+    opacity: 1;
+    transition-property: opacity;
+    transition-duration: 0.5s;
+}
+
+.slide-up {
+    translate: 0 0;
+    transition-property: translate, opacity;
+    transition-duration: 0.5s;
+}

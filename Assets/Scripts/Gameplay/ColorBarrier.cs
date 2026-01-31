@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using Zenject;
 using BreakingHue.Core;
@@ -42,6 +43,25 @@ namespace BreakingHue.Gameplay
         
         // Track which slots were active when phasing started (for proper subtraction)
         private System.Collections.Generic.List<int> _phasingActiveSlots = new System.Collections.Generic.List<int>();
+        
+        // Track if player is near this barrier (for tutorial/contextual prompts)
+        private bool _playerNearby;
+
+        /// <summary>
+        /// Event fired when player enters a barrier's trigger zone (for contextual prompts/tutorials).
+        /// </summary>
+        public static event Action<ColorBarrier> OnPlayerNearBarrier;
+        
+        /// <summary>
+        /// Event fired when player leaves a barrier's trigger zone.
+        /// </summary>
+        public static event Action OnPlayerLeftBarrier;
+        
+        /// <summary>
+        /// Event fired when player is blocked by a barrier (doesn't have correct color).
+        /// Used by tutorial system.
+        /// </summary>
+        public static event Action<ColorBarrier, ColorType> OnPlayerBlockedByBarrier;
 
         [Inject]
         public void Construct(MaskInventory inventory)
@@ -200,6 +220,13 @@ namespace BreakingHue.Gameplay
             // Check for player
             if (other.CompareTag("Player"))
             {
+                // Fire proximity event for contextual prompts/tutorials
+                if (!_playerNearby)
+                {
+                    _playerNearby = true;
+                    OnPlayerNearBarrier?.Invoke(this);
+                }
+                
                 if (_inventory != null && _inventory.CanPassThrough(requiredColor))
                 {
                     _entityInventory = null; // Use injected player inventory
@@ -230,6 +257,13 @@ namespace BreakingHue.Gameplay
 
         private void OnTriggerExit(Collider other)
         {
+            // Track player leaving barrier area
+            if (other.CompareTag("Player") && _playerNearby)
+            {
+                _playerNearby = false;
+                OnPlayerLeftBarrier?.Invoke();
+            }
+            
             // Only react to the entity that started phasing
             if (!_isPhasing) return;
             if (_phasingEntity != other.gameObject) return;
@@ -310,6 +344,12 @@ namespace BreakingHue.Gameplay
         protected virtual void OnBlockedEntity(Collider entityCollider, string entityType)
         {
             Debug.Log($"[ColorBarrier] {entityType} blocked - needs {requiredColor.GetDisplayName()} mask(s) active");
+            
+            // Fire event for tutorial system (player only)
+            if (entityType == "Player")
+            {
+                OnPlayerBlockedByBarrier?.Invoke(this, requiredColor);
+            }
             
             // Optional: Visual feedback (flash red, shake, etc.)
             // Optional: Audio feedback

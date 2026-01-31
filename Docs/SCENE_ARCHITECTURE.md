@@ -37,6 +37,7 @@ Levels are **not** separate scenes. Instead, level content is dynamically genera
 |-------|------|---------|
 | MainMenu | `Assets/Scenes/MainMenu.unity` | Title screen, menu navigation |
 | World | `Assets/Scenes/World.unity` | Gameplay, all levels |
+| EndGame | `Assets/Scenes/EndGame.unity` | End game completion screen |
 
 ### Build Settings
 
@@ -46,6 +47,7 @@ Configure in File > Build Settings:
 Scenes In Build:
   0: Scenes/MainMenu    (first scene loaded)
   1: Scenes/World
+  2: Scenes/EndGame
 ```
 
 ---
@@ -92,6 +94,44 @@ The MainMenu scene does **not** use Zenject. UI controllers use standard Unity p
 
 ---
 
+## EndGame Scene
+
+### Required GameObjects
+
+```
+EndGame (Scene)
+├── Main Camera
+│   └── AudioListener
+│
+├── EventSystem
+│   └── StandaloneInputModule
+│
+├── UIDocument (End Game)
+│   ├── UIDocument component
+│   │   └── Source Asset: (none - created programmatically)
+│   │   └── Panel Settings: PanelSettings.asset
+│   └── EndGameController component
+│
+└── [Optional] AudioSource (for completion sound/music)
+```
+
+### EndGameController Setup
+
+The `EndGameController` creates its UI programmatically using Unity UI Toolkit. It reads configuration from `EndGameManager.ActiveConfig` which is set when `Portal.ExecuteTransition()` triggers the end game.
+
+### Configuration
+
+Create an `EndGameConfig` ScriptableObject asset:
+1. Right-click in Project: **Create > Breaking Hue > End Game Config**
+2. Configure display text, scene names, and audio
+3. Assign to an end game portal's `endGameConfig` field
+
+### No Zenject in EndGame
+
+Like MainMenu, the EndGame scene does **not** use Zenject. The `EndGameManager` singleton handles state.
+
+---
+
 ## World Scene
 
 ### Required GameObjects
@@ -119,8 +159,15 @@ World (Scene)
 │   ├── CheckpointManager
 │   │   └── CheckpointManager component
 │   │
-│   └── InputManager
-│       └── InputManager component
+│   ├── InputManager
+│   │   └── InputManager component
+│   │
+│   └── TutorialManager                [OPTIONAL - Tutorial System]
+│       ├── TutorialManager component
+│       └── TutorialPromptUI (child)
+│           ├── UIDocument component
+│           │   └── Panel Settings: PanelSettings.asset
+│           └── TutorialPromptUI component
 │
 ├── UI
 │   ├── GameHUD
@@ -131,9 +178,14 @@ World (Scene)
 │   │   ├── UIDocument (PauseMenu.uxml)
 │   │   └── PauseMenuController
 │   │
-│   └── ControlsBar
-│       ├── UIDocument (ControlsBar.uxml)
-│       └── ControlsBarController
+│   ├── ControlsBar
+│   │   ├── UIDocument (ControlsBar.uxml)
+│   │   └── ControlsBarController
+│   │
+│   └── ContextualPrompts              [OPTIONAL - Contextual Hints]
+│       ├── UIDocument component
+│       │   └── Panel Settings: PanelSettings.asset
+│       └── ContextualPromptController
 │
 ├── Lighting
 │   └── Directional Light
@@ -262,19 +314,21 @@ Breaking Hue uses **Scene-scoped** Zenject (no ProjectContext).
 2. **Component Bindings**
    GameInstaller binds these types:
 
-   | Binding | Type | Source |
-   |---------|------|--------|
-   | MaskInventory | Singleton | Created by container |
-   | LevelGenerator | Single | FromComponentInHierarchy |
-   | GameManager | Single | FromComponentInHierarchy |
-   | LevelManager | Single | FromComponentInHierarchy |
-   | CheckpointManager | Single | FromComponentInHierarchy |
-   | InputManager | Single | FromComponentInHierarchy |
-   | GameCamera | Single | FromComponentInHierarchy |
-   | GameHUDController | Single | FromComponentInHierarchy |
-   | PauseMenuController | Single | FromComponentInHierarchy |
-   | ControlsBarController | Single | FromComponentInHierarchy |
-   | InputIconProvider | Single | FromComponentInHierarchy |
+   | Binding | Type | Source | Required |
+   |---------|------|--------|----------|
+   | MaskInventory | Singleton | Created by container | Yes |
+   | LevelGenerator | Single | FromComponentInHierarchy | Yes |
+   | GameManager | Single | FromComponentInHierarchy | Yes |
+   | LevelManager | Single | FromComponentInHierarchy | Yes |
+   | CheckpointManager | Single | FromComponentInHierarchy | Yes |
+   | InputManager | Single | FromComponentInHierarchy | Yes |
+   | GameCamera | Single | FromComponentInHierarchy | Yes |
+   | GameHUDController | Single | FromComponentInHierarchy | Yes |
+   | PauseMenuController | Single | FromComponentInHierarchy | Yes |
+   | ControlsBarController | Single | FromComponentInHierarchy | Yes |
+   | InputIconProvider | Single | FromComponentInHierarchy | Yes |
+   | TutorialManager | Single | FromComponentInHierarchy | Optional |
+   | ContextualPromptController | Single | FromComponentInHierarchy | Optional |
 
 3. **Injection in Components**
    ```csharp
@@ -393,6 +447,7 @@ private void Start()
 
 Use this checklist when setting up World scene:
 
+**Required:**
 - [ ] SceneContext exists
 - [ ] GameInstaller attached to SceneContext
 - [ ] GameInstaller in Mono Installers list
@@ -406,6 +461,13 @@ Use this checklist when setting up World scene:
 - [ ] LevelContent parent exists
 - [ ] Directional Light configured
 - [ ] Scene added to Build Settings
+
+**Optional (Tutorial/Contextual System):**
+- [ ] TutorialManager component in scene
+- [ ] TutorialPromptUI with UIDocument
+- [ ] ContextualPromptController with UIDocument
+- [ ] EndGame scene created and added to Build Settings
+- [ ] EndGameConfig asset created
 
 ---
 

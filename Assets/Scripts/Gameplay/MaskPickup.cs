@@ -31,6 +31,17 @@ namespace BreakingHue.Gameplay
         /// Parameters: pickupId
         /// </summary>
         public static event Action<string> OnMaskPickupCollected;
+        
+        /// <summary>
+        /// Event fired when a mask is picked up (for tutorial system).
+        /// Parameters: pickup instance, color type
+        /// </summary>
+        public static event Action<MaskPickup, ColorType> OnMaskPickedUp;
+        
+        /// <summary>
+        /// Event fired when pickup fails because inventory is full (for tutorial system).
+        /// </summary>
+        public static event Action<MaskPickup> OnInventoryFullAttempt;
 
         [Inject]
         public void Construct(MaskInventory inventory)
@@ -178,6 +189,7 @@ namespace BreakingHue.Gameplay
         {
             Debug.Log($"[MaskPickup] Collected {colorToGive.GetDisplayName()} mask");
             OnMaskPickupCollected?.Invoke(pickupId);
+            OnMaskPickedUp?.Invoke(this, colorToGive);
         }
 
         /// <summary>
@@ -186,6 +198,7 @@ namespace BreakingHue.Gameplay
         protected virtual void OnInventoryFull()
         {
             Debug.Log($"[MaskPickup] Cannot collect {colorToGive.GetDisplayName()} - inventory full!");
+            OnInventoryFullAttempt?.Invoke(this);
         }
 
         /// <summary>

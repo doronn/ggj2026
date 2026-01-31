@@ -7,7 +7,10 @@ using System.IO;
 using System.Collections.Generic;
 using Zenject;
 using BreakingHue.Core;
+using BreakingHue.Input;
 using BreakingHue.Level.Data;
+using BreakingHue.Tutorial;
+using BreakingHue.UI;
 
 namespace BreakingHue.Editor
 {
@@ -119,6 +122,12 @@ namespace BreakingHue.Editor
             if (GUILayout.Button("4. Generate World Scene"))
                 GenerateScenes();
 
+            if (GUILayout.Button("4b. Generate EndGame Scene"))
+                GenerateEndGameScene();
+
+            if (GUILayout.Button("4c. Setup Tutorial & Prompts in World Scene"))
+                SetupTutorialAndPromptsInWorldScene();
+
             if (GUILayout.Button("5. Generate Example Level"))
                 GenerateExampleLevel();
 
@@ -208,8 +217,11 @@ namespace BreakingHue.Editor
                 EditorUtility.DisplayProgressBar("Breaking Hue Setup", "Generating UI assets...", 0.45f);
                 GenerateUIAssets();
 
-                EditorUtility.DisplayProgressBar("Breaking Hue Setup", "Generating World scene...", 0.60f);
+                EditorUtility.DisplayProgressBar("Breaking Hue Setup", "Generating World scene...", 0.55f);
                 GenerateScenes();
+
+                EditorUtility.DisplayProgressBar("Breaking Hue Setup", "Generating EndGame scene...", 0.62f);
+                GenerateEndGameScene();
 
                 EditorUtility.DisplayProgressBar("Breaking Hue Setup", "Generating example level...", 0.70f);
                 GenerateExampleLevel();
@@ -660,6 +672,265 @@ namespace BreakingHue.Editor
             Log("Scenes generated");
         }
 
+        private void GenerateEndGameScene()
+        {
+            CreateEndGameScene();
+            CreateEndGameConfig();
+            UpdateBuildSettings();
+            AssetDatabase.Refresh();
+            Log("EndGame scene and config generated");
+        }
+
+        private void CreateEndGameScene()
+        {
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            // Camera
+            var cameraObj = new GameObject("Main Camera");
+            var camera = cameraObj.AddComponent<UnityEngine.Camera>();
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = new Color(0.04f, 0.05f, 0.08f);
+            cameraObj.transform.position = new Vector3(0, 0, -10);
+            cameraObj.tag = "MainCamera";
+            cameraObj.AddComponent<AudioListener>();
+
+            // Light
+            var lightObj = new GameObject("Directional Light");
+            var light = lightObj.AddComponent<Light>();
+            light.type = LightType.Directional;
+            light.intensity = 0.5f;
+            lightObj.transform.rotation = Quaternion.Euler(50, -30, 0);
+
+            // UI with EndGameController
+            var uiObj = new GameObject("EndGameUI");
+            var uiDoc = uiObj.AddComponent<UIDocument>();
+            uiObj.AddComponent<BreakingHue.UI.EndGameController>();
+
+            var panelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>($"{UIPath}/PanelSettings.asset");
+            if (panelSettings != null) uiDoc.panelSettings = panelSettings;
+            // Note: EndGameController creates UI programmatically, no UXML needed
+
+            // Audio source for completion sounds (optional)
+            var audioObj = new GameObject("AudioSource");
+            audioObj.AddComponent<AudioSource>();
+
+            // Save scene
+            string path = $"{ScenesPath}/EndGame.unity";
+            EditorSceneManager.SaveScene(scene, path);
+            Log("EndGame scene created");
+        }
+
+        private void CreateEndGameConfig()
+        {
+            string path = $"{ConfigPath}/EndGameConfig.asset";
+            
+            // Check if already exists
+            var existing = AssetDatabase.LoadAssetAtPath<BreakingHue.Core.EndGameConfig>(path);
+            if (existing != null)
+            {
+                Log("EndGameConfig already exists, skipping");
+                return;
+            }
+
+            var config = ScriptableObject.CreateInstance<BreakingHue.Core.EndGameConfig>();
+            config.completionTitle = "Congratulations!";
+            config.completionText = "You have completed Breaking Hue!\n\nThank you for playing!";
+            config.endGameSceneName = "EndGame";
+            config.mainMenuSceneName = "MainMenu";
+            config.autoResetProgress = true;
+            config.displayDelay = 0.5f;
+
+            AssetDatabase.CreateAsset(config, path);
+            Log("EndGameConfig asset created");
+        }
+
+        // ==================== TUTORIAL & PROMPTS SETUP ====================
+
+        private void SetupTutorialAndPromptsInWorldScene()
+        {
+            string worldScenePath = $"{ScenesPath}/World.unity";
+            
+            if (!File.Exists(worldScenePath))
+            {
+                Log("ERROR: World scene not found. Please run 'Generate World Scene' first.");
+                EditorUtility.DisplayDialog("Error", "World scene not found.\n\nPlease run 'Generate World Scene' first.", "OK");
+                return;
+            }
+
+            try
+            {
+                // Open the World scene
+                var scene = EditorSceneManager.OpenScene(worldScenePath, OpenSceneMode.Single);
+                
+                var panelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>($"{UIPath}/PanelSettings.asset");
+                
+                // Find or create Managers container
+                var managersObj = GameObject.Find("Managers");
+                if (managersObj == null)
+                {
+                    managersObj = new GameObject("Managers");
+                    Log("Created Managers container");
+                }
+
+                // Setup TutorialManager
+                SetupTutorialManager(managersObj, panelSettings);
+                
+                // Find or create UI container
+                var uiContainer = GameObject.Find("UI");
+                if (uiContainer == null)
+                {
+                    uiContainer = new GameObject("UI");
+                    Log("Created UI container");
+                }
+                
+                // Setup ContextualPromptController
+                SetupContextualPromptController(uiContainer, panelSettings);
+                
+                // Setup PauseMenu
+                SetupPauseMenu(uiContainer, panelSettings);
+                
+                // Setup InputManager
+                SetupInputManager(managersObj);
+                
+                // Setup EndGameManager (singleton that persists)
+                SetupEndGameManager(managersObj);
+
+                // Save the scene
+                EditorSceneManager.SaveScene(scene);
+                AssetDatabase.Refresh();
+
+                Log("Tutorial & Prompts setup complete in World scene!");
+                EditorUtility.DisplayDialog("Setup Complete", 
+                    "Tutorial and Contextual Prompts have been added to the World scene!\n\n" +
+                    "Components added:\n" +
+                    "• TutorialManager (under Managers)\n" +
+                    "• TutorialPromptUI with UIDocument\n" +
+                    "• ContextualPromptController with UIDocument\n" +
+                    "• PauseMenuController with UIDocument\n" +
+                    "• InputManager\n" +
+                    "• EndGameManager (singleton)",
+                    "OK");
+            }
+            catch (System.Exception ex)
+            {
+                Log($"ERROR: {ex.Message}");
+                Debug.LogException(ex);
+                EditorUtility.DisplayDialog("Error", $"Failed to setup tutorial components:\n\n{ex.Message}", "OK");
+            }
+        }
+
+        private void SetupTutorialManager(GameObject managersObj, PanelSettings panelSettings)
+        {
+            // Check if TutorialManager already exists
+            var existingTutorialManager = Object.FindObjectOfType<TutorialManager>();
+            if (existingTutorialManager != null)
+            {
+                Log("TutorialManager already exists, skipping");
+                return;
+            }
+
+            // Create TutorialManager GameObject
+            var tutorialManagerObj = new GameObject("TutorialManager");
+            tutorialManagerObj.transform.SetParent(managersObj.transform);
+            tutorialManagerObj.AddComponent<TutorialManager>();
+            Log("Added TutorialManager");
+
+            // Create TutorialPromptUI as child with UIDocument
+            var tutorialPromptObj = new GameObject("TutorialPromptUI");
+            tutorialPromptObj.transform.SetParent(tutorialManagerObj.transform);
+            
+            var tutorialUIDoc = tutorialPromptObj.AddComponent<UIDocument>();
+            if (panelSettings != null)
+            {
+                tutorialUIDoc.panelSettings = panelSettings;
+            }
+            
+            tutorialPromptObj.AddComponent<TutorialPromptUI>();
+            Log("Added TutorialPromptUI with UIDocument");
+        }
+
+        private void SetupContextualPromptController(GameObject uiContainer, PanelSettings panelSettings)
+        {
+            // Check if ContextualPromptController already exists
+            var existingController = Object.FindObjectOfType<ContextualPromptController>();
+            if (existingController != null)
+            {
+                Log("ContextualPromptController already exists, skipping");
+                return;
+            }
+
+            // Create ContextualPrompts GameObject
+            var contextualPromptsObj = new GameObject("ContextualPrompts");
+            contextualPromptsObj.transform.SetParent(uiContainer.transform);
+            
+            var contextualUIDoc = contextualPromptsObj.AddComponent<UIDocument>();
+            if (panelSettings != null)
+            {
+                contextualUIDoc.panelSettings = panelSettings;
+            }
+            
+            contextualPromptsObj.AddComponent<ContextualPromptController>();
+            Log("Added ContextualPromptController with UIDocument");
+        }
+
+        private void SetupPauseMenu(GameObject uiContainer, PanelSettings panelSettings)
+        {
+            // Check if PauseMenuController already exists
+            var existingPauseMenu = Object.FindObjectOfType<PauseMenuController>();
+            if (existingPauseMenu != null)
+            {
+                Log("PauseMenuController already exists, skipping");
+                return;
+            }
+
+            // Create PauseMenu GameObject
+            var pauseMenuObj = new GameObject("PauseMenu");
+            pauseMenuObj.transform.SetParent(uiContainer.transform);
+            
+            var pauseMenuDoc = pauseMenuObj.AddComponent<UIDocument>();
+            if (panelSettings != null)
+            {
+                pauseMenuDoc.panelSettings = panelSettings;
+            }
+            
+            pauseMenuObj.AddComponent<PauseMenuController>();
+            Log("Added PauseMenuController with UIDocument");
+        }
+
+        private void SetupInputManager(GameObject managersObj)
+        {
+            // Check if InputManager already exists
+            var existingInputManager = Object.FindObjectOfType<BreakingHue.Input.InputManager>();
+            if (existingInputManager != null)
+            {
+                Log("InputManager already exists, skipping");
+                return;
+            }
+
+            // Create InputManager GameObject
+            var inputManagerObj = new GameObject("InputManager");
+            inputManagerObj.transform.SetParent(managersObj.transform);
+            inputManagerObj.AddComponent<BreakingHue.Input.InputManager>();
+            Log("Added InputManager");
+        }
+
+        private void SetupEndGameManager(GameObject managersObj)
+        {
+            // Check if EndGameManager already exists
+            var existingEndGameManager = Object.FindObjectOfType<EndGameManager>();
+            if (existingEndGameManager != null)
+            {
+                Log("EndGameManager already exists, skipping");
+                return;
+            }
+
+            // Create EndGameManager GameObject
+            var endGameManagerObj = new GameObject("EndGameManager");
+            endGameManagerObj.transform.SetParent(managersObj.transform);
+            endGameManagerObj.AddComponent<EndGameManager>();
+            Log("Added EndGameManager");
+        }
+
         private void CreateMainMenuScene()
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -767,16 +1038,27 @@ namespace BreakingHue.Editor
             // Level Container
             var levelContainer = new GameObject("LevelContainer");
 
+            var panelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>($"{UIPath}/PanelSettings.asset");
+            var hudUxml = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>($"{UIPath}/HUD.uxml");
+
             // HUD
             var hudObj = new GameObject("HUD");
             var hudDoc = hudObj.AddComponent<UIDocument>();
             hudObj.AddComponent<BreakingHue.UI.GameHUDController>();
-
-            var panelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>($"{UIPath}/PanelSettings.asset");
-            var hudUxml = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>($"{UIPath}/HUD.uxml");
             
             if (panelSettings != null) hudDoc.panelSettings = panelSettings;
             if (hudUxml != null) hudDoc.visualTreeAsset = hudUxml;
+
+            // Pause Menu
+            var pauseMenuObj = new GameObject("PauseMenu");
+            var pauseMenuDoc = pauseMenuObj.AddComponent<UIDocument>();
+            pauseMenuObj.AddComponent<BreakingHue.UI.PauseMenuController>();
+            
+            if (panelSettings != null) pauseMenuDoc.panelSettings = panelSettings;
+
+            // InputManager (for device detection and input handling)
+            var inputManagerObj = new GameObject("InputManager");
+            inputManagerObj.AddComponent<BreakingHue.Input.InputManager>();
 
             // Save scene
             string path = $"{ScenesPath}/World.unity";
@@ -1030,6 +1312,7 @@ namespace BreakingHue.Editor
             
             string menuPath = $"{ScenesPath}/MainMenu.unity";
             string worldPath = $"{ScenesPath}/World.unity";
+            string endGamePath = $"{ScenesPath}/EndGame.unity";
 
             if (File.Exists(menuPath))
                 scenes.Add(new EditorBuildSettingsScene(menuPath, true));
@@ -1037,8 +1320,11 @@ namespace BreakingHue.Editor
             if (File.Exists(worldPath))
                 scenes.Add(new EditorBuildSettingsScene(worldPath, true));
 
+            if (File.Exists(endGamePath))
+                scenes.Add(new EditorBuildSettingsScene(endGamePath, true));
+
             EditorBuildSettings.scenes = scenes.ToArray();
-            Log("Build settings updated (MainMenu=0, World=1)");
+            Log($"Build settings updated ({scenes.Count} scenes: MainMenu, World" + (File.Exists(endGamePath) ? ", EndGame)" : ")"));
         }
 
         // ==================== DOCUMENTATION ====================

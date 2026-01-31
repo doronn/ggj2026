@@ -5,6 +5,7 @@ using BreakingHue.Save;
 using BreakingHue.UI;
 using BreakingHue.Input;
 using BreakingHue.Camera;
+using BreakingHue.Tutorial;
 
 namespace BreakingHue.Installers
 {
@@ -73,6 +74,18 @@ namespace BreakingHue.Installers
             Container.Bind<InputIconProvider>()
                 .FromComponentInHierarchy()
                 .AsSingle();
+
+            // Tutorial System (optional - only bound if component exists in scene)
+            Container.Bind<TutorialManager>()
+                .FromComponentInHierarchy()
+                .AsSingle()
+                .IfNotBound();
+
+            // Contextual Prompts (optional - only bound if component exists in scene)
+            Container.Bind<ContextualPromptController>()
+                .FromComponentInHierarchy()
+                .AsSingle()
+                .IfNotBound();
         }
     }
 }

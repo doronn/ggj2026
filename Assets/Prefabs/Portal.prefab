@@ -128,8 +128,11 @@ MonoBehaviour:
   portalId: 
   link: {fileID: 0}
   isCheckpoint: 0
+  isEndGame: 0
+  endGameConfig: {fileID: 0}
   portalRenderer: {fileID: 6491422375192174728}
   normalPortalColor: {r: 0, g: 0.8, b: 1, a: 1}
   checkpointPortalColor: {r: 1, g: 0.8, b: 0, a: 1}
+  endGamePortalColor: {r: 1, g: 0.4, b: 1, a: 1}
   portalVFX: {fileID: 0}
   transitionDelay: 0.5

@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using Zenject;
+using BreakingHue.Core;
 using BreakingHue.Level;
 using BreakingHue.Level.Data;
 
@@ -9,11 +10,13 @@ namespace BreakingHue.Gameplay
     /// <summary>
     /// Bidirectional portal that connects levels or areas within the same level.
     /// Can be configured as a checkpoint to save player progress.
+    /// Can also be configured as an end game portal.
     /// 
     /// Behavior:
     /// - On player enter: Trigger level transition or intra-level teleport
     /// - If checkpoint: Save game state before transitioning
-    /// - Visual distinction between regular portals and checkpoint portals
+    /// - If end game: Trigger end game sequence
+    /// - Visual distinction between regular, checkpoint, and end game portals
     /// </summary>
     public class Portal : MonoBehaviour
     {
@@ -22,10 +25,15 @@ namespace BreakingHue.Gameplay
         [SerializeField] private EntranceExitLink link;
         [SerializeField] private bool isCheckpoint;
         
+        [Header("End Game Settings")]
+        [SerializeField] private bool isEndGame;
+        [SerializeField] private EndGameConfig endGameConfig;
+        
         [Header("Visual")]
         [SerializeField] private Renderer portalRenderer;
         [SerializeField] private Color normalPortalColor = new Color(0f, 0.8f, 1f, 1f); // Cyan
         [SerializeField] private Color checkpointPortalColor = new Color(1f, 0.8f, 0f, 1f); // Gold
+        [SerializeField] private Color endGamePortalColor = new Color(1f, 0.4f, 1f, 1f); // Magenta/Pink
         [SerializeField] private ParticleSystem portalVFX;
         
         [Header("Transition Settings")]
@@ -58,6 +66,16 @@ namespace BreakingHue.Gameplay
         public bool IsCheckpoint => isCheckpoint;
 
         /// <summary>
+        /// Gets whether this portal triggers the end game.
+        /// </summary>
+        public bool IsEndGame => isEndGame;
+        
+        /// <summary>
+        /// Gets the end game configuration for this portal.
+        /// </summary>
+        public EndGameConfig EndGameConfig => endGameConfig;
+
+        /// <summary>
         /// Gets the portal's link asset.
         /// </summary>
         public EntranceExitLink Link => link;
@@ -83,9 +101,19 @@ namespace BreakingHue.Gameplay
         /// </summary>
         public void Initialize(string id, EntranceExitLink linkAsset, bool checkpoint)
         {
+            Initialize(id, linkAsset, checkpoint, false, null);
+        }
+        
+        /// <summary>
+        /// Initialize the portal with full configuration including end game.
+        /// </summary>
+        public void Initialize(string id, EntranceExitLink linkAsset, bool checkpoint, bool endGame, EndGameConfig endConfig)
+        {
             portalId = id;
             link = linkAsset;
             isCheckpoint = checkpoint;
+            isEndGame = endGame;
+            endGameConfig = endConfig;
             UpdateVisualColor();
             
             // Assume player might be inside until we verify otherwise
@@ -128,7 +156,21 @@ namespace BreakingHue.Gameplay
         {
             if (portalRenderer != null)
             {
-                Color color = isCheckpoint ? checkpointPortalColor : normalPortalColor;
+                // Determine color based on portal type (priority: endGame > checkpoint > normal)
+                Color color;
+                if (isEndGame)
+                {
+                    color = endGamePortalColor;
+                }
+                else if (isCheckpoint)
+                {
+                    color = checkpointPortalColor;
+                }
+                else
+                {
+                    color = normalPortalColor;
+                }
+                
 #if UNITY_EDITOR
                 if (!Application.isPlaying)
                 {
@@ -232,6 +274,15 @@ namespace BreakingHue.Gameplay
 
         private void ExecuteTransition()
         {
+            // Check if this is an end game portal
+            if (isEndGame && endGameConfig != null)
+            {
+                Debug.Log($"[Portal] End game portal triggered: {portalId}");
+                EndGameManager.TriggerEndGame(endGameConfig);
+                _isTransitioning = false;
+                return;
+            }
+            
             if (_levelManager == null)
             {
                 _levelManager = FindObjectOfType<LevelManager>();

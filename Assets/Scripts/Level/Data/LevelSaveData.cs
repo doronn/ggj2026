@@ -286,6 +286,11 @@ namespace BreakingHue.Level.Data
         public Vector3 playerPosition;
         public InventorySnapshot playerInventory;
         public List<LevelSaveData> levelStates = new List<LevelSaveData>();
+        
+        /// <summary>
+        /// IDs of tutorials that have been completed.
+        /// </summary>
+        public List<string> completedTutorials = new List<string>();
 
         public CheckpointData Clone()
         {
@@ -298,7 +303,8 @@ namespace BreakingHue.Level.Data
                 {
                     Slots = (ColorType[])playerInventory.Slots?.Clone(),
                     ActiveSlots = (bool[])playerInventory.ActiveSlots?.Clone()
-                } : null
+                } : null,
+                completedTutorials = new List<string>(completedTutorials)
             };
             
             foreach (var level in levelStates)
