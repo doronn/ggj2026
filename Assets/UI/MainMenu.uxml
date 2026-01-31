@@ -1,8 +1,8 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
-    <ui:VisualElement name="Root" style="flex-grow: 1; justify-content: center; align-items: center; background-color: rgb(20, 20, 35);">
+    <ui:VisualElement name="Root" style="flex-grow: 1; justify-content: center; align-items: center; background-color: rgb(20, 20, 35); padding-bottom: 30px;">
         <ui:Label text="BREAKING HUE" name="Title" style="font-size: 64px; color: rgb(255, 255, 255); margin-bottom: 10px; -unity-font-style: bold;" />
-        <ui:Label text="RYB Color Puzzle" name="Subtitle" style="font-size: 24px; color: rgb(255, 200, 100); margin-bottom: 40px;" />
-        <ui:Label text="Toggle masks to combine colors and pass through barriers" name="Description" style="font-size: 18px; color: rgb(180, 180, 180); margin-bottom: 60px;" />
+        <ui:Label text="RYB Color Puzzle" name="Subtitle" style="font-size: 24px; color: rgb(255, 200, 100); margin-bottom: 20px;" />
+        <ui:Label text="Toggle masks to combine colors and pass through barriers" name="Description" style="font-size: 18px; color: rgb(180, 180, 180); margin-bottom: 30px;" />
         
         <!-- Buttons Container -->
         <ui:VisualElement name="ButtonsContainer" style="align-items: center;">
@@ -12,9 +12,16 @@
         </ui:VisualElement>
         
         <!-- Controls Info -->
-        <ui:VisualElement style="margin-top: 50px; align-items: center;">
-            <ui:Label text="Controls:" style="font-size: 16px; color: white; margin-bottom: 10px;" />
+        <ui:VisualElement style="margin-top: 40px; align-items: center;">
+            <ui:Label text="Controls:" style="font-size: 16px; color: white; margin-bottom: 8px;" />
             <ui:Label name="ControlsLabel" text="WASD - Move  |  1/2/3 - Toggle Masks  |  Q - Drop Mask" style="font-size: 14px; color: rgb(150, 150, 150);" />
+        </ui:VisualElement>
+        
+        <!-- Credits -->
+        <ui:VisualElement style="margin-top: 20px; align-items: center;">
+            <ui:Label text="Credits" style="font-size: 14px; color: rgb(128, 128, 128); margin-bottom: 6px;" />
+            <ui:Label text="Game by Doron Nacash" style="font-size: 12px; color: rgb(115, 115, 115); margin-bottom: 3px;" />
+            <ui:Label text="Music by Parker Phinney (gameguy43)" style="font-size: 12px; color: rgb(115, 115, 115);" />
         </ui:VisualElement>
         
         <!-- Confirmation Dialog (hidden by default) -->

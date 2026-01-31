@@ -200,11 +200,35 @@ namespace BreakingHue.UI
             controlsContainer.Add(controlsTitle);
             controlsContainer.Add(_controlsLabel);
             
+            // Credits section
+            var creditsContainer = new VisualElement();
+            creditsContainer.style.marginTop = 40;
+            creditsContainer.style.alignItems = Align.Center;
+            
+            var creditsTitle = new Label("Credits");
+            creditsTitle.style.fontSize = 14;
+            creditsTitle.style.color = new Color(0.5f, 0.5f, 0.5f);
+            creditsTitle.style.marginBottom = 8;
+            
+            var developerCredit = new Label("Game by Doron Nacash");
+            developerCredit.style.fontSize = 12;
+            developerCredit.style.color = new Color(0.45f, 0.45f, 0.45f);
+            developerCredit.style.marginBottom = 4;
+            
+            var musicCredit = new Label("Music by Parker Phinney (gameguy43)");
+            musicCredit.style.fontSize = 12;
+            musicCredit.style.color = new Color(0.45f, 0.45f, 0.45f);
+            
+            creditsContainer.Add(creditsTitle);
+            creditsContainer.Add(developerCredit);
+            creditsContainer.Add(musicCredit);
+            
             container.Add(title);
             container.Add(subtitle);
             container.Add(description);
             container.Add(buttonsContainer);
             container.Add(controlsContainer);
+            container.Add(creditsContainer);
             
             // Confirmation dialog
             _confirmationDialog = CreateConfirmationDialog();
