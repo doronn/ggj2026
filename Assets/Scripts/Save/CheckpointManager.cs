@@ -221,18 +221,9 @@ namespace BreakingHue.Save
         /// </summary>
         public void RestoreCheckpoint()
         {
-            // #region agent log
-            System.IO.File.AppendAllText("/Users/doronnacash/RiderProjects/adventure-game/ggj2026/.cursor/debug.log", 
-                $"{{\"hypothesisId\":\"H6\",\"location\":\"CheckpointManager.cs:RestoreCheckpoint\",\"message\":\"RestoreCheckpoint called\",\"data\":{{\"hasCheckpoint\":{(_lastCheckpoint != null).ToString().ToLower()}}},\"timestamp\":{System.DateTimeOffset.Now.ToUnixTimeMilliseconds()}}}\n");
-            // #endregion
-            
             if (_lastCheckpoint == null)
             {
                 Debug.LogWarning("[CheckpointManager] No checkpoint to restore - triggering game over!");
-                // #region agent log
-                System.IO.File.AppendAllText("/Users/doronnacash/RiderProjects/adventure-game/ggj2026/.cursor/debug.log", 
-                    $"{{\"hypothesisId\":\"H6\",\"location\":\"CheckpointManager.cs:RestoreCheckpoint\",\"message\":\"NO CHECKPOINT - triggering game over\",\"timestamp\":{System.DateTimeOffset.Now.ToUnixTimeMilliseconds()}}}\n");
-                // #endregion
                 
                 // Reset to initial game state (reload the starting level)
                 TriggerGameOver();
@@ -316,11 +307,6 @@ namespace BreakingHue.Save
         private void TriggerGameOver()
         {
             Debug.Log("[CheckpointManager] Game Over! Resetting to initial state...");
-            
-            // #region agent log
-            System.IO.File.AppendAllText("/Users/doronnacash/RiderProjects/adventure-game/ggj2026/.cursor/debug.log", 
-                $"{{\"hypothesisId\":\"H6-FIX\",\"location\":\"CheckpointManager.cs:TriggerGameOver\",\"message\":\"Game over triggered, resetting game\",\"timestamp\":{System.DateTimeOffset.Now.ToUnixTimeMilliseconds()}}}\n");
-            // #endregion
             
             // Clear any saved checkpoint file
             if (File.Exists(_savePath))

@@ -795,6 +795,9 @@ namespace BreakingHue.Editor
                 // Setup SelfDestructController
                 SetupSelfDestructController(managersObj);
                 
+                // Setup ControlsBar (shows control hints and self-destruct progress)
+                SetupControlsBar(uiContainer, panelSettings);
+                
                 // Setup EndGameManager (singleton that persists)
                 SetupEndGameManager(managersObj);
 
@@ -812,6 +815,7 @@ namespace BreakingHue.Editor
                     "• PauseMenuController with UIDocument\n" +
                     "• InputManager\n" +
                     "• SelfDestructController (R key / B button reset)\n" +
+                    "• ControlsBarController (control hints + reset progress bar)\n" +
                     "• EndGameManager (singleton)",
                     "OK");
             }
@@ -933,6 +937,30 @@ namespace BreakingHue.Editor
             selfDestructObj.transform.SetParent(managersObj.transform);
             selfDestructObj.AddComponent<BreakingHue.Gameplay.SelfDestructController>();
             Log("Added SelfDestructController (R key / B button to reset checkpoint)");
+        }
+
+        private void SetupControlsBar(GameObject uiContainer, PanelSettings panelSettings)
+        {
+            // Check if ControlsBarController already exists
+            var existingController = Object.FindObjectOfType<ControlsBarController>();
+            if (existingController != null)
+            {
+                Log("ControlsBarController already exists, skipping");
+                return;
+            }
+
+            // Create ControlsBar GameObject
+            var controlsBarObj = new GameObject("ControlsBar");
+            controlsBarObj.transform.SetParent(uiContainer.transform);
+            
+            var controlsBarDoc = controlsBarObj.AddComponent<UIDocument>();
+            if (panelSettings != null)
+            {
+                controlsBarDoc.panelSettings = panelSettings;
+            }
+            
+            controlsBarObj.AddComponent<ControlsBarController>();
+            Log("Added ControlsBarController (shows control hints and self-destruct progress)");
         }
 
         private void SetupEndGameManager(GameObject managersObj)
