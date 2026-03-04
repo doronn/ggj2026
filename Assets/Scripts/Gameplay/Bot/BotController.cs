@@ -1,6 +1,9 @@
 using System;
+using BreakingHue.Camera;
 using UnityEngine;
 using BreakingHue.Core;
+using BreakingHue.Level;
+using Zenject;
 
 namespace BreakingHue.Gameplay.Bot
 {
@@ -44,6 +47,7 @@ namespace BreakingHue.Gameplay.Bot
         private bool _isDead;
         
         private GameObject _blockingPlayer;
+        private LevelManager _levelManager;
 
         /// <summary>
         /// Event fired when bot is destroyed/exploded.
@@ -55,6 +59,12 @@ namespace BreakingHue.Gameplay.Bot
         /// </summary>
         public string BotId { get; private set; }
 
+        [Inject]
+        public void Construct(LevelManager levelManager)
+        {
+            _levelManager = levelManager;
+        }
+        
         private void Awake()
         {
             _inventory = GetComponent<BotInventory>();
@@ -319,31 +329,12 @@ namespace BreakingHue.Gameplay.Bot
         /// </summary>
         private void SpawnDroppedMaskDirectly(Vector3 position, ColorType color)
         {
-            // Create a simple sphere as the visual representation
-            var maskObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            maskObj.name = $"DroppedMask_{color}";
-            maskObj.transform.position = position + Vector3.up * 0.5f; // Raise slightly off ground
-            maskObj.transform.localScale = Vector3.one * 0.5f;
-            
-            // Set the color
-            var renderer = maskObj.GetComponent<Renderer>();
-            if (renderer != null)
+            DroppedMask dropped = null;
+            var droppedMaskPrefab = _levelManager?.EffectivePrefabs?.droppedMaskPrefab;
+            if (droppedMaskPrefab != null)
             {
-                renderer.material.color = color.ToColor();
+                dropped = DroppedMask.Spawn(droppedMaskPrefab, position, color);
             }
-            
-            // Configure the collider as a trigger
-            var collider = maskObj.GetComponent<Collider>();
-            if (collider != null)
-            {
-                collider.isTrigger = true;
-            }
-            
-            // Add the DroppedMask component
-            var droppedMask = maskObj.AddComponent<DroppedMask>();
-            droppedMask.Initialize(position + Vector3.up * 0.5f, color);
-            
-            Debug.Log($"[BotController] Spawned dropped {color.GetDisplayName()} mask at {position}");
         }
 
         /// <summary>

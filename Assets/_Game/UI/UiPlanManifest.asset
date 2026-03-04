@@ -1,0 +1,79 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 700833803e94e4a0982f4ca4c4b963c5, type: 3}
+  m_Name: UiPlanManifest
+  m_EditorClassIdentifier: Ggj2026.Game.Authoring::Ggj2026.Game.Authoring.UI.UiPlanManifest
+  manifestVersion: 1.0
+  runtimePanels:
+  - panel:
+      panelId: BootstrapStatus
+      displayName: Bootstrap Status
+      uxmlPath: Assets/_Game/UI/Runtime/UXML/BootstrapStatus.uxml
+      ussPath: Assets/_Game/UI/Runtime/USS/BootstrapStatus.uss
+      panelSettingsPath: Assets/_Game/UI/Runtime/PanelSettings/DefaultRuntimePanelSettings.asset
+    visualTreeAsset: {fileID: 9197481963319205126, guid: 3524ad90cd1f741a9b1934ba1c7cc41b, type: 3}
+    styleSheet: {fileID: 7433441132597879392, guid: 9e88ab32c24434fc6b8c47690742a370, type: 3}
+    panelSettings: {fileID: 11400000, guid: 18bbd70b0166f49868fcdc6257eb3626, type: 2}
+  - panel:
+      panelId: PersistentMainMenu
+      displayName: Persistent Main Menu
+      uxmlPath: Assets/_Game/UI/Runtime/UXML/PersistentMainMenu.uxml
+      ussPath: Assets/_Game/UI/Runtime/USS/PersistentMainMenu.uss
+      panelSettingsPath: Assets/_Game/UI/Runtime/PanelSettings/DefaultRuntimePanelSettings.asset
+    visualTreeAsset: {fileID: 9197481963319205126, guid: 6bcefe472569d4f23ad4e91f483f6376, type: 3}
+    styleSheet: {fileID: 7433441132597879392, guid: 2b102b535cfa54194ae9f81ec264e7d4, type: 3}
+    panelSettings: {fileID: 11400000, guid: 18bbd70b0166f49868fcdc6257eb3626, type: 2}
+  - panel:
+      panelId: ClientWorldHud
+      displayName: Client World HUD
+      uxmlPath: Assets/_Game/UI/Runtime/UXML/ClientWorldHud.uxml
+      ussPath: Assets/_Game/UI/Runtime/USS/ClientWorldHud.uss
+      panelSettingsPath: Assets/_Game/UI/Runtime/PanelSettings/DefaultRuntimePanelSettings.asset
+    visualTreeAsset: {fileID: 9197481963319205126, guid: 125ee100196ee4c6b9c4bdec161b8bea, type: 3}
+    styleSheet: {fileID: 7433441132597879392, guid: e119d54a132e6469b9f419ec802f6a84, type: 3}
+    panelSettings: {fileID: 11400000, guid: 18bbd70b0166f49868fcdc6257eb3626, type: 2}
+  themes: []
+  sceneBindings:
+  - scenePath: Assets/Scenes/Bootstrap.unity
+    documents:
+    - bindingId: bootstrap-status
+      scenePath: Assets/Scenes/Bootstrap.unity
+      hostObjectName: BootstrapStatusUI
+      controllerTypeName: Ggj2026.Game.Shell.Bootstrap.BootstrapStatusPanelController
+      visualTreeAsset: {fileID: 9197481963319205126, guid: 3524ad90cd1f741a9b1934ba1c7cc41b, type: 3}
+      styleSheet: {fileID: 7433441132597879392, guid: 9e88ab32c24434fc6b8c47690742a370, type: 3}
+      panelSettings: {fileID: 11400000, guid: 18bbd70b0166f49868fcdc6257eb3626, type: 2}
+  - scenePath: Assets/Scenes/PersistentMainMenu.unity
+    documents:
+    - bindingId: persistent-main-menu
+      scenePath: Assets/Scenes/PersistentMainMenu.unity
+      hostObjectName: PersistentMainMenuRoot
+      controllerTypeName: Ggj2026.Game.Shell.Bootstrap.PersistentMainMenuController
+      visualTreeAsset: {fileID: 9197481963319205126, guid: 6bcefe472569d4f23ad4e91f483f6376, type: 3}
+      styleSheet: {fileID: 7433441132597879392, guid: 2b102b535cfa54194ae9f81ec264e7d4, type: 3}
+      panelSettings: {fileID: 11400000, guid: 18bbd70b0166f49868fcdc6257eb3626, type: 2}
+  - scenePath: Assets/Scenes/ClientWorld.unity
+    documents:
+    - bindingId: client-world-hud
+      scenePath: Assets/Scenes/ClientWorld.unity
+      hostObjectName: ClientWorldHud
+      controllerTypeName: Ggj2026.Game.Shell.World.ClientWorldHudController
+      visualTreeAsset: {fileID: 9197481963319205126, guid: 125ee100196ee4c6b9c4bdec161b8bea, type: 3}
+      styleSheet: {fileID: 7433441132597879392, guid: e119d54a132e6469b9f419ec802f6a84, type: 3}
+      panelSettings: {fileID: 11400000, guid: 18bbd70b0166f49868fcdc6257eb3626, type: 2}
+  editorWindows:
+  - windowId: ui-installer
+    title: UI Plan Integration
+    controllerTypeName: Ggj2026.Game.Authoring.Editor.UiPlanIntegrationWindow
+  - windowId: manual-test-runner
+    title: Manual Test Runner
+    controllerTypeName: Ggj2026.Game.Authoring.Editor.ManualTestRunnerWindow

@@ -1,0 +1,5 @@
+interface:
+  display_name: "GGJ2026 UI Toolkit"
+  short_description: "Manage UI Toolkit assets and wiring"
+  default_prompt: "Use $ggj2026-ui-toolkit to edit maintained UI Toolkit assets, bindings, and installer wiring for ggj2026."
+

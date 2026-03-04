@@ -1,0 +1,5 @@
+interface:
+  display_name: "GGJ2026 Manual QA"
+  short_description: "Run and author guided manual QA"
+  default_prompt: "Use $ggj2026-manual-qa to create, run, or extend guided manual test scenarios for ggj2026."
+

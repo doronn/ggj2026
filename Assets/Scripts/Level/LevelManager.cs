@@ -7,6 +7,7 @@ using BreakingHue.Gameplay;
 using BreakingHue.Gameplay.Bot;
 using BreakingHue.Level.Data;
 using BreakingHue.Save;
+using Object = UnityEngine.Object;
 
 namespace BreakingHue.Level
 {
@@ -111,7 +112,7 @@ namespace BreakingHue.Level
             DroppedMask.OnAnyMaskCollected += OnMaskCollected;
             
             // Before loading level, check if CheckpointManager has states to apply
-            var checkpointManager = FindObjectOfType<CheckpointManager>();
+            var checkpointManager = Object.FindFirstObjectByType<CheckpointManager>();
             if (checkpointManager != null && checkpointManager.HasCheckpoint)
             {
                 var checkpointStates = checkpointManager.GetCheckpointLevelStates();
@@ -477,7 +478,7 @@ namespace BreakingHue.Level
                 }
                 pos.y = 0.5f;
 
-                var bot = Instantiate(prefabs.botPrefab, pos, Quaternion.identity, _currentLevelInstance.transform);
+                var bot = _container.InstantiatePrefab(prefabs.botPrefab, pos, Quaternion.identity, _currentLevelInstance.transform);
                 var botController = bot.GetComponent<BotController>();
                 
                 if (botController != null)
@@ -611,7 +612,7 @@ namespace BreakingHue.Level
         {
             if (_playerController == null)
             {
-                _playerController = FindObjectOfType<PlayerController>();
+                _playerController = Object.FindFirstObjectByType<PlayerController>();
             }
 
             if (_playerController != null)

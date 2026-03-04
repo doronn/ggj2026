@@ -293,7 +293,6 @@ namespace BreakingHue.UI
             if (maskTexture != null)
             {
                 colorBlock.style.backgroundImage = new StyleBackground(maskTexture);
-                colorBlock.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
                 colorBlock.style.unityBackgroundImageTintColor = new StyleColor(new Color(0.3f, 0.3f, 0.35f, 0.4f)); // Empty slot tint
             }
             else

@@ -1,0 +1,5 @@
+interface:
+  display_name: "GGJ2026 Log Triage"
+  short_description: "Triage Unity, telemetry, and test logs"
+  default_prompt: "Use $ggj2026-log-triage to diagnose compile, runtime, telemetry, or test issues in ggj2026."
+

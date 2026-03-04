@@ -32,9 +32,6 @@ namespace BreakingHue.Editor
         private Vector2 _scrollPosition;
         private List<ValidationResult> _validationResults = new List<ValidationResult>();
         private bool _showValidation = true;
-        private bool _showPrefabs = true;
-        private bool _showLevels = true;
-
         private struct ValidationResult
         {
             public string category;
@@ -399,7 +396,7 @@ namespace BreakingHue.Editor
             bool modified = false;
 
             // Find and fix SceneContext
-            var sceneContext = FindObjectOfType<SceneContext>();
+            var sceneContext = Object.FindFirstObjectByType<SceneContext>();
             if (sceneContext != null)
             {
                 modified |= FixSceneContext(sceneContext);
@@ -410,7 +407,7 @@ namespace BreakingHue.Editor
             }
 
             // Find and fix LevelManager
-            var levelManager = FindObjectOfType<LevelManager>();
+            var levelManager = Object.FindFirstObjectByType<LevelManager>();
             if (levelManager != null)
             {
                 modified |= FixLevelManager(levelManager);
@@ -421,7 +418,7 @@ namespace BreakingHue.Editor
             }
 
             // Find and fix CheckpointManager
-            var checkpointManager = FindObjectOfType<CheckpointManager>();
+            var checkpointManager = Object.FindFirstObjectByType<CheckpointManager>();
             if (checkpointManager != null)
             {
                 modified |= FixCheckpointManager(checkpointManager);

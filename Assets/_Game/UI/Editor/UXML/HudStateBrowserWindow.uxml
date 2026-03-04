@@ -1,0 +1,23 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="HudStateBrowserRoot" class="editor-root">
+        <ui:Label text="HUD State Browser" class="editor-title" />
+        <ui:Label text="Shows the live human HUD read model and the shared action list that MCP gameplay commands use. Use it to debug parity, wording, and blocker discoverability." class="editor-body editor-prewrap" />
+        <ui:VisualElement name="ActionButtonRow" class="editor-button-row" />
+        <ui:Label text="Runtime" class="editor-section-title" />
+        <ui:Label name="RuntimeStatusLabel" class="editor-body editor-prewrap" />
+        <ui:Label text="Selection" class="editor-section-title" />
+        <ui:Label name="SelectionSummaryLabel" class="editor-body editor-prewrap" />
+        <ui:Label text="Actions" class="editor-section-title" />
+        <ui:Label name="ActionSummaryLabel" class="editor-body editor-prewrap" />
+        <ui:Label text="Parity" class="editor-section-title" />
+        <ui:Label name="WarningSummaryLabel" class="editor-body editor-prewrap" />
+        <ui:Label text="HUD JSON" class="editor-section-title" />
+        <ui:ScrollView class="editor-scroll">
+            <ui:Label name="HudJsonLabel" class="editor-mono editor-prewrap" />
+        </ui:ScrollView>
+        <ui:Label text="Action JSON" class="editor-section-title" />
+        <ui:ScrollView class="editor-scroll">
+            <ui:Label name="ActionsJsonLabel" class="editor-mono editor-prewrap" />
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

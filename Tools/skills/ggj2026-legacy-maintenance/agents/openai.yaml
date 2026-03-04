@@ -1,0 +1,4 @@
+interface:
+  display_name: "GGJ2026 Legacy Maintenance"
+  short_description: "Fix legacy compile and compatibility issues"
+  default_prompt: "Use $ggj2026-legacy-maintenance to fix legacy Assets/Scripts or Assets/Editor issues that still affect ggj2026."

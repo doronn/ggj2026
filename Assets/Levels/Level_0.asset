@@ -108,7 +108,7 @@ MonoBehaviour:
     - portalId: e986f15d-79a3-41d9-b01e-edd5da82e84f
       position: {x: 16, y: 21}
       link: {fileID: 11400000, guid: bb8bd84f035f84e3294eae12863dea30, type: 2}
-      isCheckpoint: 0
+      isCheckpoint: 1
       isEntrance: 0
       isEndGame: 0
       endGameConfig: {fileID: 0}

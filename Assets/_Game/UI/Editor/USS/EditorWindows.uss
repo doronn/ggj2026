@@ -1,0 +1,50 @@
+.editor-root {
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-top: 14px;
+    padding-bottom: 14px;
+    row-gap: 8px;
+}
+
+.editor-title {
+    font-size: 16px;
+    -unity-font-style: bold;
+}
+
+.editor-title--small {
+    font-size: 13px;
+}
+
+.editor-body {
+    color: rgb(212, 212, 212);
+}
+
+.editor-prewrap {
+    white-space: normal;
+}
+
+.editor-section-title {
+    margin-top: 8px;
+    -unity-font-style: bold;
+}
+
+.editor-button-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    column-gap: 6px;
+    row-gap: 6px;
+}
+
+.editor-button-column {
+    flex-direction: column;
+    row-gap: 6px;
+}
+
+.editor-scroll {
+    flex-grow: 1;
+    min-height: 120px;
+}
+
+.editor-mono {
+    color: rgb(166, 199, 226);
+}

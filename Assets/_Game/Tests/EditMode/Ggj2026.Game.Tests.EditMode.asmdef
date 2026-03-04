@@ -1,0 +1,25 @@
+{
+  "name": "Ggj2026.Game.Tests.EditMode",
+  "rootNamespace": "Ggj2026.Game.Tests.EditMode",
+  "references": [
+    "Ggj2026.Game.Shared",
+    "Ggj2026.Game.Shell",
+    "Ggj2026.Game.Authoring",
+    "Ggj2026.Game.Authoring.Editor",
+    "UniTask"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

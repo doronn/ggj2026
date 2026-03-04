@@ -830,7 +830,7 @@ namespace BreakingHue.Editor
         private void SetupTutorialManager(GameObject managersObj, PanelSettings panelSettings)
         {
             // Check if TutorialManager already exists
-            var existingTutorialManager = Object.FindObjectOfType<TutorialManager>();
+            var existingTutorialManager = Object.FindFirstObjectByType<TutorialManager>();
             if (existingTutorialManager != null)
             {
                 Log("TutorialManager already exists, skipping");
@@ -860,7 +860,7 @@ namespace BreakingHue.Editor
         private void SetupContextualPromptController(GameObject uiContainer, PanelSettings panelSettings)
         {
             // Check if ContextualPromptController already exists
-            var existingController = Object.FindObjectOfType<ContextualPromptController>();
+            var existingController = Object.FindFirstObjectByType<ContextualPromptController>();
             if (existingController != null)
             {
                 Log("ContextualPromptController already exists, skipping");
@@ -884,7 +884,7 @@ namespace BreakingHue.Editor
         private void SetupPauseMenu(GameObject uiContainer, PanelSettings panelSettings)
         {
             // Check if PauseMenuController already exists
-            var existingPauseMenu = Object.FindObjectOfType<PauseMenuController>();
+            var existingPauseMenu = Object.FindFirstObjectByType<PauseMenuController>();
             if (existingPauseMenu != null)
             {
                 Log("PauseMenuController already exists, skipping");
@@ -908,7 +908,7 @@ namespace BreakingHue.Editor
         private void SetupInputManager(GameObject managersObj)
         {
             // Check if InputManager already exists
-            var existingInputManager = Object.FindObjectOfType<BreakingHue.Input.InputManager>();
+            var existingInputManager = Object.FindFirstObjectByType<BreakingHue.Input.InputManager>();
             if (existingInputManager != null)
             {
                 Log("InputManager already exists, skipping");
@@ -925,7 +925,7 @@ namespace BreakingHue.Editor
         private void SetupSelfDestructController(GameObject managersObj)
         {
             // Check if SelfDestructController already exists
-            var existingController = Object.FindObjectOfType<BreakingHue.Gameplay.SelfDestructController>();
+            var existingController = Object.FindFirstObjectByType<BreakingHue.Gameplay.SelfDestructController>();
             if (existingController != null)
             {
                 Log("SelfDestructController already exists, skipping");
@@ -942,7 +942,7 @@ namespace BreakingHue.Editor
         private void SetupControlsBar(GameObject uiContainer, PanelSettings panelSettings)
         {
             // Check if ControlsBarController already exists
-            var existingController = Object.FindObjectOfType<ControlsBarController>();
+            var existingController = Object.FindFirstObjectByType<ControlsBarController>();
             if (existingController != null)
             {
                 Log("ControlsBarController already exists, skipping");
@@ -966,7 +966,7 @@ namespace BreakingHue.Editor
         private void SetupEndGameManager(GameObject managersObj)
         {
             // Check if EndGameManager already exists
-            var existingEndGameManager = Object.FindObjectOfType<EndGameManager>();
+            var existingEndGameManager = Object.FindFirstObjectByType<EndGameManager>();
             if (existingEndGameManager != null)
             {
                 Log("EndGameManager already exists, skipping");
@@ -1300,7 +1300,7 @@ namespace BreakingHue.Editor
             var scene = EditorSceneManager.OpenScene(worldScenePath, OpenSceneMode.Single);
 
             // Find LevelManager and assign config
-            var levelManager = Object.FindObjectOfType<BreakingHue.Level.LevelManager>();
+            var levelManager = Object.FindFirstObjectByType<BreakingHue.Level.LevelManager>();
             if (levelManager != null)
             {
                 var so = new SerializedObject(levelManager);
@@ -1314,7 +1314,7 @@ namespace BreakingHue.Editor
             }
 
             // Find SceneContext and ensure GameInstaller is assigned
-            var sceneContext = Object.FindObjectOfType<SceneContext>();
+            var sceneContext = Object.FindFirstObjectByType<SceneContext>();
             if (sceneContext != null)
             {
                 var gameInstaller = sceneContext.GetComponent<BreakingHue.Installers.GameInstaller>();

@@ -63,8 +63,18 @@ namespace BreakingHue.Tutorial
             {
                 Debug.LogWarning("[TutorialPromptUI] UIDocument has no PanelSettings, trying to find one...");
                 // Try to find PanelSettings from another UIDocument
-                var otherDoc = FindObjectOfType<UIDocument>();
-                if (otherDoc != null && otherDoc != _uiDocument && otherDoc.panelSettings != null)
+                var allDocuments = Object.FindObjectsByType<UIDocument>(FindObjectsSortMode.None);
+                UIDocument otherDoc = null;
+                foreach (var document in allDocuments)
+                {
+                    if (document != _uiDocument && document.panelSettings != null)
+                    {
+                        otherDoc = document;
+                        break;
+                    }
+                }
+
+                if (otherDoc != null)
                 {
                     _uiDocument.panelSettings = otherDoc.panelSettings;
                     Debug.Log("[TutorialPromptUI] Borrowed PanelSettings from another UIDocument");
@@ -287,7 +297,7 @@ namespace BreakingHue.Tutorial
             _promptContainer.style.display = DisplayStyle.Flex;
             _promptContainer.schedule.Execute(() => {
                 _promptContainer.style.opacity = 1;
-            }).ExecuteLater(50);
+            }).ExecuteLater(Mathf.Max(1, Mathf.RoundToInt(fadeInDuration * 150f)));
         }
         
         private void UpdateKeyButtonDisplay(string actionName)

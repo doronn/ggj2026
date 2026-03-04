@@ -6,6 +6,7 @@ using BreakingHue.Core;
 using BreakingHue.Input;
 using BreakingHue.Camera;
 using BreakingHue.Level;
+using Object = UnityEngine.Object;
 
 namespace BreakingHue.Gameplay
 {
@@ -98,7 +99,7 @@ namespace BreakingHue.Gameplay
             if (_inventory == null)
             {
                 Debug.Log("[PlayerController] Inventory not injected, trying to find via SceneContext...");
-                var sceneContext = FindObjectOfType<Zenject.SceneContext>();
+                var sceneContext = Object.FindFirstObjectByType<Zenject.SceneContext>();
                 if (sceneContext != null && sceneContext.Container != null)
                 {
                     _inventory = sceneContext.Container.TryResolve<MaskInventory>();
@@ -112,7 +113,7 @@ namespace BreakingHue.Gameplay
             // Fallback for GameCamera
             if (_gameCamera == null)
             {
-                _gameCamera = FindObjectOfType<GameCamera>();
+                _gameCamera = Object.FindFirstObjectByType<GameCamera>();
                 if (_gameCamera == null && useCameraRelativeMovement)
                 {
                     Debug.LogWarning("[PlayerController] GameCamera not found! Movement will use world-relative direction.");
@@ -122,7 +123,7 @@ namespace BreakingHue.Gameplay
             // Fallback for LevelManager
             if (_levelManager == null)
             {
-                _levelManager = FindObjectOfType<LevelManager>();
+                _levelManager = Object.FindFirstObjectByType<LevelManager>();
                 if (_levelManager != null)
                 {
                     Debug.Log("[PlayerController] Found LevelManager via FindObjectOfType");

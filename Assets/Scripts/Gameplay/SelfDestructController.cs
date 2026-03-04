@@ -4,6 +4,7 @@ using UnityEngine.InputSystem;
 using Zenject;
 using BreakingHue.Save;
 using BreakingHue.Input;
+using Object = UnityEngine.Object;
 
 namespace BreakingHue.Gameplay
 {
@@ -244,7 +245,7 @@ namespace BreakingHue.Gameplay
             else
             {
                 // Fallback: try to find CheckpointManager
-                var checkpointManager = FindObjectOfType<CheckpointManager>();
+                var checkpointManager = Object.FindFirstObjectByType<CheckpointManager>();
                 if (checkpointManager != null)
                 {
                     checkpointManager.RestoreCheckpoint();

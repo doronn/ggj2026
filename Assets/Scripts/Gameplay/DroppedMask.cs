@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using BreakingHue.Core;
+using Object = UnityEngine.Object;
 
 namespace BreakingHue.Gameplay
 {
@@ -27,7 +28,6 @@ namespace BreakingHue.Gameplay
         private Renderer _renderer;
         private Vector3 _startPosition;
         private bool _canBePickedUpByPlayer = true;
-        private bool _playerInTrigger;
         private bool _isCollected;
         private bool _isRestoredFromSave;
 
@@ -152,8 +152,6 @@ namespace BreakingHue.Gameplay
             // Check for player
             if (other.CompareTag("Player"))
             {
-                _playerInTrigger = true;
-                
                 if (_canBePickedUpByPlayer)
                 {
                     TryPlayerPickup(other.gameObject);
@@ -165,7 +163,6 @@ namespace BreakingHue.Gameplay
         {
             if (other.CompareTag("Player"))
             {
-                _playerInTrigger = false;
                 // Re-enable pickup when player leaves
                 _canBePickedUpByPlayer = true;
             }
@@ -177,7 +174,7 @@ namespace BreakingHue.Gameplay
             if (inventory == null)
             {
                 // Try to get from Zenject context
-                inventory = FindObjectOfType<Zenject.SceneContext>()?.Container?.Resolve<MaskInventory>();
+                inventory = Object.FindFirstObjectByType<Zenject.SceneContext>()?.Container?.Resolve<MaskInventory>();
             }
             
             if (inventory == null) return;

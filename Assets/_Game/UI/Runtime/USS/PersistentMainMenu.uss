@@ -1,0 +1,35 @@
+.menu-shell {
+    flex-grow: 1;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(18, 22, 30, 0.96);
+}
+
+.menu-card {
+    width: 460px;
+    padding-left: 28px;
+    padding-right: 28px;
+    padding-top: 24px;
+    padding-bottom: 24px;
+    row-gap: 10px;
+    background-color: rgba(34, 42, 54, 0.98);
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
+.menu-title {
+    font-size: 26px;
+    -unity-font-style: bold;
+    color: rgb(245, 248, 250);
+}
+
+.menu-subtitle {
+    font-size: 14px;
+    color: rgb(189, 202, 211);
+}
+
+.menu-button {
+    height: 38px;
+}

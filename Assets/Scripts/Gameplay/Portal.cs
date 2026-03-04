@@ -4,6 +4,7 @@ using Zenject;
 using BreakingHue.Core;
 using BreakingHue.Level;
 using BreakingHue.Level.Data;
+using Object = UnityEngine.Object;
 
 namespace BreakingHue.Gameplay
 {
@@ -301,7 +302,7 @@ namespace BreakingHue.Gameplay
             
             if (_levelManager == null)
             {
-                _levelManager = FindObjectOfType<LevelManager>();
+                _levelManager = Object.FindFirstObjectByType<LevelManager>();
             }
 
             if (_levelManager != null && link != null)
@@ -387,7 +388,7 @@ namespace BreakingHue.Gameplay
                 Gizmos.color = Color.green;
                 
                 // Try to find the linked portal in the scene
-                var allPortals = FindObjectsOfType<Portal>();
+                var allPortals = Object.FindObjectsByType<Portal>(FindObjectsSortMode.None);
                 foreach (var portal in allPortals)
                 {
                     if (portal != this && link.ConnectsPortal(portal.portalId))

@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 78a51c1481be94c75a9c369ea6f45746, type: 3}
+  m_Name: OnboardingAndPresentationSanity
+  m_EditorClassIdentifier: Ggj2026.Game.Authoring::Ggj2026.Game.Authoring.ManualTests.ManualTestScenarioDefinition
+  scenarioId: onboarding-and-presentation-sanity
+  milestone: onboarding-foundation
+  category: Onboarding sanity
+  displayName: Onboarding And Presentation Sanity
+  summary: Confirms the first-session guide teaches the interface clearly, hides irrelevant options, can be skipped, and that movement/work animation remains readable.
+  steps:
+  - stepId: onboarding-starts-active
+    title: Guide starts automatically
+    instruction: Start a fresh ClientWorld session and confirm the onboarding guide appears without opening logs or docs.
+    requiredScene: ClientWorld
+    expectation:
+      expectedResult: The guide appears as an overlay card and only the relevant operation groups are visible for the current step.
+      sanityChecks: The highlighted region and guide copy make it clear what that interface area is for.
+      requiresTelemetryArtifact: 1
+      requiresScreenshot: 0
+  - stepId: onboarding-can-skip
+    title: Guide can be skipped
+    instruction: Use the onboarding Skip control and confirm the guide disappears for the current session.
+    requiredScene: ClientWorld
+    expectation:
+      expectedResult: The guide disappears and the full operations rail is visible again.
+      sanityChecks: The live HUD or MCP HUD state reports onboarding inactive after skip.
+      requiresTelemetryArtifact: 1
+      requiresScreenshot: 0
+  - stepId: onboarding-can-restart
+    title: Guide can restart
+    instruction: Restart the guide from the shared action surface and advance at least one step.
+    requiredScene: ClientWorld
+    expectation:
+      expectedResult: The guide returns to step one and progress updates when Next is used.
+      sanityChecks: Visible operation groups or progress text change between steps.
+      requiresTelemetryArtifact: 1
+      requiresScreenshot: 0
+  - stepId: movement-has-juice
+    title: Movement and work feel alive
+    instruction: Start realtime simulation and watch workers move and work for several seconds.
+    requiredScene: ClientWorld
+    expectation:
+      expectedResult: Units animate from hex to hex and active work shows visible motion or pulse.
+      sanityChecks: Motion remains readable and does not make unit position ambiguous.
+      requiresTelemetryArtifact: 0
+      requiresScreenshot: 0

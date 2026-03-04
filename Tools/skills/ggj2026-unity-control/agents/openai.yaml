@@ -1,0 +1,5 @@
+interface:
+  display_name: "GGJ2026 Unity Control"
+  short_description: "Operate Unity editor and MCP workflows"
+  default_prompt: "Use $ggj2026-unity-control to compile, test, or control the open Unity editor for ggj2026."
+

@@ -305,14 +305,14 @@ MonoBehaviour:
     - portalId: 08599635-cb78-4ae5-b805-1b17708629ca
       position: {x: 17, y: 14}
       link: {fileID: 11400000, guid: bb8bd84f035f84e3294eae12863dea30, type: 2}
-      isCheckpoint: 0
+      isCheckpoint: 1
       isEntrance: 0
       isEndGame: 0
       endGameConfig: {fileID: 0}
     - portalId: dc96b965-6816-4f8f-9e82-678888f0ee80
       position: {x: 17, y: 22}
       link: {fileID: 11400000, guid: 0f644913b753e4780b371670817ae04e, type: 2}
-      isCheckpoint: 0
+      isCheckpoint: 1
       isEntrance: 0
       isEndGame: 0
       endGameConfig: {fileID: 0}

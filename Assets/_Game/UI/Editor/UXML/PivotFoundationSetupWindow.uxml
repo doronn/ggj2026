@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="PivotSetupRoot" class="editor-root">
+        <ui:Label text="Persistent World Foundation" class="editor-title" />
+        <ui:Label text="Creates the runtime config asset and scaffold scenes for the Bootstrap, ClientWorld, ServerWorld, and Tools flow without touching the legacy scenes." class="editor-body" />
+        <ui:VisualElement name="SetupButtonColumn" class="editor-button-column" />
+    </ui:VisualElement>
+</ui:UXML>

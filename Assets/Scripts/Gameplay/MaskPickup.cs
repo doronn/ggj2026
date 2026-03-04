@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using Zenject;
 using BreakingHue.Core;
+using Object = UnityEngine.Object;
 
 namespace BreakingHue.Gameplay
 {
@@ -71,7 +72,7 @@ namespace BreakingHue.Gameplay
             // try to resolve the inventory manually
             if (_inventory == null)
             {
-                var sceneContext = FindObjectOfType<Zenject.SceneContext>();
+                var sceneContext = Object.FindFirstObjectByType<Zenject.SceneContext>();
                 if (sceneContext != null && sceneContext.Container != null)
                 {
                     _inventory = sceneContext.Container.TryResolve<MaskInventory>();

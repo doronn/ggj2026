@@ -12,6 +12,7 @@ using BreakingHue.Camera;
 using BreakingHue.Gameplay;
 using BreakingHue.UI;
 using BreakingHue.Input;
+using Object = UnityEngine.Object;
 
 namespace BreakingHue.Editor
 {
@@ -181,7 +182,7 @@ namespace BreakingHue.Editor
             _inputActionsExist = File.Exists(InputActionsPath);
             
             // Check camera
-            var camera = FindObjectOfType<GameCamera>();
+            var camera = Object.FindFirstObjectByType<GameCamera>();
             _cameraConfigured = camera != null;
             
             // Check player prefab
@@ -189,10 +190,10 @@ namespace BreakingHue.Editor
             _playerPrefabConfigured = playerPrefab != null && playerPrefab.GetComponent<PlayerInput>() != null;
             
             // Check UI GameObjects
-            _uiGameObjectsExist = FindObjectOfType<ControlsBarController>() != null;
+            _uiGameObjectsExist = Object.FindFirstObjectByType<ControlsBarController>() != null;
             
             // Check InputManager
-            _inputManagerExists = FindObjectOfType<InputManager>() != null;
+            _inputManagerExists = Object.FindFirstObjectByType<InputManager>() != null;
             
             Repaint();
         }
@@ -459,7 +460,7 @@ namespace BreakingHue.Editor
             Transform uiParent = hudObj?.transform.parent ?? null;
 
             // Create ControlsBar
-            var controlsBar = FindObjectOfType<ControlsBarController>();
+            var controlsBar = Object.FindFirstObjectByType<ControlsBarController>();
             if (controlsBar == null)
             {
                 var controlsBarObj = new GameObject("ControlsBar");
@@ -480,7 +481,7 @@ namespace BreakingHue.Editor
             }
 
             // Create PauseMenu
-            var pauseMenu = FindObjectOfType<PauseMenuController>();
+            var pauseMenu = Object.FindFirstObjectByType<PauseMenuController>();
             if (pauseMenu == null)
             {
                 var pauseMenuObj = new GameObject("PauseMenu");
@@ -505,7 +506,7 @@ namespace BreakingHue.Editor
 
         private void CreateInputManager()
         {
-            var inputManager = FindObjectOfType<InputManager>();
+            var inputManager = Object.FindFirstObjectByType<InputManager>();
             if (inputManager == null)
             {
                 var inputManagerObj = new GameObject("InputManager");
@@ -528,7 +529,7 @@ namespace BreakingHue.Editor
             }
 
             // Also create InputIconProvider if not present
-            var iconProvider = FindObjectOfType<InputIconProvider>();
+            var iconProvider = Object.FindFirstObjectByType<InputIconProvider>();
             if (iconProvider == null)
             {
                 var iconProviderObj = new GameObject("InputIconProvider");

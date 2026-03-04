@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 78a51c1481be94c75a9c369ea6f45746, type: 3}
+  m_Name: PlacementAndShelterSanity
+  m_EditorClassIdentifier: Ggj2026.Game.Authoring::Ggj2026.Game.Authoring.ManualTests.ManualTestScenarioDefinition
+  scenarioId: placement-and-shelter-sanity
+  milestone: hex-colony-foundation
+  category: Placement sanity
+  displayName: Placement And Shelter Sanity
+  summary: Confirms module purpose matching, shelter requirements, and landmark placement
+    constraints.
+  steps:
+  - stepId: storage-floor-and-rack
+    title: Storage floor accepts storage module
+    instruction: Paint an outdoor Storage floor, build it, and place a Rack on it.
+    requiredScene: ClientWorld
+    expectation:
+      expectedResult: The Rack queues successfully on Storage floor.
+      sanityChecks: The same cell should reject Residential or Workshop-only modules.
+      requiresTelemetryArtifact: 1
+      requiresScreenshot: 0
+  - stepId: bed-requires-sheltered-residential
+    title: Bed requires sheltered Residential space
+    instruction: Try placing a Bed on an open Residential floor and then inside an
+      enclosed Residential room.
+    requiredScene: ClientWorld
+    expectation:
+      expectedResult: Open placement is rejected; enclosed residential placement
+        is accepted.
+      sanityChecks: Failure reason mentions shelter or residential purpose.
+      requiresTelemetryArtifact: 1
+      requiresScreenshot: 0
+  - stepId: gatehouse-requires-wall-connection
+    title: Gatehouse requires wall connections
+    instruction: Attempt to place a Gatehouse without walls, then build supporting
+      wall edges and place it again.
+    requiredScene: ClientWorld
+    expectation:
+      expectedResult: Unconnected placement is rejected and connected placement succeeds.
+      sanityChecks: The gate passage is created only after the landmark completes.
+      requiresTelemetryArtifact: 1
+      requiresScreenshot: 0

@@ -1,0 +1,21 @@
+{
+  "name": "Ggj2026.Game.Shell",
+  "rootNamespace": "Ggj2026.Game.Shell",
+  "references": [
+    "Ggj2026.Game.Shared",
+    "Ggj2026.Game.Simulation",
+    "Ggj2026.Game.Networking",
+    "UniTask",
+    "Zenject",
+    "Unity.InputSystem"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

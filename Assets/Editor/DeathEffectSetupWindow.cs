@@ -80,11 +80,11 @@ namespace BreakingHue.Editor
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             
             // Check for DeathEffectController
-            var deathController = FindObjectOfType<Effects.DeathEffectController>();
+            var deathController = Object.FindFirstObjectByType<Effects.DeathEffectController>();
             DrawStatusRow("DeathEffectController", deathController != null);
             
             // Check for WhiteOutEffect
-            var whiteOut = FindObjectOfType<UI.WhiteOutEffect>();
+            var whiteOut = Object.FindFirstObjectByType<UI.WhiteOutEffect>();
             DrawStatusRow("WhiteOutEffect", whiteOut != null);
             
             // Check for explosion prefab
@@ -266,7 +266,7 @@ namespace BreakingHue.Editor
         private void SetupDeathEffectController()
         {
             // Check if already exists
-            var existingController = FindObjectOfType<Effects.DeathEffectController>();
+            var existingController = Object.FindFirstObjectByType<Effects.DeathEffectController>();
             if (existingController != null)
             {
                 Log("DeathEffectController already exists, skipping");
@@ -293,7 +293,7 @@ namespace BreakingHue.Editor
         private void SetupWhiteOutEffect()
         {
             // Check if already exists
-            var existingWhiteOut = FindObjectOfType<UI.WhiteOutEffect>();
+            var existingWhiteOut = Object.FindFirstObjectByType<UI.WhiteOutEffect>();
             if (existingWhiteOut != null)
             {
                 Log("WhiteOutEffect already exists, skipping");
@@ -407,8 +407,8 @@ namespace BreakingHue.Editor
 
         private void ConnectComponents()
         {
-            var deathController = FindObjectOfType<Effects.DeathEffectController>();
-            var whiteOutEffect = FindObjectOfType<UI.WhiteOutEffect>();
+            var deathController = Object.FindFirstObjectByType<Effects.DeathEffectController>();
+            var whiteOutEffect = Object.FindFirstObjectByType<UI.WhiteOutEffect>();
 
             if (deathController == null)
             {
@@ -451,7 +451,7 @@ namespace BreakingHue.Editor
 
         private void AssignExplosionPrefab()
         {
-            var deathController = FindObjectOfType<Effects.DeathEffectController>();
+            var deathController = Object.FindFirstObjectByType<Effects.DeathEffectController>();
             
             if (deathController == null)
             {

@@ -18,5 +18,5 @@ MonoBehaviour:
   portalIdA: dc96b965-6816-4f8f-9e82-678888f0ee80
   levelB: {fileID: 11400000, guid: f6ab98d91cc65408099aad32be999f58, type: 2}
   portalIdB: 976da82d-b593-4b90-a6c7-5138c64e11be
-  isCheckpointA: 0
+  isCheckpointA: 1
   isCheckpointB: 1

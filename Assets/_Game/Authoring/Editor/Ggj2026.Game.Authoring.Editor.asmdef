@@ -1,0 +1,23 @@
+{
+  "name": "Ggj2026.Game.Authoring.Editor",
+  "rootNamespace": "Ggj2026.Game.Authoring.Editor",
+  "references": [
+    "Ggj2026.Game.Authoring",
+    "Ggj2026.Game.Shared",
+    "Ggj2026.Game.Shell",
+    "Ggj2026.Game.Simulation",
+    "UniTask",
+    "Unity.NetCode"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

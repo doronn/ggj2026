@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 78a51c1481be94c75a9c369ea6f45746, type: 3}
+  m_Name: BarracksAndRaidSanity
+  m_EditorClassIdentifier: Ggj2026.Game.Authoring::Ggj2026.Game.Authoring.ManualTests.ManualTestScenarioDefinition
+  scenarioId: barracks-and-raid-sanity
+  milestone: local-defense-slice
+  category: Defense sanity
+  displayName: Barracks And Raid Sanity
+  summary: Confirms soldier training, raid pressure, and human-visible defense explanations work in the local colony slice.
+  steps:
+  - stepId: build-barracks
+    title: Create a working barracks
+    instruction: In ClientWorld, create or use a sheltered Barracks room with a built Bunk module and confirm the World tab no longer says `Need active barracks.`
+    requiredScene: ClientWorld
+    expectation:
+      expectedResult: The defense card shows barracks ready and `Train Soldier` becomes available if a recruit and weapons exist.
+      sanityChecks: The blocker text is explicit if the room is still invalid or missing shelter.
+      requiresTelemetryArtifact: 1
+      requiresScreenshot: 0
+  - stepId: train-soldier
+    title: Train a defender
+    instruction: Queue `Train Soldier`, let realtime simulation run for at least 12 ticks, and confirm one worker is converted into a soldier at the colony rally point.
+    requiredScene: ClientWorld
+    expectation:
+      expectedResult: The world defense card shows at least one soldier and the weapons count drops by one.
+      sanityChecks: Training should not stall silently; if it blocks, the reason must be visible in the HUD and MCP.
+      requiresTelemetryArtifact: 1
+      requiresScreenshot: 0
+  - stepId: observe-raid
+    title: Observe raid countdown and outcome
+    instruction: Let the colony run long enough for raid pressure to appear, then verify the defense card and blockers show the countdown and the final result.
+    requiredScene: ClientWorld
+    expectation:
+      expectedResult: Raid countdown appears in plain language, then resolves into either `repelled` when soldiers exist or `looted` when the colony has no defenders.
+      sanityChecks: The result must match the actual colony state and available supplies.
+      requiresTelemetryArtifact: 1
+      requiresScreenshot: 0

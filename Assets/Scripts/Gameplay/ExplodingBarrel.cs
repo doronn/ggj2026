@@ -86,7 +86,7 @@ namespace BreakingHue.Gameplay
             // try to resolve the inventory manually
             if (_playerInventory == null)
             {
-                var sceneContext = FindObjectOfType<Zenject.SceneContext>();
+                var sceneContext = Object.FindFirstObjectByType<Zenject.SceneContext>();
                 if (sceneContext != null && sceneContext.Container != null)
                 {
                     _playerInventory = sceneContext.Container.TryResolve<MaskInventory>();

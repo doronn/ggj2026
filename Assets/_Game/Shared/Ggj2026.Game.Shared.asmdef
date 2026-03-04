@@ -1,0 +1,16 @@
+{
+  "name": "Ggj2026.Game.Shared",
+  "rootNamespace": "Ggj2026.Game.Shared",
+  "references": [
+    "UniTask"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

@@ -178,8 +178,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da4b24723c68b44e786e8209cd05bdb0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BreakingHue.Gameplay.Bot.BotController
-  moveSpeed: 3
-  acceleration: 20
+  moveSpeed: 2
+  acceleration: 10
   arrivalDistance: 0.1
   pathData: {fileID: 0}
   cellSize: 1

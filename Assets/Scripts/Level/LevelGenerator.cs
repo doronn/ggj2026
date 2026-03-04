@@ -36,10 +36,6 @@ namespace BreakingHue.Level
         [Header("Parent Containers")]
         [SerializeField] private Transform levelContainer;
 
-        [Header("Barrier Setup")]
-        [Tooltip("If true, barriers will auto-configure dual colliders for phasing")]
-        [SerializeField] private bool autoConfigureBarrierColliders = true;
-
         private DiContainer _container;
         private GameObject _spawnedPlayer;
         private Vector3 _levelOffset;

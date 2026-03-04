@@ -981,16 +981,29 @@ MonoBehaviour:
     - {x: 17, y: 16}
     - {x: 17, y: 17}
     - {x: 17, y: 18}
+    - {x: 16, y: 12}
     - {x: 16, y: 13}
+    - {x: 16, y: 14}
+    - {x: 17, y: 12}
+    - {x: 17, y: 13}
+    - {x: 17, y: 14}
+    - {x: 14, y: 12}
+    - {x: 14, y: 13}
+    - {x: 14, y: 14}
+    - {x: 14, y: 11}
+    - {x: 16, y: 11}
+    - {x: 16, y: 15}
+    - {x: 16, y: 16}
+    - {x: 16, y: 17}
+    - {x: 16, y: 18}
+    - {x: 14, y: 17}
   barrierLayer:
     isVisible: 1
     barriers:
     - position: {x: 15, y: 18}
       color: 4
-    - position: {x: 17, y: 13}
-      color: 1
     - position: {x: 15, y: 13}
-      color: 5
+      color: 1
   pickupLayer:
     isVisible: 1
     pickups:
@@ -999,13 +1012,7 @@ MonoBehaviour:
       pickupId: de0da569-e0a8-4868-aa1f-77b0f1fddbd7
   barrelLayer:
     isVisible: 1
-    barrels:
-    - position: {x: 14, y: 13}
-      color: 1
-      barrelId: 658f5dca-f807-4aa5-b767-2f8ce6e3fc66
-    - position: {x: 16, y: 18}
-      color: 4
-      barrelId: 6b38094f-b597-49be-a3da-fd82b99dfcca
+    barrels: []
   botLayer:
     isVisible: 1
     bots: []
@@ -1019,13 +1026,13 @@ MonoBehaviour:
       isEntrance: 0
       isEndGame: 0
       endGameConfig: {fileID: 0}
-    - portalId: f0fa4044-e57c-411b-8398-4d6a893196d2
+    - portalId: c640e3cd-9920-43a4-8521-f0a2cbc557e3
       position: {x: 16, y: 20}
-      link: {fileID: 0}
-      isCheckpoint: 0
+      link: {fileID: 11400000, guid: d6f1e5d8526004b2f9105377eb6b9fb2, type: 2}
+      isCheckpoint: 1
       isEntrance: 0
-      isEndGame: 1
-      endGameConfig: {fileID: 11400000, guid: 95e5f6c2b829743e4849daae40267aaf, type: 2}
+      isEndGame: 0
+      endGameConfig: {fileID: 0}
     playerSpawnPosition: {x: 15, y: 7}
   hiddenAreaLayer:
     isVisible: 1

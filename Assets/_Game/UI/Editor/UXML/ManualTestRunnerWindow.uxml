@@ -1,0 +1,19 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="ManualTestRunnerRoot" class="editor-root">
+        <ui:Label text="Manual Test Runner" class="editor-title" />
+        <ui:Label text="Runs guided milestone sanity checks and writes structured manual-test artifacts for agents and future server-side analysis." class="editor-body" />
+        <ui:Label text="Scenario" class="editor-section-title" />
+        <ui:VisualElement name="ScenarioSelectionRow" class="editor-button-row" />
+        <ui:Label name="ScenarioSummaryLabel" class="editor-body editor-prewrap" />
+        <ui:Label text="Step" class="editor-section-title" />
+        <ui:Label name="StepTitleLabel" class="editor-title editor-title--small" />
+        <ui:Label name="StepInstructionLabel" class="editor-body editor-prewrap" />
+        <ui:Label name="StepExpectationLabel" class="editor-body editor-prewrap" />
+        <ui:TextField name="StepNoteField" label="Notes" multiline="true" />
+        <ui:VisualElement name="StepActionRow" class="editor-button-row" />
+        <ui:Label text="Run Log" class="editor-section-title" />
+        <ui:ScrollView name="RunLogScroll" class="editor-scroll">
+            <ui:Label name="RunLogLabel" class="editor-body editor-prewrap" />
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

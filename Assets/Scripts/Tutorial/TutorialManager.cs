@@ -7,6 +7,7 @@ using BreakingHue.Core;
 using BreakingHue.Gameplay;
 using BreakingHue.UI;
 using BreakingHue.Input;
+using Object = UnityEngine.Object;
 
 namespace BreakingHue.Tutorial
 {
@@ -70,7 +71,7 @@ namespace BreakingHue.Tutorial
             Debug.Log("[TutorialManager] Starting...");
             
             // Find or create the tutorial UI
-            _promptUI = FindObjectOfType<TutorialPromptUI>();
+            _promptUI = Object.FindFirstObjectByType<TutorialPromptUI>();
             if (_promptUI == null)
             {
                 Debug.Log("[TutorialManager] TutorialPromptUI not found, creating...");
@@ -83,10 +84,14 @@ namespace BreakingHue.Tutorial
                 {
                     uiDoc = uiGO.AddComponent<UIDocument>();
                     // Try to find and assign PanelSettings
-                    var existingDoc = FindObjectOfType<UIDocument>();
-                    if (existingDoc != null && existingDoc.panelSettings != null)
+                    var allDocuments = Object.FindObjectsByType<UIDocument>(FindObjectsSortMode.None);
+                    foreach (var existingDoc in allDocuments)
                     {
-                        uiDoc.panelSettings = existingDoc.panelSettings;
+                        if (existingDoc != null && existingDoc.panelSettings != null)
+                        {
+                            uiDoc.panelSettings = existingDoc.panelSettings;
+                            break;
+                        }
                     }
                 }
             }
@@ -99,7 +104,7 @@ namespace BreakingHue.Tutorial
             if (_inventory == null)
             {
                 Debug.Log("[TutorialManager] Inventory not injected, trying to find via SceneContext...");
-                var sceneContext = FindObjectOfType<Zenject.SceneContext>();
+                var sceneContext = Object.FindFirstObjectByType<Zenject.SceneContext>();
                 if (sceneContext != null && sceneContext.Container != null)
                 {
                     _inventory = sceneContext.Container.TryResolve<MaskInventory>();

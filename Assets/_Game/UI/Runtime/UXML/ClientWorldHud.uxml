@@ -1,0 +1,127 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="ClientWorldHudRoot" class="hud-shell">
+        <ui:VisualElement name="WorldTopBar" class="world-top-bar">
+            <ui:VisualElement class="world-top-bar__column world-top-bar__column--identity">
+                <ui:Label text="World" class="world-section-label" />
+                <ui:Label name="WorldNameLabel" text="World" class="world-title" />
+                <ui:Label name="TickLabel" text="Tick -" class="world-subtitle" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="world-top-bar__column world-top-bar__column--status">
+                <ui:Label text="Status" class="world-section-label" />
+                <ui:VisualElement class="world-status-grid">
+                    <ui:VisualElement class="world-status-block world-status-block--primary">
+                        <ui:Label text="Simulation" class="world-status-block__label" />
+                        <ui:Label name="SimulationLabel" text="Paused" class="world-status-block__value" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="world-status-block">
+                        <ui:Label text="Save" class="world-status-block__label" />
+                        <ui:Label name="SaveStateLabel" text="Save state" class="world-status-block__value" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="world-status-block">
+                        <ui:Label text="Workers" class="world-status-block__label" />
+                        <ui:Label name="WorkerStatusLabel" text="Workers" class="world-status-block__value" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="world-status-block">
+                        <ui:Label text="Growth" class="world-status-block__label" />
+                        <ui:Label name="GrowthStatusLabel" text="Growth" class="world-status-block__value" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="world-status-block world-status-block--warning">
+                        <ui:Label text="Blockers" class="world-status-block__label" />
+                        <ui:Label name="BlockerStatusLabel" text="Blockers" class="world-status-block__value" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="world-status-block">
+                        <ui:Label text="Telemetry" class="world-status-block__label" />
+                        <ui:Label name="TelemetryStatusLabel" text="Telemetry" class="world-status-block__value" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="world-status-block">
+                        <ui:Label text="View" class="world-status-block__label" />
+                        <ui:Label name="OverlayStatusLabel" text="Overlay" class="world-status-block__value" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement class="world-top-bar__column world-top-bar__column--resources">
+                <ui:Label text="Resources" class="world-section-label" />
+                <ui:VisualElement name="WorldMetricsContainer" class="world-metrics" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="HudBody" class="hud-body">
+            <ui:VisualElement name="OperationsRailPanel" class="hud-panel hud-panel--rail">
+                <ui:Label text="Command Panel" class="panel-title" />
+                <ui:Label text="Pick a mode here. Then act directly on the world." class="panel-summary panel-summary--soft" />
+                <ui:Label name="ActiveToolLabel" text="Active tool: None" class="panel-summary panel-summary--hero" />
+                <ui:ScrollView name="OperationsRailScroll" class="panel-scroll">
+                    <ui:VisualElement name="OperationsRailContainer" class="operations-rail" />
+                </ui:ScrollView>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="HudCenterSpacer" class="hud-center-spacer" />
+
+            <ui:VisualElement name="ContextInspectorPanel" class="hud-panel hud-panel--inspector">
+                <ui:VisualElement class="context-header">
+                    <ui:Label text="Inspector" class="world-section-label" />
+                    <ui:Label name="ContextTitleLabel" text="World" class="panel-title" />
+                    <ui:Label name="ContextSubtitleLabel" text="No target selected" class="panel-subtitle" />
+                    <ui:Label name="ContextSummaryLabel" text="Select a tile, edge, or worker to inspect it." class="panel-summary" />
+                </ui:VisualElement>
+                <ui:VisualElement name="InspectorTabBar" class="inspector-tab-bar">
+                    <ui:Button name="ContextTabButton" text="Context" class="inspector-tab" />
+                    <ui:Button name="TasksTabButton" text="Tasks" class="inspector-tab" />
+                    <ui:Button name="EntitiesTabButton" text="Entities" class="inspector-tab" />
+                    <ui:Button name="WorldTabButton" text="World" class="inspector-tab" />
+                </ui:VisualElement>
+                <ui:ScrollView name="ContextInspectorScroll" class="panel-scroll">
+                    <ui:VisualElement name="ContextInspectorCards" class="context-cards" />
+                </ui:ScrollView>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="WorldOverlayLayer" class="world-overlay-layer">
+            <ui:VisualElement name="HoverWorldLabel" class="world-target-label world-target-label--hover">
+                <ui:Label name="HoverWorldLabelTitle" text="" class="world-target-label__title world-target-label__title--hover" />
+                <ui:Label name="HoverWorldLabelSubtitle" text="" class="world-target-label__subtitle" />
+            </ui:VisualElement>
+            <ui:VisualElement name="SelectedWorldLabel" class="world-target-label world-target-label--selected">
+                <ui:Label name="SelectedWorldLabelTitle" text="" class="world-target-label__title" />
+                <ui:Label name="SelectedWorldLabelSubtitle" text="" class="world-target-label__subtitle" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="EventStripPanel" class="event-strip">
+            <ui:VisualElement class="event-strip__block event-strip__block--primary">
+                <ui:Label text="Tool" class="event-strip__title" />
+                <ui:Label name="CurrentToolHintLabel" text="Choose a tool, then act on the world." class="event-strip__item" />
+            </ui:VisualElement>
+            <ui:VisualElement class="event-strip__block">
+                <ui:Label text="Hover" class="event-strip__title" />
+                <ui:Label name="HoverHintLabel" text="Move the pointer over the world for details." class="event-strip__item" />
+            </ui:VisualElement>
+            <ui:VisualElement class="event-strip__block">
+                <ui:Label text="Last Action" class="event-strip__title" />
+                <ui:Label name="LastActionLabel" text="Choose a tool and act on the world." class="event-strip__item" />
+            </ui:VisualElement>
+            <ui:VisualElement class="event-strip__block event-strip__block--warning">
+                <ui:Label text="Blockers" class="event-strip__title" />
+                <ui:Label name="BlockerHintLabel" text="No blockers" class="event-strip__item" />
+                <ui:Label name="WarningHintLabel" text="" class="event-strip__item event-strip__item--warning" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="OnboardingOverlay" class="onboarding-overlay">
+            <ui:VisualElement name="OnboardingCard" class="onboarding-card onboarding-card--world">
+                <ui:Label name="OnboardingProgressLabel" text="Guide 1/6" class="onboarding-card__progress" />
+                <ui:Label name="OnboardingTitleLabel" text="Welcome" class="onboarding-card__title" />
+                <ui:Label name="OnboardingBodyLabel" text="This short guide explains the interface." class="onboarding-card__body" />
+                <ui:Label name="OnboardingEmphasisLabel" text="Start with the world and the few actions that matter now." class="onboarding-card__emphasis" />
+                <ui:Label name="OnboardingTipLabel" text="You can skip this session at any time." class="onboarding-card__tip" />
+                <ui:VisualElement class="onboarding-card__actions">
+                    <ui:Button name="OnboardingBackButton" text="Back" class="onboarding-card__button onboarding-card__button--secondary" />
+                    <ui:Button name="OnboardingSkipButton" text="Skip For Now" class="onboarding-card__button onboarding-card__button--ghost" />
+                    <ui:Button name="OnboardingNextButton" text="Next Tip" class="onboarding-card__button onboarding-card__button--primary" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

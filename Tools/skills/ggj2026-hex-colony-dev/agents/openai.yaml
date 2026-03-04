@@ -1,0 +1,5 @@
+interface:
+  display_name: "GGJ2026 Hex Colony Dev"
+  short_description: "Build maintained _Game gameplay systems"
+  default_prompt: "Use $ggj2026-hex-colony-dev to implement or change maintained _Game gameplay systems in ggj2026."
+

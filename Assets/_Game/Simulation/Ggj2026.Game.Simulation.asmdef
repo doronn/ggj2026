@@ -1,0 +1,21 @@
+{
+  "name": "Ggj2026.Game.Simulation",
+  "rootNamespace": "Ggj2026.Game.Simulation",
+  "references": [
+    "Ggj2026.Game.Shared",
+    "Unity.Burst",
+    "Unity.Collections",
+    "Unity.Entities",
+    "Unity.Entities.Hybrid",
+    "Unity.Mathematics"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

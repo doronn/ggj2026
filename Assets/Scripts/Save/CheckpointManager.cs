@@ -8,6 +8,7 @@ using BreakingHue.Gameplay;
 using BreakingHue.Level;
 using BreakingHue.Level.Data;
 using BreakingHue.Tutorial;
+using Object = UnityEngine.Object;
 
 namespace BreakingHue.Save
 {
@@ -88,7 +89,7 @@ namespace BreakingHue.Save
 
         private void Start()
         {
-            _playerController = FindObjectOfType<PlayerController>();
+            _playerController = Object.FindFirstObjectByType<PlayerController>();
             // Note: Checkpoint states are applied by LevelManager.Start() before level load
         }
         
@@ -103,7 +104,7 @@ namespace BreakingHue.Save
             // Try to find LevelManager if not injected
             if (_levelManager == null)
             {
-                _levelManager = FindObjectOfType<LevelManager>();
+                _levelManager = Object.FindFirstObjectByType<LevelManager>();
             }
             
             if (_levelManager == null)
@@ -167,7 +168,7 @@ namespace BreakingHue.Save
             
             if (_playerController == null)
             {
-                _playerController = FindObjectOfType<PlayerController>();
+                _playerController = Object.FindFirstObjectByType<PlayerController>();
             }
 
             // IMPORTANT: Force save the current level state BEFORE capturing checkpoint

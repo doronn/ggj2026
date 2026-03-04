@@ -1,0 +1,15 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="UiInstallerRoot" class="editor-root">
+        <ui:Label text="UI Plan Integration" class="editor-title" />
+        <ui:Label text="Creates and wires the maintained UI Toolkit assets, documents, panel settings, and controller references for the active `_Game` scenes." class="editor-body" />
+        <ui:Label text="Manifest" class="editor-section-title" />
+        <ui:Label name="ManifestPathLabel" class="editor-mono" />
+        <ui:Label text="Actions" class="editor-section-title" />
+        <ui:VisualElement name="ActionButtonRow" class="editor-button-row" />
+        <ui:Label text="Latest Report" class="editor-section-title" />
+        <ui:Label name="LatestReportLabel" class="editor-mono" />
+        <ui:ScrollView name="ReportScroll" class="editor-scroll">
+            <ui:Label name="ReportSummaryLabel" class="editor-body editor-prewrap" />
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

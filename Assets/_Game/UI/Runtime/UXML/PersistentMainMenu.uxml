@@ -1,0 +1,11 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="MainMenuRoot" class="menu-shell">
+        <ui:VisualElement name="MainMenuCard" class="menu-card">
+            <ui:Label name="TitleLabel" text="Persistent Hex-World" class="menu-title" />
+            <ui:Label name="SubtitleLabel" text="4X / RTS Foundation" class="menu-subtitle" />
+            <ui:Button name="EnterLocalWorldButton" text="Enter Local World" class="menu-button" />
+            <ui:Button name="OpenToolsSceneButton" text="Open Tools Scene" class="menu-button" />
+            <ui:Button name="QuitButton" text="Quit" class="menu-button" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="BootstrapStatusRoot" class="bootstrap-shell">
+        <ui:VisualElement class="bootstrap-card">
+            <ui:Label name="BootstrapTitleLabel" text="Preparing Persistent World" class="bootstrap-title" />
+            <ui:Label name="BootstrapStatusLabel" text="Loading startup scene flow..." class="bootstrap-status" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

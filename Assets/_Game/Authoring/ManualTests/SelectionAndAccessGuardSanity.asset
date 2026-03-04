@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 78a51c1481be94c75a9c369ea6f45746, type: 3}
+  m_Name: SelectionAndAccessGuardSanity
+  m_EditorClassIdentifier: Ggj2026.Game.Authoring::Ggj2026.Game.Authoring.ManualTests.ManualTestScenarioDefinition
+  scenarioId: selection-and-access-guard-sanity
+  milestone: interaction-clarity-slice
+  category: Selection and access sanity
+  displayName: Selection And Access Guard Sanity
+  summary: Confirms hover and selection labels are readable, contextual actions stay focused,
+    and the wall guard blocks only the final inaccessible seal.
+  steps:
+  - stepId: hover-and-select
+    title: Hover and select a clear target
+    instruction: In ClientWorld, hover a worker, a floor tile, and a wall or door edge,
+      then click each target once.
+    requiredScene: ClientWorld
+    expectation:
+      expectedResult: A small hover label appears before clicking and a stronger selected
+        label appears after clicking.
+      sanityChecks: The selected object is obvious without obscuring the map, and right-click
+        still selects the nearest edge when no tool is active.
+      requiresTelemetryArtifact: 1
+      requiresScreenshot: 0
+  - stepId: contextual-next-actions
+    title: Contextual Next actions stay focused
+    instruction: Select a sheltered Residential tile, then a plain Wetlands tile, then
+      a workshop edge and compare the `Next` action group each time.
+    requiredScene: ClientWorld
+    expectation:
+      expectedResult: The `Next` group changes with the selected target and only shows
+        the immediately useful actions.
+      sanityChecks: The player should not need to scan every tool family to continue the
+        current task.
+      requiresTelemetryArtifact: 1
+      requiresScreenshot: 0
+  - stepId: seal-last-opening-only
+    title: Wall guard blocks only the final inaccessible seal
+    instruction: Build walls around a reachable one-tile work area step by step, leaving
+      one opening, then attempt to place the final closing wall.
+    requiredScene: ClientWorld
+    expectation:
+      expectedResult: Earlier enclosure walls succeed, but the final wall is rejected
+        with a plain-language reason about sealing access.
+      sanityChecks: Building a normal enclosed room with a door must still succeed.
+      requiresTelemetryArtifact: 1
+      requiresScreenshot: 0

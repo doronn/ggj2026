@@ -6,6 +6,7 @@ using Zenject;
 using BreakingHue.Core;
 using BreakingHue.Input;
 using BreakingHue.Gameplay;
+using Object = UnityEngine.Object;
 
 namespace BreakingHue.UI
 {
@@ -65,7 +66,7 @@ namespace BreakingHue.UI
             if (_inventory == null)
             {
                 Debug.Log("[ContextualPromptController] Inventory not injected, trying to find via SceneContext...");
-                var sceneContext = FindObjectOfType<Zenject.SceneContext>();
+                var sceneContext = Object.FindFirstObjectByType<Zenject.SceneContext>();
                 if (sceneContext != null && sceneContext.Container != null)
                 {
                     _inventory = sceneContext.Container.TryResolve<MaskInventory>();
@@ -91,7 +92,7 @@ namespace BreakingHue.UI
             }
             
             // Find player controller
-            _playerController = FindObjectOfType<PlayerController>();
+            _playerController = Object.FindFirstObjectByType<PlayerController>();
             
             // Subscribe to barrier proximity events
             ColorBarrier.OnPlayerNearBarrier += OnPlayerNearBarrier;
@@ -127,7 +128,7 @@ namespace BreakingHue.UI
             {
                 Debug.LogWarning("[ContextualPromptController] UIDocument has no PanelSettings, trying to find one...");
                 // Try to find PanelSettings from another UIDocument
-                var allDocs = FindObjectsOfType<UIDocument>();
+                var allDocs = Object.FindObjectsByType<UIDocument>(FindObjectsSortMode.None);
                 foreach (var doc in allDocs)
                 {
                     if (doc != uiDocument && doc.panelSettings != null)

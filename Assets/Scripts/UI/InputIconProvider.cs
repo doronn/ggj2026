@@ -424,7 +424,6 @@ namespace BreakingHue.UI
                 image.style.width = size;
                 image.style.height = size;
                 image.style.backgroundImage = new StyleBackground(sprite);
-                image.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
                 return image;
             }
             else

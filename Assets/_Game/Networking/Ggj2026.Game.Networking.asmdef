@@ -1,0 +1,20 @@
+{
+  "name": "Ggj2026.Game.Networking",
+  "rootNamespace": "Ggj2026.Game.Networking",
+  "references": [
+    "Ggj2026.Game.Shared",
+    "UniTask",
+    "Unity.Collections",
+    "Unity.Entities",
+    "Unity.NetCode"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

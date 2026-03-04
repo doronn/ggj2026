@@ -1,0 +1,21 @@
+{
+  "name": "Ggj2026.Game.Tests.PlayMode",
+  "rootNamespace": "Ggj2026.Game.Tests.PlayMode",
+  "references": [
+    "Ggj2026.Game.Shared",
+    "Ggj2026.Game.Shell",
+    "UniTask"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

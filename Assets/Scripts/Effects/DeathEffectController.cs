@@ -4,6 +4,7 @@ using Zenject;
 using BreakingHue.Gameplay;
 using BreakingHue.Save;
 using BreakingHue.UI;
+using Object = UnityEngine.Object;
 
 namespace BreakingHue.Effects
 {
@@ -67,13 +68,13 @@ namespace BreakingHue.Effects
             // Try to find WhiteOutEffect if not assigned
             if (whiteOutEffect == null)
             {
-                whiteOutEffect = FindObjectOfType<WhiteOutEffect>();
+                whiteOutEffect = Object.FindFirstObjectByType<WhiteOutEffect>();
             }
             
             // Fallback: Try to find CheckpointManager if not injected
             if (_checkpointManager == null)
             {
-                _checkpointManager = FindObjectOfType<CheckpointManager>();
+                _checkpointManager = Object.FindFirstObjectByType<CheckpointManager>();
             }
         }
 

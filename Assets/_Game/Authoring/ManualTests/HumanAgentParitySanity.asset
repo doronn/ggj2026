@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 78a51c1481be94c75a9c369ea6f45746, type: 3}
+  m_Name: HumanAgentParitySanity
+  m_EditorClassIdentifier: Ggj2026.Game.Authoring::Ggj2026.Game.Authoring.ManualTests.ManualTestScenarioDefinition
+  scenarioId: human-agent-parity-sanity
+  milestone: interface-foundation
+  category: Human-agent parity
+  displayName: Human Agent Parity Sanity
+  summary: Confirms the runtime HUD, the HUD State Browser, and the MCP gameplay surface agree on context and available actions.
+  steps:
+  - stepId: inspect-tile-context
+    title: Tile context is readable
+    instruction: Enter ClientWorld, select a tile, and confirm the Context tab explains the tile state without opening logs.
+    requiredScene: ClientWorld
+    expectation:
+      expectedResult: The inspector shows floor, room, module, stacks, occupancy, and contextual actions in clear language.
+      sanityChecks: Disabled or blocked actions explain why they are unavailable.
+      requiresTelemetryArtifact: 1
+      requiresScreenshot: 0
+  - stepId: compare-hud-browser
+    title: HUD browser matches runtime HUD
+    instruction: Open Window > GGJ2026 > QA > HUD State Browser and compare its context summary with the live runtime HUD for the same selection.
+    requiredScene: ClientWorld
+    expectation:
+      expectedResult: The HUD State Browser reports the same context kind, selection, and action count that the runtime HUD is showing.
+      sanityChecks: World context falls back cleanly when nothing is selected.
+      requiresTelemetryArtifact: 0
+      requiresScreenshot: 0
+  - stepId: compare-mcp-actions
+    title: MCP gameplay actions match HUD actions
+    instruction: Query the gameplay HUD/action state through MCP and confirm the same actions are present for the current context.
+    requiredScene: ClientWorld
+    expectation:
+      expectedResult: MCP action/query responses match the human HUD state for selection, blockers, and available actions.
+      sanityChecks: Admin/setup commands remain distinct from normal player actions.
+      requiresTelemetryArtifact: 1
+      requiresScreenshot: 0

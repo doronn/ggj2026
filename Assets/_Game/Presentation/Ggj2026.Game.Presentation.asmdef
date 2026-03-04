@@ -1,0 +1,16 @@
+{
+  "name": "Ggj2026.Game.Presentation",
+  "rootNamespace": "Ggj2026.Game.Presentation",
+  "references": [
+    "Ggj2026.Game.Shared"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
