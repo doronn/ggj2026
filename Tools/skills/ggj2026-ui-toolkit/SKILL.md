@@ -40,6 +40,12 @@ Treat UI Toolkit as the only maintained UI stack.
 - Contextual cards must explain blocked states in short readable language.
 - Keep copy accessible: short labels, explicit wording, not color-only meaning.
 - Prefer contextual action surfacing over always-visible exhaustive tool lists.
+- Keep operations rail progressively disclosed:
+  - always keep simulation/view/context guidance reachable
+  - show floors/edges/modules/landmarks/cleanup only when relevant to current context or active tool
+- Keep a readable fallback path when runtime stylesheet binding is missing:
+  - avoid unreadable default button/text colors
+  - keep minimum button size and contrast in controller fallback styles
 - Added motion/juice must support readability:
   - movement should feel alive but land clearly on a tile
   - work animation should show activity without hiding state

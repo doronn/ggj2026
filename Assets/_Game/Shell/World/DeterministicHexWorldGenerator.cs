@@ -154,15 +154,17 @@ namespace Ggj2026.Game.Shell.World
             ColonySnapshot colony = snapshot.colonies[0];
             var nodeCells = new List<(HexCoord cell, ResourceNodeKind kind, ResourceType resourceType, int amount)>
             {
-                (colony.center + new HexCoord(3, -2), ResourceNodeKind.Tree, ResourceType.Wood, 32),
-                (colony.center + new HexCoord(4, -1), ResourceNodeKind.Tree, ResourceType.Wood, 28),
-                (colony.center + new HexCoord(-3, 2), ResourceNodeKind.StoneOutcrop, ResourceType.Stone, 26),
-                (colony.center + new HexCoord(-4, 1), ResourceNodeKind.OreSeam, ResourceType.Ore, 22),
-                (colony.center + new HexCoord(2, 3), ResourceNodeKind.FertileSoil, ResourceType.Food, 16)
+                (colony.center + new HexCoord(3, -2), ResourceNodeKind.Tree, ResourceType.Wood, 64),
+                (colony.center + new HexCoord(4, -1), ResourceNodeKind.Tree, ResourceType.Wood, 56),
+                (colony.center + new HexCoord(-2, -3), ResourceNodeKind.Tree, ResourceType.Wood, 48),
+                (colony.center + new HexCoord(-3, 2), ResourceNodeKind.StoneOutcrop, ResourceType.Stone, 52),
+                (colony.center + new HexCoord(-4, 1), ResourceNodeKind.OreSeam, ResourceType.Ore, 44),
+                (colony.center + new HexCoord(2, 3), ResourceNodeKind.FertileSoil, ResourceType.Food, 32)
             };
 
             for (int i = 0; i < nodeCells.Count; i++)
             {
+                int yield = nodeCells[i].amount + (DeterministicHash(seed.Value, nodeCells[i].cell.Q, nodeCells[i].cell.R) % 8);
                 ChunkSnapshot chunk = EnsureChunk(snapshot, ChunkCoord.FromHex(nodeCells[i].cell, profile.chunkSize));
                 chunk.resourceNodes.Add(new ResourceNodeState
                 {
@@ -170,7 +172,8 @@ namespace Ggj2026.Game.Shell.World
                     resourceNodeKind = nodeCells[i].kind,
                     resourceType = nodeCells[i].resourceType,
                     cell = nodeCells[i].cell,
-                    remainingYield = nodeCells[i].amount + (DeterministicHash(seed.Value, nodeCells[i].cell.Q, nodeCells[i].cell.R) % 8),
+                    remainingYield = yield,
+                    maxYield = yield,
                     isDepleted = false
                 });
             }

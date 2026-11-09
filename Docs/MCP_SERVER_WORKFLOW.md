@@ -105,6 +105,23 @@ Behavior:
 - otherwise uses the command-line helper
 - noninteractive mode rejects unsaved open scenes instead of prompting
 
+### `unity_polygon_visual_maintenance`
+Live bridge only.
+
+Arguments:
+- `importPackages`
+- `repairMaterials`
+- `refreshVisualLibrary`
+- `assignLibraryToRenderers`
+- `sourceRoot`
+
+Behavior:
+- runs noninteractive Polygon maintenance inside the open editor
+- optional package import from `/Users/doronnacash/polygon assets` (or `sourceRoot`)
+- repairs unsupported legacy Polygon shaders/materials to URP-compatible lit shader
+- rebuilds `WorldVisualPrefabLibrary`
+- assigns the library to all loaded `LocalWorldDebugRenderer` components
+
 ### `unity_open_scene`
 Live bridge only.
 
@@ -230,6 +247,9 @@ Current shared action example:
 - `HoldDefenders`
   - no cell target required
   - keeps defenders at their current held position
+- `PerimeterDefenders`
+  - no cell target required
+  - distributes defenders across perimeter approach lanes
 - `DefendArea`
   - requires `targetCell`
   - sends defenders to hold the selected tile

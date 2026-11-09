@@ -1,0 +1,103 @@
+.pause-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.78);
+    display: none;
+    pointer-events: auto;
+}
+
+.pause-card {
+    width: 380px;
+    padding-left: 32px;
+    padding-right: 32px;
+    padding-top: 28px;
+    padding-bottom: 28px;
+    row-gap: 12px;
+    background-color: rgba(16, 22, 28, 0.98);
+    border-top-left-radius: 18px;
+    border-top-right-radius: 18px;
+    border-bottom-left-radius: 18px;
+    border-bottom-right-radius: 18px;
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(0, 180, 220, 0.35);
+    border-right-color: rgba(0, 180, 220, 0.35);
+    border-top-color: rgba(0, 180, 220, 0.35);
+    border-bottom-color: rgba(0, 180, 220, 0.35);
+}
+
+.pause-title {
+    font-size: 28px;
+    -unity-font-style: bold;
+    color: rgb(248, 249, 250);
+    -unity-text-align: middle-center;
+}
+
+.pause-subtitle {
+    font-size: 14px;
+    color: rgb(186, 198, 208);
+    -unity-text-align: middle-center;
+    margin-bottom: 8px;
+}
+
+.pause-button {
+    height: 44px;
+    font-size: 16px;
+    -unity-font-style: bold;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    color: rgb(248, 249, 250);
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+    transition-property: background-color, scale, border-color, border-width;
+    transition-duration: 0.12s;
+}
+
+.pause-button:hover {
+    scale: 1.04;
+}
+
+.pause-button:active {
+    scale: 0.97;
+}
+
+.pause-button:focus {
+    border-left-width: 4px;
+    border-right-width: 4px;
+    border-top-width: 4px;
+    border-bottom-width: 4px;
+    border-left-color: rgb(0, 255, 255);
+    border-right-color: rgb(0, 255, 255);
+    border-top-color: rgb(0, 255, 255);
+    border-bottom-color: rgb(0, 255, 255);
+    scale: 1.08;
+    background-color: rgb(255, 255, 255);
+    color: rgb(0, 0, 0);
+}
+
+.pause-button--primary {
+    background-color: rgba(40, 130, 75, 0.96);
+}
+
+.pause-button--primary:hover {
+    background-color: rgba(55, 155, 90, 0.98);
+}
+
+.pause-button--danger {
+    background-color: rgba(140, 48, 48, 0.96);
+}
+
+.pause-button--danger:hover {
+    background-color: rgba(165, 60, 60, 0.98);
+}

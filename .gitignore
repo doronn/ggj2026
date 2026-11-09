@@ -97,3 +97,17 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+# Third-party store asset packs (licensed, not redistributable; re-import from the Asset Store)
+/Assets/POLYGON-LiteHalloweenPack/
+/Assets/POLYGON-LiteHalloweenPack.meta
+/Assets/Poly-Survival Melee Weapons/
+/Assets/Poly-Survival Melee Weapons.meta
+/Assets/Polygon - House Appliances/
+/Assets/Polygon - House Appliances.meta
+/Assets/Polygon-Mega Survival Tools/
+/Assets/Polygon-Mega Survival Tools.meta
+/Assets/Polygon-Mega Survival/
+/Assets/Polygon-Mega Survival.meta
+/Assets/Polygon-Mega Weapone Kit/
+/Assets/Polygon-Mega Weapone Kit.meta

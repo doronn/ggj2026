@@ -7,6 +7,7 @@ using Ggj2026.Game.Shared.Hex;
 using Ggj2026.Game.Shared.Ids;
 using Ggj2026.Game.Shared.Logistics;
 using Ggj2026.Game.Shared.Telemetry;
+using Ggj2026.Game.Shared.UI;
 using Ggj2026.Game.Shared.Units;
 using Ggj2026.Game.Shared.World;
 using Ggj2026.Game.Shell.Diagnostics;
@@ -23,6 +24,7 @@ namespace Ggj2026.Game.Shell.World
         private const int RaidCountdownTicks = 6;
         private const int RaidLootAmount = 4;
         private const int ColonyOwnershipRadius = 12;
+        private const int SoldierPerimeterRadius = 9;
 
         private static readonly FloorPurposeKind[] FloorTools =
         {
@@ -67,6 +69,12 @@ namespace Ggj2026.Game.Shell.World
 
         private WorldSnapshot _snapshot;
         private WorldGenerationProfile _profile;
+        private readonly HashSet<ColonyMilestone> _completedMilestones = new HashSet<ColonyMilestone>();
+        private readonly Dictionary<ColonyMilestone, int> _milestoneCompletedTick = new Dictionary<ColonyMilestone, int>();
+        private string _lastMilestoneMessage;
+
+        private const int MaxRecentEvents = 50;
+        private readonly List<GameEventRecord> _recentEvents = new List<GameEventRecord>();
 
         public LocalColonyGameplayService(LocalWorldSessionService sessionService)
         {
@@ -74,9 +82,12 @@ namespace Ggj2026.Game.Shell.World
         }
 
         public event Action<WorldSnapshot> WorldChanged;
+        public event Action<ColonyMilestone> MilestoneAchieved;
 
         public WorldSnapshot Snapshot => _snapshot;
         public WorldGenerationProfile Profile => _profile;
+        public string LastMilestoneMessage => _lastMilestoneMessage;
+        public IReadOnlyList<GameEventRecord> RecentEvents => _recentEvents;
         public IReadOnlyList<FloorPurposeKind> PaintableFloors => FloorTools;
         public IReadOnlyList<ModuleKind> PlaceableModules => ModuleTools;
         public IReadOnlyList<EdgeFeatureKind> PlaceableEdges => EdgeTools;
@@ -477,7 +488,7 @@ namespace Ggj2026.Game.Shell.World
 
             for (int i = 0; i < units.Count; i++)
             {
-                lines.Add($"Unit: {units[i].unitRole} job={units[i].currentJobType} carry={units[i].carryLoad.resourceType}:{units[i].carryLoad.amount}");
+                lines.Add($"Unit: {units[i].unitRole} {DescribeUnitTask(units[i])}");
             }
 
             for (int i = 0; i < nodes.Count; i++)
@@ -496,6 +507,169 @@ namespace Ggj2026.Game.Shell.World
             }
 
             return string.Join("\n", lines);
+        }
+
+        public string DescribeUnitTask(UnitSnapshot unit)
+        {
+            if (unit == null)
+            {
+                return "unavailable.";
+            }
+
+            string carryText = unit.carryLoad.amount > 0
+                ? $"{unit.carryLoad.resourceType} x{unit.carryLoad.amount}"
+                : "empty hands";
+
+            if (unit.currentJobType == JobType.Idle)
+            {
+                return $"{DescribeIdleUnitReason(unit)} Carrying {carryText}.";
+            }
+
+            return $"{DescribeActiveUnitTask(unit)} Carrying {carryText}.";
+        }
+
+        private string DescribeActiveUnitTask(UnitSnapshot unit)
+        {
+            return unit.currentJobType switch
+            {
+                JobType.HarvestSource => $"Harvesting near {unit.targetHex}.",
+                JobType.HaulToStaging => $"Hauling to construction staging at {unit.targetHex}.",
+                JobType.HaulToStorage => $"Hauling to storage at {unit.targetHex}.",
+                JobType.HaulToConsumer => $"Hauling to module input at {unit.targetHex}.",
+                JobType.BuildFloor or JobType.BuildEdge or JobType.InstallModule or JobType.PlaceLandmark => $"Building at {unit.targetHex}.",
+                JobType.OperateModule => $"Operating module at {unit.targetHex}.",
+                JobType.Garrison => $"Holding position at {unit.targetHex}.",
+                _ => $"{unit.currentJobType} at {unit.targetHex}."
+            };
+        }
+
+        private string DescribeIdleUnitReason(UnitSnapshot unit)
+        {
+            if (_snapshot == null)
+            {
+                return "No world loaded.";
+            }
+
+            if (unit.carryLoad.amount > 0)
+            {
+                return "Waiting to drop carried resources.";
+            }
+
+            if (TryGetMostUrgentConstructionNeed(unit.hexCoord, out ResourceType constructionResource, out int freeAmount, out int stagedAmount, out int nodeYield))
+            {
+                if (freeAmount + nodeYield <= 0)
+                {
+                    return stagedAmount > 0
+                        ? $"Construction needs {constructionResource}, but materials are staged elsewhere."
+                        : $"No source for {constructionResource}.";
+                }
+
+                return $"Waiting to haul {constructionResource} to construction.";
+            }
+
+            if (TryGetMostUrgentModuleNeed(unit.ownerFactionId, unit.hexCoord, out ResourceType moduleResource, out int moduleFree, out int moduleNodeYield))
+            {
+                if (moduleFree + moduleNodeYield <= 0)
+                {
+                    return $"No source for {moduleResource} needed by modules.";
+                }
+
+                return $"Waiting to haul {moduleResource} to a module.";
+            }
+
+            if (FindNearestRelocatableStack(unit.ownerFactionId, unit.hexCoord) != null)
+            {
+                return "Waiting for storage organization assignment.";
+            }
+
+            return "No pending work.";
+        }
+
+        private bool TryGetMostUrgentConstructionNeed(HexCoord origin, out ResourceType resourceType, out int freeAmount, out int stagedAmount, out int nodeYield)
+        {
+            resourceType = ResourceType.Wood;
+            freeAmount = 0;
+            stagedAmount = 0;
+            nodeYield = 0;
+
+            int bestScore = int.MaxValue;
+            bool found = false;
+
+            for (int i = 0; i < _snapshot.constructionFeatures.Count; i++)
+            {
+                ConstructionState construction = _snapshot.constructionFeatures[i];
+                if (construction.isCompleted || HasDeliveredMaterials(construction))
+                {
+                    continue;
+                }
+
+                if (!TryGetMissingResource(construction, out ResourceType missingResource))
+                {
+                    continue;
+                }
+
+                int score = GetSupplyPriorityScore(construction, origin);
+                if (score >= bestScore)
+                {
+                    continue;
+                }
+
+                bestScore = score;
+                resourceType = missingResource;
+                found = true;
+            }
+
+            if (!found)
+            {
+                return false;
+            }
+
+            freeAmount = GetFreeStackAmount(resourceType);
+            stagedAmount = GetReservedConstructionStackAmount(resourceType);
+            nodeYield = GetHarvestableNodeYield(resourceType);
+            return true;
+        }
+
+        private bool TryGetMostUrgentModuleNeed(FactionId factionId, HexCoord origin, out ResourceType resourceType, out int freeAmount, out int nodeYield)
+        {
+            resourceType = ResourceType.Wood;
+            freeAmount = 0;
+            nodeYield = 0;
+
+            int bestDistance = int.MaxValue;
+            bool found = false;
+
+            for (int i = 0; i < _snapshot.chunks.Count; i++)
+            {
+                List<HexCellState> cells = _snapshot.chunks[i].modifiedCells;
+                for (int j = 0; j < cells.Count; j++)
+                {
+                    HexCellState cell = cells[j];
+                    if (!TryGetMissingModuleInput(cell.coord, cell.module, out ResourceType missingResource))
+                    {
+                        continue;
+                    }
+
+                    int distance = origin.DistanceTo(cell.coord);
+                    if (distance >= bestDistance)
+                    {
+                        continue;
+                    }
+
+                    bestDistance = distance;
+                    resourceType = missingResource;
+                    found = true;
+                }
+            }
+
+            if (!found)
+            {
+                return false;
+            }
+
+            freeAmount = CountAvailableFactionResource(factionId, resourceType);
+            nodeYield = GetHarvestableNodeYield(resourceType);
+            return true;
         }
 
         public string DescribeSelectedEdge(HexEdgeCoord edge)
@@ -651,6 +825,16 @@ namespace Ggj2026.Game.Shell.World
             {
                 failureReason = "Floor already built with this purpose.";
                 return false;
+            }
+
+            if (existing?.module != null && existing.module.moduleKind != ModuleKind.None)
+            {
+                ModuleDefinition moduleDef = SimulationCatalog.GetModuleDefinition(existing.module.moduleKind);
+                if (moduleDef.requiredPurposeKind != FloorPurposeKind.None && moduleDef.requiredPurposeKind != purposeKind)
+                {
+                    failureReason = $"Cell has {moduleDef.displayName} which requires {moduleDef.requiredPurposeKind} floor. Remove the module first.";
+                    return false;
+                }
             }
 
             if (HasPendingConstructionAtCell(cell, ConstructionFeatureKind.Floor))
@@ -1186,6 +1370,11 @@ namespace Ggj2026.Game.Shell.World
                 case SquadOrderKind.DefendArea:
                     order.targetHex = targetCell;
                     break;
+                case SquadOrderKind.Perimeter:
+                    order.targetHex = TryFindPerimeterAnchorCell(colony, 0, out HexCoord perimeterAnchor)
+                        ? perimeterAnchor
+                        : (TryFindSoldierRallyCell(colony.colonyId, out HexCoord perimeterFallback) ? perimeterFallback : colony.center);
+                    break;
                 case SquadOrderKind.Garrison:
                 default:
                     order.targetHex = TryFindSoldierRallyCell(colony.colonyId, out HexCoord rallyCell) ? rallyCell : colony.center;
@@ -1217,7 +1406,9 @@ namespace Ggj2026.Game.Shell.World
             for (int i = 0; i < clampedTicks; i++)
             {
                 _snapshot.simulationTick++;
+                RegenerateResourceNodes();
                 SimulateWorkers();
+                DetectAndBreakDeadlock();
                 ApplyConstructionCompletions();
                 RecomputeDerivedState();
                 if (SimulatePopulationGrowth())
@@ -1234,6 +1425,8 @@ namespace Ggj2026.Game.Shell.World
                 {
                     RecomputeDerivedState();
                 }
+
+                CheckMilestones();
             }
 
             NotifyWorldChanged();
@@ -1272,6 +1465,90 @@ namespace Ggj2026.Game.Shell.World
                 CompleteTelemetryAction(scope, false, $"Failed to reset local world: {exception.Message}");
                 return false;
             }
+        }
+
+        public List<MilestoneState> GetMilestoneStates()
+        {
+            var states = new List<MilestoneState>();
+            AddMilestoneState(states, ColonyMilestone.FirstShelter, "First Shelter", "Build an enclosed residential room.");
+            AddMilestoneState(states, ColonyMilestone.FirstProduction, "First Production", "Activate a workshop and produce metal.");
+            AddMilestoneState(states, ColonyMilestone.PopulationGrowth, "Population Growth", "Grow population to 10.");
+            AddMilestoneState(states, ColonyMilestone.FirstSoldier, "First Soldier", "Train a soldier.");
+            AddMilestoneState(states, ColonyMilestone.SurvivedFirstRaid, "Survived First Raid", "Survive the first raid.");
+            AddMilestoneState(states, ColonyMilestone.WeaponsChain, "Weapons Chain", "Complete Ore to Metal to Weapons chain.");
+            return states;
+        }
+
+        private void AddMilestoneState(List<MilestoneState> list, ColonyMilestone milestone, string title, string description)
+        {
+            bool complete = _completedMilestones.Contains(milestone);
+            list.Add(new MilestoneState
+            {
+                milestoneId = milestone.ToString(),
+                title = title,
+                description = description,
+                isComplete = complete,
+                completedTick = complete && _milestoneCompletedTick.TryGetValue(milestone, out int tick) ? tick : 0
+            });
+        }
+
+        private void RecordEvent(string text, GameEventSeverity severity, GameEventCategory category)
+        {
+            _recentEvents.Add(new GameEventRecord
+            {
+                tick = _snapshot?.simulationTick ?? 0,
+                text = text,
+                severity = severity,
+                category = category
+            });
+            while (_recentEvents.Count > MaxRecentEvents) _recentEvents.RemoveAt(0);
+        }
+
+        private void CheckMilestones()
+        {
+            ColonySnapshot colony = GetPrimaryColony();
+            FactionSnapshot faction = GetPlayerFaction();
+            if (colony == null || faction == null || _snapshot == null)
+            {
+                return;
+            }
+
+            TryAwardMilestone(ColonyMilestone.FirstShelter, () => HasShelteredResidentialSpace(colony));
+            TryAwardMilestone(ColonyMilestone.FirstProduction, () => CountAvailableFactionResource(faction.factionId, ResourceType.Metal) > 0);
+            TryAwardMilestone(ColonyMilestone.PopulationGrowth, () => colony.population >= 10);
+            TryAwardMilestone(ColonyMilestone.FirstSoldier, () => CountUnitsForColony(colony.colonyId, UnitRole.Soldier) > 0);
+            TryAwardMilestone(ColonyMilestone.SurvivedFirstRaid, () => colony.raidEvent != null && colony.raidEvent.lastResolvedTick > 0);
+            TryAwardMilestone(ColonyMilestone.WeaponsChain, () => CountAvailableFactionResource(faction.factionId, ResourceType.Weapons) > 0);
+        }
+
+        private void TryAwardMilestone(ColonyMilestone milestone, Func<bool> condition)
+        {
+            if (_completedMilestones.Contains(milestone))
+            {
+                return;
+            }
+
+            if (!condition())
+            {
+                return;
+            }
+
+            _completedMilestones.Add(milestone);
+            int tick = (int)(_snapshot?.simulationTick ?? 0);
+            _milestoneCompletedTick[milestone] = tick;
+            string title = milestone switch
+            {
+                ColonyMilestone.FirstShelter => "First Shelter",
+                ColonyMilestone.FirstProduction => "First Production",
+                ColonyMilestone.PopulationGrowth => "Population Growth",
+                ColonyMilestone.FirstSoldier => "First Soldier",
+                ColonyMilestone.SurvivedFirstRaid => "Survived First Raid",
+                ColonyMilestone.WeaponsChain => "Weapons Chain",
+                _ => milestone.ToString()
+            };
+            _lastMilestoneMessage = $"Milestone: {title}!";
+            RecordEvent(_lastMilestoneMessage, GameEventSeverity.Info, GameEventCategory.Milestone);
+            MilestoneAchieved?.Invoke(milestone);
         }
 
         private void NormalizeWorld()
@@ -1404,6 +1681,94 @@ namespace Ggj2026.Game.Shell.World
             }
         }
 
+        private void RegenerateResourceNodes()
+        {
+            long tick = _snapshot.simulationTick;
+            for (int c = 0; c < _snapshot.chunks.Count; c++)
+            {
+                List<ResourceNodeState> nodes = _snapshot.chunks[c].resourceNodes;
+                if (nodes == null) continue;
+
+                for (int n = 0; n < nodes.Count; n++)
+                {
+                    ResourceNodeState node = nodes[n];
+                    if (node.remainingYield >= node.maxYield) continue;
+
+                    int interval = node.resourceNodeKind switch
+                    {
+                        ResourceNodeKind.Tree => 8,
+                        ResourceNodeKind.FertileSoil => 10,
+                        ResourceNodeKind.StoneOutcrop => 15,
+                        ResourceNodeKind.OreSeam => 20,
+                        _ => 12
+                    };
+
+                    if (tick % interval != 0) continue;
+
+                    node.remainingYield = Mathf.Min(node.remainingYield + 1, node.maxYield);
+                    if (node.remainingYield > 0 && node.isDepleted)
+                    {
+                        node.isDepleted = false;
+                    }
+                }
+            }
+        }
+
+        private void DetectAndBreakDeadlock()
+        {
+            if (_snapshot.constructionFeatures == null || _snapshot.constructionFeatures.Count == 0) return;
+            if (_snapshot.units == null || _snapshot.units.Count == 0) return;
+
+            int idleWorkers = 0;
+            int totalWorkers = 0;
+            for (int i = 0; i < _snapshot.units.Count; i++)
+            {
+                UnitSnapshot unit = _snapshot.units[i];
+                if (unit.unitRole != UnitRole.Worker || unit.lifecycleState != UnitLifecycleState.Active) continue;
+                totalWorkers++;
+                if (unit.currentJobType == JobType.Idle) idleWorkers++;
+            }
+
+            if (totalWorkers == 0 || idleWorkers < totalWorkers) return;
+
+            int pendingUnsupplied = 0;
+            ConstructionState lowestPriority = null;
+            int lowestRank = -1;
+            for (int i = 0; i < _snapshot.constructionFeatures.Count; i++)
+            {
+                ConstructionState c = _snapshot.constructionFeatures[i];
+                if (c.isCompleted) continue;
+                if (HasDeliveredMaterials(c)) return;
+                if (HasAnyPartialDelivery(c)) return; // partially supplied -- not a true deadlock
+
+                pendingUnsupplied++;
+                int rank = GetConstructionPriorityRank(c);
+                if (rank > lowestRank)
+                {
+                    lowestRank = rank;
+                    lowestPriority = c;
+                }
+            }
+
+            if (pendingUnsupplied == 0 || lowestPriority == null) return;
+
+            string desc = DescribeConstruction(lowestPriority);
+            TryCancelConstruction(lowestPriority.constructionFeatureId, out _);
+            string msg = $"Auto-cancelled {desc} -- not enough materials";
+            RecordEvent(msg, GameEventSeverity.Warning, GameEventCategory.Economy);
+            Debug.Log($"[DeadlockBreaker] {msg} (all {totalWorkers} workers idle, {pendingUnsupplied} unsupplied constructions)");
+        }
+
+        private static bool HasAnyPartialDelivery(ConstructionState construction)
+        {
+            for (int i = 0; i < construction.deliveredMaterials.Count; i++)
+            {
+                if (construction.deliveredMaterials[i].deliveredAmount > 0)
+                    return true;
+            }
+            return false;
+        }
+
         private void SimulateWorkers()
         {
             if (_snapshot.units == null)
@@ -1529,6 +1894,14 @@ namespace Ggj2026.Game.Shell.World
                     case SquadOrderKind.Hold:
                     case SquadOrderKind.DefendArea:
                         targetHex = order.targetHex;
+                        break;
+                    case SquadOrderKind.Perimeter:
+                        if (!TryFindPerimeterTargetCell(unit, colony, out targetHex) &&
+                            !TryFindSoldierRallyCell(unit.ownerColonyId, out targetHex))
+                        {
+                            targetHex = unit.hexCoord;
+                        }
+
                         break;
                     case SquadOrderKind.Garrison:
                     default:
@@ -1889,7 +2262,10 @@ namespace Ggj2026.Game.Shell.World
 
                 int amount = Mathf.Min(4, node.remainingYield);
                 node.remainingYield -= amount;
+                bool wasDepleted = node.isDepleted;
                 node.isDepleted = node.remainingYield <= 0;
+                if (node.isDepleted && !wasDepleted)
+                    RecordEvent($"{node.resourceNodeKind} depleted ({node.resourceType})", GameEventSeverity.Warning, GameEventCategory.Economy);
                 unit.carryLoad.resourceType = node.resourceType;
                 unit.carryLoad.amount = amount;
                 unit.carryLoad.bulkClass = ResolveBulkClass(amount);
@@ -2002,7 +2378,10 @@ namespace Ggj2026.Game.Shell.World
 
                 int amount = Mathf.Min(4, Mathf.Min(node.remainingYield, remainingRequired));
                 node.remainingYield -= amount;
+                bool wasDepleted2 = node.isDepleted;
                 node.isDepleted = node.remainingYield <= 0;
+                if (node.isDepleted && !wasDepleted2)
+                    RecordEvent($"{node.resourceNodeKind} depleted ({node.resourceType})", GameEventSeverity.Warning, GameEventCategory.Economy);
                 unit.carryLoad.resourceType = node.resourceType;
                 unit.carryLoad.amount = amount;
                 unit.carryLoad.bulkClass = ResolveBulkClass(amount);
@@ -2278,6 +2657,7 @@ namespace Ggj2026.Game.Shell.World
                     continue;
                 }
 
+                RecordEvent($"Built {DescribeConstruction(construction)}", GameEventSeverity.Info, GameEventCategory.Construction);
                 ApplyConstruction(construction);
                 ConsumeReservedStacks(construction.constructionFeatureId);
                 _snapshot.constructionFeatures.RemoveAt(i);
@@ -2538,6 +2918,8 @@ namespace Ggj2026.Game.Shell.World
 
                 if (ProcessSpawnQueue(colony))
                 {
+                    int newPop = CountUnitsForColony(colony.colonyId);
+                    RecordEvent($"New colonist arrived (pop: {newPop})", GameEventSeverity.Info, GameEventCategory.Population);
                     spawnedAny = true;
                 }
             }
@@ -4323,6 +4705,7 @@ namespace Ggj2026.Game.Shell.World
                         colony.raidEvent.countdownTicks = RaidCountdownTicks;
                         colony.raidEvent.strength = Mathf.Max(1, colony.threatAlert.threatScore / 8);
                         colony.raidEvent.summary = $"Raiders sighted. Impact in {RaidCountdownTicks} ticks.";
+                        RecordEvent(colony.raidEvent.summary, GameEventSeverity.Critical, GameEventCategory.Raid);
                         changed = true;
                     }
 
@@ -4342,6 +4725,7 @@ namespace Ggj2026.Game.Shell.World
                 colony.raidEvent.nextRaidTick = _snapshot.simulationTick + RaidIntervalTicks;
                 colony.raidEvent.summary = ResolveRaid(colony);
                 colony.raidEvent.strength = 0;
+                RecordEvent($"Raid resolved: {colony.raidEvent.summary}", GameEventSeverity.Warning, GameEventCategory.Raid);
                 changed = true;
             }
 
@@ -4625,6 +5009,106 @@ namespace Ggj2026.Game.Shell.World
             return false;
         }
 
+        private bool TryFindPerimeterTargetCell(UnitSnapshot soldier, ColonySnapshot colony, out HexCoord targetCell)
+        {
+            targetCell = default;
+            if (soldier == null || colony == null)
+            {
+                return false;
+            }
+
+            var anchors = new List<HexCoord>(6);
+            for (int direction = 0; direction < 6; direction++)
+            {
+                if (TryFindPerimeterAnchorCell(colony, direction, out HexCoord anchor) && !anchors.Contains(anchor))
+                {
+                    anchors.Add(anchor);
+                }
+            }
+
+            if (anchors.Count == 0)
+            {
+                return false;
+            }
+
+            int soldierIndex = GetSortedSoldierIndex(colony.colonyId, soldier.entityUid);
+            if (soldierIndex < 0)
+            {
+                soldierIndex = 0;
+            }
+
+            targetCell = anchors[soldierIndex % anchors.Count];
+            return true;
+        }
+
+        private int GetSortedSoldierIndex(ColonyId colonyId, EntityUid soldierId)
+        {
+            int index = 0;
+            bool found = false;
+
+            for (int i = 0; i < _snapshot.units.Count; i++)
+            {
+                UnitSnapshot candidate = _snapshot.units[i];
+                if (candidate.ownerColonyId != colonyId ||
+                    candidate.lifecycleState != UnitLifecycleState.Active ||
+                    candidate.unitRole != UnitRole.Soldier)
+                {
+                    continue;
+                }
+
+                if (candidate.entityUid == soldierId)
+                {
+                    found = true;
+                    continue;
+                }
+
+                if (candidate.entityUid.Value < soldierId.Value)
+                {
+                    index++;
+                }
+            }
+
+            return found ? index : -1;
+        }
+
+        private bool TryFindPerimeterAnchorCell(ColonySnapshot colony, int direction, out HexCoord anchorCell)
+        {
+            if (colony == null)
+            {
+                anchorCell = HexCoord.Zero;
+                return false;
+            }
+
+            int clampedDirection = ((direction % 6) + 6) % 6;
+            int maxRadius = Mathf.Clamp(SoldierPerimeterRadius, 3, ColonyOwnershipRadius);
+            for (int radius = maxRadius; radius >= 3; radius--)
+            {
+                HexCoord candidate = StepDirection(colony.center, clampedDirection, radius);
+                OccupancyEvaluation occupancy = EvaluateCell(candidate, MovementClassMask.GroundSmall);
+                if (!occupancy.isHardBlocked)
+                {
+                    anchorCell = candidate;
+                    return true;
+                }
+            }
+
+            anchorCell = colony.center;
+            return false;
+        }
+
+        private static HexCoord StepDirection(HexCoord origin, int direction, int steps)
+        {
+            HexCoord result = origin;
+            int clampedDirection = ((direction % 6) + 6) % 6;
+            int clampedSteps = Mathf.Max(0, steps);
+            for (int i = 0; i < clampedSteps; i++)
+            {
+                result = result.Neighbor(clampedDirection);
+            }
+
+            return result;
+        }
+
         private ColonySnapshot FindColony(ColonyId colonyId)
         {
             for (int i = 0; i < _snapshot.colonies.Count; i++)
@@ -4689,6 +5173,7 @@ namespace Ggj2026.Game.Shell.World
             {
                 SquadOrderKind.Hold => $"Holding {order.targetHex}.",
                 SquadOrderKind.DefendArea => $"Defending {order.targetHex}.",
+                SquadOrderKind.Perimeter => "Defending the colony perimeter.",
                 _ => $"Rallying at {order.targetHex}."
             };
         }

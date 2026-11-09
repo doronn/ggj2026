@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Ggj2026.Game.Shared.Hex;
 using Ggj2026.Game.Shared.UI;
 using UnityEngine;
 
@@ -23,7 +24,8 @@ namespace Ggj2026.Game.Shell.World
                 "This is a learning overlay. It hides advanced options until the guide reaches them.",
                 OnboardingFocusArea.WorldView,
                 new[] { "simulation" },
-                new[] { InspectorTabKind.World }));
+                new[] { InspectorTabKind.World },
+                worldMarkerCell: HexCoord.Zero));
             _steps.Add(new OnboardingDefinition(
                 "world-bar",
                 "Read The Top Bar",
@@ -41,7 +43,8 @@ namespace Ggj2026.Game.Shell.World
                 "The Next group shows the best action for what you selected, so you do not need to hunt for every tool.",
                 OnboardingFocusArea.OperationsRail,
                 new[] { "simulation", "view", "context", "floors", "edges" },
-                new[] { InspectorTabKind.World }));
+                new[] { InspectorTabKind.World },
+                tryItActionId: GameActionId.SetFloorTool));
             _steps.Add(new OnboardingDefinition(
                 "inspect-world",
                 "Inspect What You Selected",
@@ -50,7 +53,9 @@ namespace Ggj2026.Game.Shell.World
                 "Context explains the selected thing. Tasks shows urgent work. World shows colony health and the biggest blocker.",
                 OnboardingFocusArea.ContextInspector,
                 new[] { "simulation", "context", "floors", "edges", "modules", "cleanup" },
-                new[] { InspectorTabKind.Context, InspectorTabKind.Tasks, InspectorTabKind.World }));
+                new[] { InspectorTabKind.Context, InspectorTabKind.Tasks, InspectorTabKind.World },
+                worldMarkerCell: HexCoord.Zero,
+                tryItActionId: GameActionId.SelectCell));
             _steps.Add(new OnboardingDefinition(
                 "event-strip",
                 "Watch The Bottom Strip",
@@ -59,7 +64,8 @@ namespace Ggj2026.Game.Shell.World
                 "This is the fastest place to understand why a click did or did not work.",
                 OnboardingFocusArea.EventStrip,
                 new[] { "simulation", "context", "floors", "edges", "modules", "cleanup", "world" },
-                new[] { InspectorTabKind.Context, InspectorTabKind.Tasks, InspectorTabKind.World }));
+                new[] { InspectorTabKind.Context, InspectorTabKind.Tasks, InspectorTabKind.World },
+                tryItActionId: GameActionId.PaintFloor));
             _steps.Add(new OnboardingDefinition(
                 "systems",
                 "Your First Good Run",
@@ -68,7 +74,8 @@ namespace Ggj2026.Game.Shell.World
                 "If workers stop, the top blocker usually tells you why: no door, no path, or no source.",
                 OnboardingFocusArea.WorldView,
                 new[] { "simulation", "view", "context", "floors", "edges", "modules", "landmarks", "cleanup", "world" },
-                new[] { InspectorTabKind.Context, InspectorTabKind.Tasks, InspectorTabKind.Entities, InspectorTabKind.World }));
+                new[] { InspectorTabKind.Context, InspectorTabKind.Tasks, InspectorTabKind.Entities, InspectorTabKind.World },
+                worldMarkerCell: HexCoord.Zero));
             _steps.Add(new OnboardingDefinition(
                 "done",
                 "Guide Complete",
@@ -186,7 +193,11 @@ namespace Ggj2026.Game.Shell.World
                 isFinalStep = _stepIndex >= _steps.Count - 1,
                 progressText = $"Guide {_stepIndex + 1}/{_steps.Count}",
                 visibleOperationGroups = new List<string>(step.VisibleOperationGroups),
-                visibleInspectorTabs = new List<InspectorTabKind>(step.VisibleInspectorTabs)
+                visibleInspectorTabs = new List<InspectorTabKind>(step.VisibleInspectorTabs),
+                hasWorldMarkerCell = step.WorldMarkerCell.HasValue,
+                worldMarkerCell = step.WorldMarkerCell ?? HexCoord.Zero,
+                tryItActionId = step.TryItActionId ?? GameActionId.None,
+                hasTryItAction = step.TryItActionId.HasValue
             };
         }
 
@@ -210,6 +221,22 @@ namespace Ggj2026.Game.Shell.World
 
             OnboardingDefinition step = _steps[Mathf.Clamp(_stepIndex, 0, _steps.Count - 1)];
             return step.VisibleInspectorTabs.Contains(tabKind);
+        }
+
+        public void NotifyActionPerformed(GameActionId actionId)
+        {
+            if (!_isActive || _skippedThisSession || actionId == GameActionId.None)
+            {
+                return;
+            }
+
+            OnboardingDefinition step = _steps[Mathf.Clamp(_stepIndex, 0, _steps.Count - 1)];
+            if (!step.TryItActionId.HasValue || step.TryItActionId.Value != actionId)
+            {
+                return;
+            }
+
+            TryAdvance(out _);
         }
 
         public string GetPanelTooltip(string panelId)
@@ -239,7 +266,9 @@ namespace Ggj2026.Game.Shell.World
                 string tip,
                 OnboardingFocusArea focusArea,
                 IReadOnlyList<string> visibleOperationGroups,
-                IReadOnlyList<InspectorTabKind> visibleInspectorTabs)
+                IReadOnlyList<InspectorTabKind> visibleInspectorTabs,
+                HexCoord? worldMarkerCell = null,
+                GameActionId? tryItActionId = null)
             {
                 StepId = stepId;
                 Title = title;
@@ -249,6 +278,8 @@ namespace Ggj2026.Game.Shell.World
                 FocusArea = focusArea;
                 VisibleOperationGroups = new List<string>(visibleOperationGroups);
                 VisibleInspectorTabs = new List<InspectorTabKind>(visibleInspectorTabs);
+                WorldMarkerCell = worldMarkerCell;
+                TryItActionId = tryItActionId;
             }
 
             public string StepId { get; }
@@ -259,6 +290,8 @@ namespace Ggj2026.Game.Shell.World
             public OnboardingFocusArea FocusArea { get; }
             public List<string> VisibleOperationGroups { get; }
             public List<InspectorTabKind> VisibleInspectorTabs { get; }
+            public HexCoord? WorldMarkerCell { get; }
+            public GameActionId? TryItActionId { get; }
         }
     }
 }

@@ -6,10 +6,12 @@
     padding-right: 18px;
     padding-top: 16px;
     padding-bottom: 16px;
+    pointer-events: none;
     color: rgb(236, 239, 241);
 }
 
 .world-top-bar {
+    pointer-events: auto;
     min-height: 132px;
     margin-bottom: 12px;
     padding-left: 20px;
@@ -32,6 +34,9 @@
     border-right-color: rgba(177, 188, 195, 0.16);
     border-top-color: rgba(177, 188, 195, 0.16);
     border-bottom-color: rgba(177, 188, 195, 0.16);
+    transition-property: translate, opacity;
+    transition-duration: 0.2s;
+    transition-timing-function: ease-out;
 }
 
 .world-top-bar__column {
@@ -158,6 +163,7 @@
     flex-direction: row;
     justify-content: space-between;
     column-gap: 12px;
+    pointer-events: none;
 }
 
 .world-overlay-layer {
@@ -171,7 +177,9 @@
 
 .world-target-label {
     position: absolute;
-    display: none;
+    display: flex;
+    opacity: 0;
+    pointer-events: none;
     max-width: 260px;
     padding-left: 12px;
     padding-right: 12px;
@@ -190,6 +198,9 @@
     border-right-color: rgba(255, 243, 173, 0.28);
     border-top-color: rgba(255, 243, 173, 0.28);
     border-bottom-color: rgba(255, 243, 173, 0.28);
+    transition-property: opacity;
+    transition-duration: 0.12s;
+    transition-timing-function: ease-out;
 }
 
 .world-target-label--hover {
@@ -223,6 +234,7 @@
 }
 
 .hud-panel {
+    pointer-events: auto;
     padding-left: 18px;
     padding-right: 18px;
     padding-top: 18px;
@@ -254,17 +266,24 @@
     width: 340px;
     min-width: 320px;
     max-width: 360px;
+    transition-property: translate, opacity;
+    transition-duration: 0.25s;
+    transition-timing-function: ease-out;
 }
 
 .hud-panel--inspector {
     width: 420px;
     min-width: 360px;
     max-width: 440px;
+    transition-property: translate, opacity;
+    transition-duration: 0.25s;
+    transition-timing-function: ease-out;
 }
 
 .hud-center-spacer {
     flex-grow: 1;
     min-width: 120px;
+    pointer-events: none;
 }
 
 .panel-title {
@@ -329,11 +348,12 @@
     top: 0;
     bottom: 0;
     display: none;
-    pointer-events: auto;
+    pointer-events: none;
 }
 
 .onboarding-card {
     position: absolute;
+    pointer-events: auto;
     width: 380px;
     min-height: 220px;
     padding-left: 18px;
@@ -436,6 +456,31 @@
     min-width: 98px;
     min-height: 36px;
     margin-left: 8px;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+    transition-property: background-color, scale, border-color, border-width;
+    transition-duration: 0.12s;
+}
+
+.onboarding-card__button:hover {
+    scale: 1.06;
+}
+
+.onboarding-card__button:active {
+    scale: 0.96;
+}
+
+.onboarding-card__button:focus {
+    border-left-width: 3px;
+    border-right-width: 3px;
+    border-top-width: 3px;
+    border-bottom-width: 3px;
+    border-left-color: rgb(0, 255, 255);
+    border-right-color: rgb(0, 255, 255);
+    border-top-color: rgb(0, 255, 255);
+    border-bottom-color: rgb(0, 255, 255);
 }
 
 .onboarding-card__button--primary {
@@ -475,10 +520,34 @@
     background-color: rgba(50, 60, 68, 0.9);
     color: rgb(247, 248, 249);
     font-size: 13px;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+    transition-property: background-color, scale, border-color, border-width;
+    transition-duration: 0.15s;
 }
 
 .action-button:hover {
     background-color: rgba(68, 81, 92, 0.96);
+    scale: 1.02;
+}
+
+.action-button:active {
+    scale: 0.97;
+    background-color: rgba(44, 52, 59, 0.96);
+}
+
+.action-button:focus {
+    border-left-width: 3px;
+    border-right-width: 3px;
+    border-top-width: 3px;
+    border-bottom-width: 3px;
+    border-left-color: rgb(0, 255, 255);
+    border-right-color: rgb(0, 255, 255);
+    border-top-color: rgb(0, 255, 255);
+    border-bottom-color: rgb(0, 255, 255);
+    scale: 1.04;
 }
 
 .action-button--active {
@@ -556,6 +625,32 @@
     color: rgb(231, 236, 238);
     font-size: 13px;
     -unity-font-style: bold;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+    transition-property: background-color, scale, border-color, border-width;
+    transition-duration: 0.12s;
+}
+
+.inspector-tab:hover {
+    background-color: rgba(68, 82, 95, 0.92);
+    scale: 1.06;
+}
+
+.inspector-tab:active {
+    scale: 0.96;
+}
+
+.inspector-tab:focus {
+    border-left-width: 3px;
+    border-right-width: 3px;
+    border-top-width: 3px;
+    border-bottom-width: 3px;
+    border-left-color: rgb(0, 255, 255);
+    border-right-color: rgb(0, 255, 255);
+    border-top-color: rgb(0, 255, 255);
+    border-bottom-color: rgb(0, 255, 255);
 }
 
 .inspector-tab--active {
@@ -586,6 +681,9 @@
     border-right-color: rgba(177, 188, 195, 0.10);
     border-top-color: rgba(177, 188, 195, 0.10);
     border-bottom-color: rgba(177, 188, 195, 0.10);
+    transition-property: opacity, translate;
+    transition-duration: 0.15s;
+    transition-timing-function: ease-out;
 }
 
 .context-card--warning {
@@ -660,6 +758,7 @@
 }
 
 .event-strip {
+    pointer-events: auto;
     min-height: 96px;
     margin-top: 12px;
     padding-left: 16px;
@@ -673,6 +772,9 @@
     background-color: rgba(15, 20, 25, 0.94);
     flex-direction: row;
     flex-wrap: wrap;
+    transition-property: translate, opacity;
+    transition-duration: 0.2s;
+    transition-timing-function: ease-out;
 }
 
 .event-strip__block {
@@ -716,6 +818,90 @@
     color: rgb(255, 221, 170);
 }
 
+.control-hints-bar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 14px;
+    row-gap: 6px;
+    min-width: 180px;
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    pointer-events: none;
+}
+
+.control-hint {
+    flex-direction: row;
+    align-items: center;
+    column-gap: 5px;
+    pointer-events: none;
+}
+
+.control-hint__action {
+    color: rgb(186, 198, 208);
+    font-size: 11px;
+}
+
+.keycap {
+    min-width: 26px;
+    min-height: 22px;
+    padding-left: 6px;
+    padding-right: 6px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    font-size: 11px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(255, 255, 255);
+    background-color: rgba(45, 50, 58, 0.95);
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+    border-top-width: 1px;
+    border-bottom-width: 3px;
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-color: rgba(90, 100, 115, 0.9);
+    border-bottom-color: rgba(20, 24, 30, 0.95);
+    border-left-color: rgba(60, 68, 78, 0.9);
+    border-right-color: rgba(60, 68, 78, 0.9);
+}
+
+.keycap--xbox {
+    background-color: rgba(20, 100, 20, 0.95);
+    border-top-color: rgba(30, 140, 30, 0.9);
+    border-bottom-color: rgba(10, 60, 10, 0.95);
+    border-left-color: rgba(15, 80, 15, 0.9);
+    border-right-color: rgba(15, 80, 15, 0.9);
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
+.keycap--playstation {
+    background-color: rgba(30, 50, 110, 0.95);
+    border-top-color: rgba(40, 70, 150, 0.9);
+    border-bottom-color: rgba(15, 25, 60, 0.95);
+    border-left-color: rgba(25, 40, 90, 0.9);
+    border-right-color: rgba(25, 40, 90, 0.9);
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
+.keycap--gamepad {
+    background-color: rgba(60, 60, 68, 0.95);
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
 @media (max-width: 1600px) {
     .world-top-bar {
         flex-wrap: wrap;
@@ -736,5 +922,235 @@
     .hud-panel--inspector {
         width: 380px;
         min-width: 320px;
+    }
+}
+
+/* Readability overhaul pass: stronger contrast, clearer hierarchy, larger touch targets. */
+.hud-shell {
+    color: rgb(242, 246, 248);
+}
+
+.world-top-bar {
+    background-color: rgba(8, 13, 18, 0.96);
+    border-left-color: rgba(207, 220, 228, 0.24);
+    border-right-color: rgba(207, 220, 228, 0.24);
+    border-top-color: rgba(207, 220, 228, 0.24);
+    border-bottom-color: rgba(207, 220, 228, 0.24);
+}
+
+.world-section-label {
+    font-size: 12px;
+    color: rgb(182, 195, 204);
+}
+
+.world-status-block {
+    min-height: 62px;
+    background-color: rgba(33, 45, 55, 0.9);
+}
+
+.world-status-block__label {
+    font-size: 12px;
+}
+
+.world-status-block__value {
+    font-size: 16px;
+}
+
+.metric-chip {
+    min-height: 62px;
+    background-color: rgba(24, 33, 41, 0.96);
+}
+
+.metric-chip__label {
+    font-size: 12px;
+}
+
+.metric-chip__value {
+    font-size: 21px;
+}
+
+.hud-panel {
+    background-color: rgba(11, 17, 23, 0.94);
+    border-left-color: rgba(189, 202, 212, 0.2);
+    border-right-color: rgba(189, 202, 212, 0.2);
+    border-top-color: rgba(189, 202, 212, 0.2);
+    border-bottom-color: rgba(189, 202, 212, 0.2);
+}
+
+.panel-title {
+    font-size: 23px;
+}
+
+.panel-subtitle {
+    font-size: 15px;
+    color: rgb(213, 222, 227);
+}
+
+.panel-summary {
+    font-size: 15px;
+    color: rgb(228, 234, 238);
+}
+
+.panel-summary--soft {
+    color: rgb(196, 206, 212);
+}
+
+.panel-summary--hero {
+    background-color: rgba(33, 45, 56, 0.94);
+    font-size: 16px;
+}
+
+.panel-summary--next {
+    background-color: rgba(58, 73, 43, 0.86);
+    color: rgb(248, 244, 220);
+    font-size: 15px;
+    -unity-font-style: bold;
+}
+
+.operations-group {
+    border-bottom-color: rgba(196, 208, 216, 0.2);
+}
+
+.panel-section-title {
+    font-size: 16px;
+    color: rgb(242, 246, 248);
+}
+
+.action-button {
+    min-height: 64px;
+    margin-top: 10px;
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    background-color: rgba(42, 54, 66, 0.94);
+}
+
+.action-button:hover {
+    background-color: rgba(57, 73, 88, 0.98);
+}
+
+.action-button:focus {
+    border-left-color: rgb(255, 225, 136);
+    border-right-color: rgb(255, 225, 136);
+    border-top-color: rgb(255, 225, 136);
+    border-bottom-color: rgb(255, 225, 136);
+}
+
+.action-button--active {
+    background-color: rgba(112, 84, 40, 0.98);
+}
+
+.action-button__title {
+    font-size: 16px;
+}
+
+.action-button__meta {
+    margin-top: 6px;
+    color: rgb(216, 225, 231);
+    font-size: 13px;
+}
+
+.action-button__meta--warning {
+    color: rgb(255, 224, 168);
+    -unity-font-style: bold;
+}
+
+.inspector-tab {
+    min-height: 42px;
+    font-size: 14px;
+    background-color: rgba(50, 63, 75, 0.92);
+}
+
+.inspector-tab--active {
+    background-color: rgba(72, 104, 128, 0.98);
+}
+
+.inspector-tab:focus {
+    border-left-color: rgb(255, 225, 136);
+    border-right-color: rgb(255, 225, 136);
+    border-top-color: rgb(255, 225, 136);
+    border-bottom-color: rgb(255, 225, 136);
+}
+
+.context-card {
+    margin-bottom: 14px;
+    padding-left: 18px;
+    padding-right: 18px;
+    padding-top: 16px;
+    padding-bottom: 16px;
+    background-color: rgba(23, 32, 41, 0.94);
+    border-left-color: rgba(194, 207, 216, 0.18);
+    border-right-color: rgba(194, 207, 216, 0.18);
+    border-top-color: rgba(194, 207, 216, 0.18);
+    border-bottom-color: rgba(194, 207, 216, 0.18);
+}
+
+.context-card__title {
+    font-size: 18px;
+}
+
+.context-card__subtitle {
+    font-size: 14px;
+}
+
+.context-card__summary {
+    font-size: 15px;
+}
+
+.context-card__emphasis {
+    font-size: 14px;
+}
+
+.info-row__label,
+.info-row__value {
+    font-size: 14px;
+}
+
+.event-strip {
+    min-height: 108px;
+    background-color: rgba(11, 16, 21, 0.96);
+}
+
+.event-strip__block {
+    min-height: 72px;
+    background-color: rgba(29, 40, 49, 0.9);
+}
+
+.event-strip__title {
+    font-size: 12px;
+    color: rgb(192, 203, 210);
+}
+
+.event-strip__item {
+    font-size: 14px;
+}
+
+.event-strip__item--warning {
+    -unity-font-style: bold;
+}
+
+.control-hint__action {
+    font-size: 12px;
+}
+
+@media (max-width: 1280px) {
+    .hud-shell {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .hud-panel--rail {
+        width: 292px;
+        min-width: 272px;
+    }
+
+    .hud-panel--inspector {
+        width: 340px;
+        min-width: 300px;
+    }
+
+    .hud-center-spacer {
+        min-width: 32px;
     }
 }

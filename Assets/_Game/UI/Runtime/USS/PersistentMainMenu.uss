@@ -2,7 +2,7 @@
     flex-grow: 1;
     justify-content: center;
     align-items: center;
-    background-color: rgba(18, 22, 30, 0.96);
+    background-color: rgba(8, 10, 16, 0.96);
 }
 
 .menu-card {
@@ -11,25 +11,71 @@
     padding-right: 28px;
     padding-top: 24px;
     padding-bottom: 24px;
-    row-gap: 10px;
-    background-color: rgba(34, 42, 54, 0.98);
-    border-top-left-radius: 12px;
-    border-top-right-radius: 12px;
-    border-bottom-left-radius: 12px;
-    border-bottom-right-radius: 12px;
+    row-gap: 12px;
+    background-color: rgba(16, 22, 28, 0.98);
+    border-top-left-radius: 18px;
+    border-top-right-radius: 18px;
+    border-bottom-left-radius: 18px;
+    border-bottom-right-radius: 18px;
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(0, 180, 220, 0.35);
+    border-right-color: rgba(0, 180, 220, 0.35);
+    border-top-color: rgba(0, 180, 220, 0.35);
+    border-bottom-color: rgba(0, 180, 220, 0.35);
 }
 
 .menu-title {
     font-size: 26px;
     -unity-font-style: bold;
-    color: rgb(245, 248, 250);
+    color: rgb(248, 249, 250);
 }
 
 .menu-subtitle {
     font-size: 14px;
-    color: rgb(189, 202, 211);
+    color: rgb(186, 198, 208);
+    margin-bottom: 6px;
 }
 
 .menu-button {
-    height: 38px;
+    height: 42px;
+    font-size: 15px;
+    -unity-font-style: bold;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    background-color: rgba(40, 51, 61, 0.92);
+    color: rgb(248, 249, 250);
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+    transition-property: background-color, scale, border-color, border-width;
+    transition-duration: 0.12s;
+}
+
+.menu-button:hover {
+    background-color: rgba(55, 70, 82, 0.96);
+    scale: 1.04;
+}
+
+.menu-button:active {
+    scale: 0.97;
+}
+
+.menu-button:focus {
+    border-left-width: 4px;
+    border-right-width: 4px;
+    border-top-width: 4px;
+    border-bottom-width: 4px;
+    border-left-color: rgb(0, 255, 255);
+    border-right-color: rgb(0, 255, 255);
+    border-top-color: rgb(0, 255, 255);
+    border-bottom-color: rgb(0, 255, 255);
+    scale: 1.08;
+    background-color: rgb(255, 255, 255);
+    color: rgb(0, 0, 0);
 }

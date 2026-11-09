@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="PauseOverlay" class="pause-overlay">
+        <ui:VisualElement name="PauseCard" class="pause-card">
+            <ui:Label name="PauseTitleLabel" text="Paused" class="pause-title" />
+            <ui:Label name="PauseSubtitleLabel" text="Game is paused" class="pause-subtitle" />
+            <ui:Button name="ResumeButton" text="Resume" class="pause-button pause-button--primary" />
+            <ui:Button name="ExitToMenuButton" text="Exit to Menu" class="pause-button pause-button--danger" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

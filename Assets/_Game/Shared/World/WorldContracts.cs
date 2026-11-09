@@ -107,6 +107,7 @@ namespace Ggj2026.Game.Shared.World
         public ResourceType resourceType;
         public HexCoord cell;
         public int remainingYield;
+        public int maxYield;
         public bool isDepleted;
     }
 

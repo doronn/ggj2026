@@ -24,6 +24,7 @@
 - `unity_run_tests`
 - `unity_cancel_tests`
 - `unity_apply_ui_plan`
+- `unity_polygon_visual_maintenance`
 - `unity_open_scene`
 - `unity_play_mode`
 - `unity_list_manual_tests`

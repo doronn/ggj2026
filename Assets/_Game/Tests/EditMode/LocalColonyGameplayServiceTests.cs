@@ -276,6 +276,53 @@ namespace Ggj2026.Game.Tests.EditMode
         }
 
         [Test]
+        public void DescribeUnitTask_IdleExplainsMissingConstructionSource()
+        {
+            WorldGenerationProfile profile = CreateProfile();
+            WorldSnapshot snapshot = CreateWorld();
+            FactionId factionId = snapshot.factions[0].factionId;
+            ColonySnapshot colony = snapshot.colonies[0];
+
+            snapshot.itemStacks.Clear();
+            snapshot.constructionFeatures.Clear();
+            for (int i = 0; i < snapshot.chunks.Count; i++)
+            {
+                snapshot.chunks[i].resourceNodes.Clear();
+            }
+
+            snapshot.units = new List<UnitSnapshot>
+            {
+                new UnitSnapshot
+                {
+                    entityUid = EntityUid.NewId(),
+                    ownerColonyId = colony.colonyId,
+                    ownerFactionId = factionId,
+                    unitRole = UnitRole.Worker,
+                    lifecycleState = UnitLifecycleState.Active,
+                    movementClassMask = MovementClassMask.GroundSmall,
+                    occupancyClassMask = OccupancyClassMask.Worker,
+                    hexCoord = colony.center,
+                    targetHex = colony.center,
+                    currentJobType = JobType.Idle,
+                    carryLoad = new CarryLoad()
+                }
+            };
+
+            snapshot.constructionFeatures.Add(CreateFloorConstruction(
+                ConstructionFeatureId.NewId(),
+                factionId,
+                colony.colonyId,
+                colony.center,
+                3));
+
+            var service = new LocalColonyGameplayService(null);
+            service.Initialize(snapshot, profile);
+
+            string detail = service.DescribeUnitTask(snapshot.units[0]);
+            Assert.That(detail, Does.Contain("No source for Wood"));
+        }
+
+        [Test]
         public void DerivedSummary_ComesFromPhysicalStacks()
         {
             WorldSnapshot snapshot = CreateWorld();
@@ -571,6 +618,9 @@ namespace Ggj2026.Game.Tests.EditMode
             Assert.That(service.TryIssueDefenderOrder(SquadOrderKind.Hold, default, false, out string holdFailure), Is.True, holdFailure);
             Assert.That(service.GetStandingSquadOrder().orderKind, Is.EqualTo(SquadOrderKind.Hold));
 
+            Assert.That(service.TryIssueDefenderOrder(SquadOrderKind.Perimeter, default, false, out string perimeterFailure), Is.True, perimeterFailure);
+            Assert.That(service.GetStandingSquadOrder().orderKind, Is.EqualTo(SquadOrderKind.Perimeter));
+
             Assert.That(service.TryIssueDefenderOrder(SquadOrderKind.Garrison, default, false, out string rallyFailure), Is.True, rallyFailure);
             Assert.That(service.GetStandingSquadOrder().orderKind, Is.EqualTo(SquadOrderKind.Garrison));
         }
@@ -608,6 +658,52 @@ namespace Ggj2026.Game.Tests.EditMode
             Assert.That(soldier.hexCoord, Is.EqualTo(defendCell));
             Assert.That(soldier.targetHex, Is.EqualTo(defendCell));
             Assert.That(soldier.currentJobType, Is.EqualTo(JobType.Garrison));
+        }
+
+        [Test]
+        public void AdvancingWorld_PerimeterOrderDistributesSoldiersAcrossTargets()
+        {
+            WorldSnapshot snapshot = CreateWorld();
+            ColonySnapshot colony = snapshot.colonies[0];
+
+            for (int i = 0; i < 6; i++)
+            {
+                snapshot.units.Add(new UnitSnapshot
+                {
+                    entityUid = new EntityUid((ulong)(i + 1)),
+                    ownerColonyId = colony.colonyId,
+                    ownerFactionId = colony.ownerFactionId,
+                    unitRole = UnitRole.Soldier,
+                    lifecycleState = UnitLifecycleState.Active,
+                    movementClassMask = MovementClassMask.GroundSmall,
+                    occupancyClassMask = OccupancyClassMask.Soldier,
+                    hexCoord = colony.center,
+                    targetHex = colony.center,
+                    currentJobType = JobType.Garrison,
+                    carryLoad = new CarryLoad(),
+                    health = 100
+                });
+            }
+
+            var service = new LocalColonyGameplayService(null);
+            service.Initialize(snapshot, CreateProfile());
+
+            Assert.That(service.TryIssueDefenderOrder(SquadOrderKind.Perimeter, default, false, out string perimeterFailure), Is.True, perimeterFailure);
+            service.AdvanceSimulation(2);
+
+            var soldierTargets = new HashSet<HexCoord>();
+            for (int i = 0; i < snapshot.units.Count; i++)
+            {
+                UnitSnapshot unit = snapshot.units[i];
+                if (unit.unitRole != UnitRole.Soldier)
+                {
+                    continue;
+                }
+
+                soldierTargets.Add(unit.targetHex);
+            }
+
+            Assert.That(soldierTargets.Count, Is.GreaterThan(1));
         }
 
         [Test]

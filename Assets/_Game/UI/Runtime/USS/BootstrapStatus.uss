@@ -2,7 +2,7 @@
     flex-grow: 1;
     justify-content: center;
     align-items: center;
-    background-color: rgba(14, 18, 24, 0.96);
+    background-color: rgba(8, 10, 16, 0.96);
 }
 
 .bootstrap-card {
@@ -11,20 +11,28 @@
     padding-right: 24px;
     padding-top: 20px;
     padding-bottom: 20px;
-    background-color: rgba(30, 36, 44, 0.96);
-    border-top-left-radius: 12px;
-    border-top-right-radius: 12px;
-    border-bottom-left-radius: 12px;
-    border-bottom-right-radius: 12px;
+    background-color: rgba(16, 22, 28, 0.96);
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 16px;
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(0, 180, 220, 0.35);
+    border-right-color: rgba(0, 180, 220, 0.35);
+    border-top-color: rgba(0, 180, 220, 0.35);
+    border-bottom-color: rgba(0, 180, 220, 0.35);
 }
 
 .bootstrap-title {
     font-size: 22px;
     -unity-font-style: bold;
-    color: rgb(242, 245, 247);
+    color: rgb(248, 249, 250);
 }
 
 .bootstrap-status {
     margin-top: 8px;
-    color: rgb(194, 203, 208);
+    color: rgb(186, 198, 208);
 }

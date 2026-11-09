@@ -6,6 +6,17 @@ using Ggj2026.Game.Shared.Telemetry;
 
 namespace Ggj2026.Game.Shared.UI
 {
+    public enum ColonyMilestone
+    {
+        None = 0,
+        FirstShelter,
+        FirstProduction,
+        PopulationGrowth,
+        FirstSoldier,
+        SurvivedFirstRaid,
+        WeaponsChain
+    }
+
     public enum GameActionId
     {
         None,
@@ -44,7 +55,8 @@ namespace Ggj2026.Game.Shared.UI
         SelectEntity,
         SetInspectorTab,
         FocusSelectedTarget,
-        ExplainContext
+        ExplainContext,
+        PerimeterDefenders
     }
 
     public enum GameActionCategory
@@ -331,6 +343,22 @@ namespace Ggj2026.Game.Shared.UI
         public string progressText;
         public List<string> visibleOperationGroups = new List<string>();
         public List<InspectorTabKind> visibleInspectorTabs = new List<InspectorTabKind>();
+        public bool hasWorldMarkerCell;
+        public HexCoord worldMarkerCell;
+        public GameActionId tryItActionId;
+        public bool hasTryItAction;
+    }
+
+    public enum GameEventSeverity { Info, Warning, Critical }
+    public enum GameEventCategory { Economy, Construction, Milestone, Raid, Population, System }
+
+    [Serializable]
+    public class GameEventRecord
+    {
+        public long tick;
+        public string text;
+        public GameEventSeverity severity;
+        public GameEventCategory category;
     }
 
     [Serializable]
@@ -341,6 +369,17 @@ namespace Ggj2026.Game.Shared.UI
         public string lastActionText;
         public string blockerText;
         public string warningText;
+        public List<GameEventRecord> recentEvents = new List<GameEventRecord>();
+    }
+
+    [Serializable]
+    public class MilestoneState
+    {
+        public string milestoneId;
+        public string title;
+        public string description;
+        public bool isComplete;
+        public int completedTick;
     }
 
     [Serializable]
@@ -357,5 +396,6 @@ namespace Ggj2026.Game.Shared.UI
         public List<EntitySummaryState> entities = new List<EntitySummaryState>();
         public List<BlockerSummaryState> blockers = new List<BlockerSummaryState>();
         public List<GameActionDescriptor> availableActions = new List<GameActionDescriptor>();
+        public List<MilestoneState> milestones = new List<MilestoneState>();
     }
 }

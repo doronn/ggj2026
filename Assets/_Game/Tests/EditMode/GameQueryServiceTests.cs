@@ -160,6 +160,107 @@ namespace Ggj2026.Game.Tests.EditMode
         }
 
         [Test]
+        public void BuildHudState_WorldContextShowsCoreBuildGroupsAndHidesLandmarks()
+        {
+            var generator = new DeterministicHexWorldGenerator();
+            var profile = new WorldGenerationProfile
+            {
+                profileId = "query-world-groups-test",
+                chunkSize = 24,
+                homeWorldSize = 384,
+                aiFactionCount = 1
+            };
+
+            WorldSnapshot snapshot = generator.Generate(profile, new WorldSeed(2828), new WorldId(28), new FactionId(14));
+            var gameplayService = new LocalColonyGameplayService(null);
+            gameplayService.Initialize(snapshot, profile);
+
+            var host = new GameObject("GameQueryWorldGroupsTests");
+            var renderer = host.AddComponent<LocalWorldDebugRenderer>();
+            var realtime = host.AddComponent<RealTimeSimulationController>();
+            realtime.Initialize(null, gameplayService);
+
+            var actionService = new GameActionService(gameplayService, renderer, realtime);
+            var queryService = new GameQueryService(gameplayService, renderer, realtime, actionService);
+
+            HumanAgentHudState hudState = queryService.BuildHudState();
+
+            Assert.That(hudState.operationsRail.groups.Exists(group => group.groupId == "floors"), Is.True);
+            Assert.That(hudState.operationsRail.groups.Exists(group => group.groupId == "edges"), Is.True);
+            Assert.That(hudState.operationsRail.groups.Exists(group => group.groupId == "landmarks"), Is.False);
+
+            Object.DestroyImmediate(host);
+        }
+
+        [Test]
+        public void BuildHudState_SelectedCellWithoutLandmarkHidesLandmarkGroup()
+        {
+            var generator = new DeterministicHexWorldGenerator();
+            var profile = new WorldGenerationProfile
+            {
+                profileId = "query-cell-groups-test",
+                chunkSize = 24,
+                homeWorldSize = 384,
+                aiFactionCount = 1
+            };
+
+            WorldSnapshot snapshot = generator.Generate(profile, new WorldSeed(2929), new WorldId(29), new FactionId(15));
+            var gameplayService = new LocalColonyGameplayService(null);
+            gameplayService.Initialize(snapshot, profile);
+
+            var host = new GameObject("GameQueryCellGroupsTests");
+            var renderer = host.AddComponent<LocalWorldDebugRenderer>();
+            var realtime = host.AddComponent<RealTimeSimulationController>();
+            realtime.Initialize(null, gameplayService);
+
+            var actionService = new GameActionService(gameplayService, renderer, realtime);
+            var queryService = new GameQueryService(gameplayService, renderer, realtime, actionService);
+
+            renderer.SetSelectedHex(gameplayService.GetPrimaryColony().center.Neighbor(3));
+            HumanAgentHudState hudState = queryService.BuildHudState();
+
+            Assert.That(hudState.operationsRail.groups.Exists(group => group.groupId == "floors"), Is.True);
+            Assert.That(hudState.operationsRail.groups.Exists(group => group.groupId == "landmarks"), Is.False);
+
+            Object.DestroyImmediate(host);
+        }
+
+        [Test]
+        public void BuildHudState_SelectedEdgeShowsEdgeGroupAndHidesUnrelatedBuildGroups()
+        {
+            var generator = new DeterministicHexWorldGenerator();
+            var profile = new WorldGenerationProfile
+            {
+                profileId = "query-edge-groups-test",
+                chunkSize = 24,
+                homeWorldSize = 384,
+                aiFactionCount = 1
+            };
+
+            WorldSnapshot snapshot = generator.Generate(profile, new WorldSeed(3030), new WorldId(30), new FactionId(16));
+            var gameplayService = new LocalColonyGameplayService(null);
+            gameplayService.Initialize(snapshot, profile);
+
+            var host = new GameObject("GameQueryEdgeGroupsTests");
+            var renderer = host.AddComponent<LocalWorldDebugRenderer>();
+            var realtime = host.AddComponent<RealTimeSimulationController>();
+            realtime.Initialize(null, gameplayService);
+
+            var actionService = new GameActionService(gameplayService, renderer, realtime);
+            var queryService = new GameQueryService(gameplayService, renderer, realtime, actionService);
+
+            HexCoord center = gameplayService.GetPrimaryColony().center;
+            renderer.SetSelectedEdge(HexEdgeCoord.FromCellAndDirection(center, 0));
+            HumanAgentHudState hudState = queryService.BuildHudState();
+
+            Assert.That(hudState.operationsRail.groups.Exists(group => group.groupId == "edges"), Is.True);
+            Assert.That(hudState.operationsRail.groups.Exists(group => group.groupId == "modules"), Is.False);
+            Assert.That(hudState.operationsRail.groups.Exists(group => group.groupId == "landmarks"), Is.False);
+
+            Object.DestroyImmediate(host);
+        }
+
+        [Test]
         public void BuildContextInspectorState_TaskCardsExposeConstructionManagementActions()
         {
             var generator = new DeterministicHexWorldGenerator();
@@ -350,9 +451,11 @@ namespace Ggj2026.Game.Tests.EditMode
             Assert.That(defenseCard.actions.Exists(action => action.actionId == GameActionId.TrainSoldier), Is.True);
             Assert.That(defenseCard.actions.Exists(action => action.actionId == GameActionId.RallyDefenders), Is.True);
             Assert.That(defenseCard.actions.Exists(action => action.actionId == GameActionId.HoldDefenders), Is.True);
+            Assert.That(defenseCard.actions.Exists(action => action.actionId == GameActionId.PerimeterDefenders), Is.True);
             Assert.That(queryService.BuildAvailableActions().Exists(action => action.actionId == GameActionId.TrainSoldier), Is.True);
             Assert.That(queryService.BuildAvailableActions().Exists(action => action.actionId == GameActionId.RallyDefenders), Is.True);
             Assert.That(queryService.BuildAvailableActions().Exists(action => action.actionId == GameActionId.HoldDefenders), Is.True);
+            Assert.That(queryService.BuildAvailableActions().Exists(action => action.actionId == GameActionId.PerimeterDefenders), Is.True);
 
             Object.DestroyImmediate(host);
         }

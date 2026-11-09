@@ -351,6 +351,26 @@ class UnityProjectController:
             result.data["report"] = report
         return result
 
+    def polygon_visual_maintenance(
+        self,
+        *,
+        import_packages: bool = False,
+        repair_materials: bool = True,
+        refresh_visual_library: bool = True,
+        assign_library_to_renderers: bool = True,
+        source_root: str | None = None,
+    ) -> CommandResult:
+        payload: dict[str, Any] = {
+            "importPackages": bool(import_packages),
+            "repairMaterials": bool(repair_materials),
+            "refreshVisualLibrary": bool(refresh_visual_library),
+            "assignLibraryToRenderers": bool(assign_library_to_renderers),
+        }
+        if source_root:
+            payload["sourceRoot"] = source_root
+        timeout = 300.0 if import_packages else 120.0
+        return self.send_bridge_command("polygon_visual_maintenance", payload, timeout_seconds=timeout)
+
     def open_scene(self, scene_path: str) -> CommandResult:
         return self.send_bridge_command("open_scene", {"scenePath": scene_path})
 
@@ -537,6 +557,26 @@ class JsonRpcMcpServer:
                     "additionalProperties": False,
                 },
                 lambda args: self.controller.apply_ui_plan(bool(args.get("dryRun", False)), args.get("mode", "auto")),
+            ),
+            "unity_polygon_visual_maintenance": (
+                {
+                    "type": "object",
+                    "properties": {
+                        "importPackages": {"type": "boolean"},
+                        "repairMaterials": {"type": "boolean"},
+                        "refreshVisualLibrary": {"type": "boolean"},
+                        "assignLibraryToRenderers": {"type": "boolean"},
+                        "sourceRoot": {"type": "string"},
+                    },
+                    "additionalProperties": False,
+                },
+                lambda args: self.controller.polygon_visual_maintenance(
+                    import_packages=bool(args.get("importPackages", False)),
+                    repair_materials=bool(args.get("repairMaterials", True)),
+                    refresh_visual_library=bool(args.get("refreshVisualLibrary", True)),
+                    assign_library_to_renderers=bool(args.get("assignLibraryToRenderers", True)),
+                    source_root=args.get("sourceRoot"),
+                ),
             ),
             "unity_open_scene": (
                 {
@@ -906,6 +946,119 @@ class JsonRpcMcpServer:
                 },
                 lambda args: self.controller.tail_log(args["kind"], int(args.get("lines", 80))),
             ),
+            "unity_game_onboarding_control": (
+                {
+                    "type": "object",
+                    "properties": {
+                        "command": {"type": "string", "enum": ["start", "next", "previous", "skip"]},
+                    },
+                    "required": ["command"],
+                    "additionalProperties": False,
+                },
+                lambda args: self._onboarding_control(args["command"]),
+            ),
+            "unity_game_overlay_mode": (
+                {
+                    "type": "object",
+                    "properties": {
+                        "mode": {"type": "string"},
+                    },
+                    "required": ["mode"],
+                    "additionalProperties": False,
+                },
+                lambda args: self._overlay_mode(args["mode"]),
+            ),
+            "unity_game_construction_manage": (
+                {
+                    "type": "object",
+                    "properties": {
+                        "action": {"type": "string", "enum": ["priority_up", "priority_down", "cancel"]},
+                        "construction_id": {"type": "string"},
+                    },
+                    "required": ["action", "construction_id"],
+                    "additionalProperties": False,
+                },
+                lambda args: self._construction_manage(args["action"], args["construction_id"]),
+            ),
+            "unity_game_defense_order": (
+                {
+                    "type": "object",
+                    "properties": {
+                        "order": {"type": "string", "enum": ["rally", "hold", "perimeter", "defend_here"]},
+                        "target_cell": self._cell_schema(),
+                    },
+                    "required": ["order"],
+                    "additionalProperties": False,
+                },
+                lambda args: self._defense_order(args["order"], args.get("target_cell")),
+            ),
+            "unity_game_production_chain": (
+                {
+                    "type": "object",
+                    "properties": {},
+                    "additionalProperties": False,
+                },
+                lambda args: self._query_hud_section("productionChain", "productionSummary", "worldCard", description="production chain"),
+            ),
+            "unity_game_defense_summary": (
+                {
+                    "type": "object",
+                    "properties": {},
+                    "additionalProperties": False,
+                },
+                lambda args: self._query_hud_section("defenseSummary", "defenseCard", "raidState", "worldCard", description="defense summary"),
+            ),
+            "unity_game_construction_queue": (
+                {
+                    "type": "object",
+                    "properties": {},
+                    "additionalProperties": False,
+                },
+                lambda args: self._query_hud_section("constructionQueue", "constructions", "worldCard", description="construction queue"),
+            ),
+            "unity_game_space_info": (
+                {
+                    "type": "object",
+                    "properties": {
+                        "cell": self._cell_schema(),
+                    },
+                    "required": ["cell"],
+                    "additionalProperties": False,
+                },
+                lambda args: self._query_space_info(args["cell"]),
+            ),
+            "unity_game_worker_assignments": (
+                {
+                    "type": "object",
+                    "properties": {},
+                    "additionalProperties": False,
+                },
+                lambda args: self._query_worker_assignments(),
+            ),
+            "unity_game_batch_paint": (
+                {
+                    "type": "object",
+                    "properties": {
+                        "cells": {"type": "array", "items": self._cell_schema()},
+                        "floor_type": {"type": "string"},
+                    },
+                    "required": ["cells", "floor_type"],
+                    "additionalProperties": False,
+                },
+                lambda args: self._batch_paint(args["cells"], args["floor_type"]),
+            ),
+            "unity_game_batch_edge": (
+                {
+                    "type": "object",
+                    "properties": {
+                        "edges": {"type": "array", "items": self._edge_schema()},
+                        "edge_type": {"type": "string"},
+                    },
+                    "required": ["edges", "edge_type"],
+                    "additionalProperties": False,
+                },
+                lambda args: self._batch_edge(args["edges"], args["edge_type"]),
+            ),
         }
 
     @staticmethod
@@ -974,6 +1127,110 @@ class JsonRpcMcpServer:
                 return CommandResult(False, "running is required for simulation running changes.", {})
             return self._execute_action("SetRealtimeRunning", desiredRunningState=bool(running), panelId="McpGameplay", elementId="SetRealtimeRunning")
         return CommandResult(False, f"Unsupported simulation action: {action}", {})
+
+    def _onboarding_control(self, command: str) -> CommandResult:
+        command_map = {
+            "start": "StartOnboarding",
+            "next": "NextOnboardingStep",
+            "previous": "PreviousOnboardingStep",
+            "skip": "SkipOnboarding",
+        }
+        action_id = command_map.get(command.strip().lower())
+        if not action_id:
+            return CommandResult(False, f"Unsupported onboarding command: {command}", {"supported": list(command_map.keys())})
+        return self._execute_action(action_id, panelId="McpGameplay", elementId=action_id)
+
+    def _overlay_mode(self, mode: str) -> CommandResult:
+        return self._execute_action("SetOverlayMode", overlayMode=mode, panelId="McpGameplay", elementId="SetOverlayMode")
+
+    def _construction_manage(self, action: str, construction_id: str) -> CommandResult:
+        action_map = {
+            "priority_up": "IncreaseConstructionPriority",
+            "priority_down": "DecreaseConstructionPriority",
+            "cancel": "CancelConstruction",
+        }
+        action_id = action_map.get(action.strip().lower())
+        if not action_id:
+            return CommandResult(False, f"Unsupported construction action: {action}", {"supported": list(action_map.keys())})
+        return self._execute_action(action_id, targetConstructionId=construction_id, panelId="McpGameplay", elementId=action_id)
+
+    def _defense_order(self, order: str, target_cell: dict[str, Any] | None = None) -> CommandResult:
+        order_map = {
+            "rally": "RallyDefenders",
+            "hold": "HoldDefenders",
+            "perimeter": "PerimeterDefenders",
+            "defend_here": "DefendArea",
+        }
+        action_id = order_map.get(order.strip().lower())
+        if not action_id:
+            return CommandResult(False, f"Unsupported defense order: {order}", {"supported": list(order_map.keys())})
+        kwargs: dict[str, Any] = {"panelId": "McpGameplay", "elementId": action_id}
+        if target_cell is not None:
+            kwargs["targetCell"] = target_cell
+            kwargs["hasTargetCell"] = True
+        return self._execute_action(action_id, **kwargs)
+
+    def _query_hud_section(self, *keys: str, description: str) -> CommandResult:
+        result = self.controller.game_hud_state()
+        if not result.ok:
+            return result
+        extracted: dict[str, Any] = {}
+        for key in keys:
+            value = result.data.get(key)
+            if value is not None:
+                extracted[key] = value
+        if not extracted:
+            return CommandResult(True, f"No {description} data in current HUD state.", {"availableKeys": sorted(result.data.keys())})
+        return CommandResult(True, f"Retrieved {description}.", extracted)
+
+    def _query_space_info(self, cell: dict[str, Any]) -> CommandResult:
+        select_result = self._execute_action(
+            "SelectCell", targetCell=cell, hasTargetCell=True,
+            panelId="McpGameplay", elementId="SelectCell",
+        )
+        if not select_result.ok:
+            return select_result
+        hud = self.controller.game_hud_state()
+        if not hud.ok:
+            return hud
+        context: dict[str, Any] = {}
+        for key in ("contextInspector", "context", "selectedCell", "spaceInfo", "roomInfo", "activationState"):
+            value = hud.data.get(key)
+            if value is not None:
+                context[key] = value
+        return CommandResult(True, f"Space info for cell ({cell.get('Q')}, {cell.get('R')}).", {"cell": cell, "spaceInfo": context})
+
+    def _query_worker_assignments(self) -> CommandResult:
+        result = self.controller.game_list_entities()
+        if not result.ok:
+            return result
+        return CommandResult(True, "Retrieved worker assignments.", result.data)
+
+    def _batch_paint(self, cells: list[dict[str, Any]], floor_type: str) -> CommandResult:
+        results: list[dict[str, Any]] = []
+        for cell in cells:
+            r = self._execute_action(
+                "PaintFloor", targetCell=cell, hasTargetCell=True,
+                floorPurposeKind=floor_type,
+                panelId="McpGameplay", elementId="BatchPaint",
+            )
+            results.append({"cell": cell, "ok": r.ok, "message": r.message})
+        succeeded = sum(1 for r in results if r["ok"])
+        total = len(results)
+        return CommandResult(succeeded == total, f"Painted {succeeded}/{total} cells with {floor_type}.", {"results": results})
+
+    def _batch_edge(self, edges: list[dict[str, Any]], edge_type: str) -> CommandResult:
+        results: list[dict[str, Any]] = []
+        for edge in edges:
+            r = self._execute_action(
+                "BuildEdge", targetEdge=edge, hasTargetEdge=True,
+                edgeFeatureKind=edge_type,
+                panelId="McpGameplay", elementId="BatchEdge",
+            )
+            results.append({"edge": edge, "ok": r.ok, "message": r.message})
+        succeeded = sum(1 for r in results if r["ok"])
+        total = len(results)
+        return CommandResult(succeeded == total, f"Built {succeeded}/{total} edges with {edge_type}.", {"results": results})
 
     def serve(self) -> int:
         while True:
@@ -1089,6 +1346,7 @@ class JsonRpcMcpServer:
             "unity_run_tests": "Run editmode or playmode tests through the live Unity editor bridge when available, otherwise fall back to the repo-owned batch test wrapper.",
             "unity_cancel_tests": "Cancel or clear the currently active live Unity editor test run.",
             "unity_apply_ui_plan": "Preview or apply the maintained UI Toolkit plan through the live bridge or batch fallback.",
+            "unity_polygon_visual_maintenance": "Import selected Polygon packages (optional), repair unsupported Polygon materials, rebuild the visual prefab library, and assign it to loaded world renderers.",
             "unity_open_scene": "Open a scene in the live Unity editor bridge.",
             "unity_play_mode": "Enter or exit play mode in the live Unity editor bridge.",
             "unity_list_manual_tests": "List guided manual test scenarios known to the live Unity editor bridge.",
@@ -1123,6 +1381,17 @@ class JsonRpcMcpServer:
             "unity_game_context_explain": "Ask the runtime to explain the current selection/context in plain language.",
             "unity_game_force_inspector": "Force the runtime inspector to a specific tab.",
             "unity_tail_log": "Read the tail of the latest compile, runtime, test, or telemetry log.",
+            "unity_game_onboarding_control": "Control the onboarding flow: start, advance to next step, go back, or skip entirely.",
+            "unity_game_overlay_mode": "Set the world overlay visualization mode.",
+            "unity_game_construction_manage": "Manage a construction site: raise or lower its priority, or cancel it.",
+            "unity_game_defense_order": "Issue a defense order: rally defenders, hold position, distribute on perimeter, or defend a specific cell.",
+            "unity_game_production_chain": "Read the current production chain status (Ore -> Metal -> Weapons flow).",
+            "unity_game_defense_summary": "Read the defense summary: barracks readiness, soldiers, threat level, and raid state.",
+            "unity_game_construction_queue": "Read the ordered list of active constructions with materials and progress.",
+            "unity_game_space_info": "Select a cell and read the activation state and purpose of its room or space.",
+            "unity_game_worker_assignments": "Read what each worker is currently assigned to do.",
+            "unity_game_batch_paint": "Paint floors on multiple cells in a single batch operation.",
+            "unity_game_batch_edge": "Build edges on multiple targets in a single batch operation.",
         }
         return descriptions[name]
 

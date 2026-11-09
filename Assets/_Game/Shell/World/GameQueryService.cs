@@ -43,12 +43,13 @@ namespace Ggj2026.Game.Shell.World
                 onboarding = _onboardingFlowService != null ? _onboardingFlowService.BuildViewModel() : new OnboardingStepViewModel(),
                 selection = selection,
                 worldBar = BuildWorldBar(blockers),
-                operationsRail = BuildOperationsRail(),
+                operationsRail = BuildOperationsRail(selection),
                 contextInspector = Build(selection, blockers),
                 eventStrip = BuildEventStrip(selection, blockers),
                 entities = BuildEntitySummaries(),
                 blockers = blockers,
-                availableActions = BuildAvailableActions()
+                availableActions = BuildAvailableActions(selection),
+                milestones = _gameplayService != null ? _gameplayService.GetMilestoneStates() : new List<MilestoneState>()
             };
         }
 
@@ -63,9 +64,10 @@ namespace Ggj2026.Game.Shell.World
                 onboarding = _onboardingFlowService != null ? _onboardingFlowService.BuildViewModel() : new OnboardingStepViewModel(),
                 selection = selection,
                 worldBar = BuildWorldBar(blockers),
-                operationsRail = BuildOperationsRail(),
+                operationsRail = BuildOperationsRail(selection),
                 contextInspector = Build(selection, blockers),
-                eventStrip = BuildEventStrip(selection, blockers)
+                eventStrip = BuildEventStrip(selection, blockers),
+                milestones = _gameplayService != null ? _gameplayService.GetMilestoneStates() : new List<MilestoneState>()
             };
         }
 
@@ -247,7 +249,7 @@ namespace Ggj2026.Game.Shell.World
                     break;
 
                 case InspectorTabKind.World:
-                    inspector.worldCards.AddRange(BuildWorldCards());
+                    inspector.worldCards.AddRange(BuildWorldCards(selectionState));
                     break;
             }
 
@@ -517,9 +519,14 @@ namespace Ggj2026.Game.Shell.World
 
         public List<GameActionDescriptor> BuildAvailableActions()
         {
+            return BuildAvailableActions(BuildSelectionState());
+        }
+
+        private List<GameActionDescriptor> BuildAvailableActions(GameSelectionState selection)
+        {
             var actions = new List<GameActionDescriptor>();
             actions.AddRange(BuildOperationsActions());
-            actions.AddRange(_actionService.GetContextActions(BuildSelectionState()));
+            actions.AddRange(_actionService.GetContextActions(selection));
             return actions;
         }
 
@@ -572,7 +579,7 @@ namespace Ggj2026.Game.Shell.World
 
         private EventStripState BuildEventStrip(GameSelectionState selectionState, List<BlockerSummaryState> blockers)
         {
-            return new EventStripState
+            var strip = new EventStripState
             {
                 currentToolText = BuildToolInstruction(),
                 hoverText = BuildHoverText(selectionState),
@@ -580,15 +587,22 @@ namespace Ggj2026.Game.Shell.World
                 blockerText = BuildPrimaryBlockerText(blockers),
                 warningText = BuildWarningText(selectionState, blockers)
             };
+
+            if (_gameplayService?.RecentEvents != null)
+            {
+                for (int i = 0; i < _gameplayService.RecentEvents.Count; i++)
+                    strip.recentEvents.Add(_gameplayService.RecentEvents[i]);
+            }
+
+            return strip;
         }
 
-        private OperationsRailViewModel BuildOperationsRail()
+        private OperationsRailViewModel BuildOperationsRail(GameSelectionState selection)
         {
             var viewModel = new OperationsRailViewModel
             {
                 activeToolLabel = _actionService != null ? BuildActiveToolLabel() : "Active tool: none"
             };
-            GameSelectionState selection = BuildSelectionState();
 
             TryAddOperationsGroup(viewModel, "simulation", "Simulation", BuildSimulationActions());
             TryAddOperationsGroup(viewModel, "view", "View", BuildViewActions());
@@ -598,23 +612,42 @@ namespace Ggj2026.Game.Shell.World
                 TryAddOperationsGroup(viewModel, "context", "Next", nextActions);
             }
 
-            TryAddOperationsGroup(viewModel, "floors", "Floors", BuildFloorActions());
-            if (ShouldShowEdgeGroup(selection))
+            bool showFloors = ShouldShowFloorGroup(selection);
+            bool showEdges = ShouldShowEdgeGroup(selection);
+            bool showModules = ShouldShowModuleGroup(selection);
+            bool showLandmarks = ShouldShowLandmarkGroup(selection);
+            bool showCleanup = ShouldShowCleanupGroup(selection);
+
+            if (_actionService != null && _actionService.ActiveToolMode != WorldToolMode.None)
+            {
+                showFloors = _actionService.ActiveToolMode == WorldToolMode.PaintFloor;
+                showEdges = _actionService.ActiveToolMode == WorldToolMode.BuildEdge;
+                showModules = _actionService.ActiveToolMode == WorldToolMode.PlaceModule;
+                showLandmarks = _actionService.ActiveToolMode == WorldToolMode.PlaceLandmark;
+                showCleanup = _actionService.ActiveToolMode == WorldToolMode.ClearCell || _actionService.ActiveToolMode == WorldToolMode.ClearEdge;
+            }
+
+            if (showFloors)
+            {
+                TryAddOperationsGroup(viewModel, "floors", "Floors", BuildFloorActions());
+            }
+
+            if (showEdges)
             {
                 TryAddOperationsGroup(viewModel, "edges", "Edges", BuildEdgeActions());
             }
 
-            if (ShouldShowModuleGroup(selection))
+            if (showModules)
             {
                 TryAddOperationsGroup(viewModel, "modules", "Modules", BuildModuleActions());
             }
 
-            if (ShouldShowLandmarkGroup(selection))
+            if (showLandmarks)
             {
                 TryAddOperationsGroup(viewModel, "landmarks", "Landmarks", BuildLandmarkActions());
             }
 
-            if (ShouldShowCleanupGroup(selection))
+            if (showCleanup)
             {
                 TryAddOperationsGroup(viewModel, "cleanup", "Cleanup", BuildCleanupActions());
             }
@@ -626,6 +659,11 @@ namespace Ggj2026.Game.Shell.World
         private void TryAddOperationsGroup(OperationsRailViewModel viewModel, string groupId, string title, List<GameActionDescriptor> actions)
         {
             if (_onboardingFlowService != null && !_onboardingFlowService.IsOperationGroupVisible(groupId))
+            {
+                return;
+            }
+
+            if (actions == null || actions.Count == 0)
             {
                 return;
             }
@@ -946,7 +984,7 @@ namespace Ggj2026.Game.Shell.World
             return cards;
         }
 
-        private List<ContextCardViewModel> BuildWorldCards()
+        private List<ContextCardViewModel> BuildWorldCards(GameSelectionState selection)
         {
             var cards = new List<ContextCardViewModel>();
             if (_gameplayService?.Snapshot == null)
@@ -979,7 +1017,7 @@ namespace Ggj2026.Game.Shell.World
                 }
             });
             cards.Add(BuildProductionCard(colony));
-            cards.Add(BuildDefenseCard(colony));
+            cards.Add(BuildDefenseCard(colony, selection));
             List<BlockerSummaryState> blockers = BuildBlockerSummaries();
             cards.Add(new ContextCardViewModel
             {
@@ -992,7 +1030,7 @@ namespace Ggj2026.Game.Shell.World
                 {
                     Row("Primary", BuildPrimaryBlockerText(blockers)),
                     Row("Workers", BuildWorkerText()),
-                    Row("Alerts", BuildWarningText(BuildSelectionState(), blockers))
+                    Row("Alerts", BuildWarningText(selection, blockers))
                 }
             });
             cards.Add(new ContextCardViewModel
@@ -1084,19 +1122,19 @@ namespace Ggj2026.Game.Shell.World
             return card;
         }
 
-        private ContextCardViewModel BuildDefenseCard(ColonySnapshot colony)
+        private ContextCardViewModel BuildDefenseCard(ColonySnapshot colony, GameSelectionState selection)
         {
             int soldiers = colony != null ? CountUnitsByRole(colony.colonyId, UnitRole.Soldier) : 0;
             FactionSnapshot faction = _gameplayService.GetPlayerFaction();
             IReadOnlyList<ResourceStack> summary = faction != null
                 ? _gameplayService.GetDerivedResourceSummary(faction.factionId)
                 : new List<ResourceStack>();
-            GameSelectionState selection = BuildSelectionState();
             var actions = new List<GameActionDescriptor>
             {
                 _actionService.Describe(_actionService.CreateEnvelope(GameActionId.TrainSoldier)),
                 _actionService.Describe(_actionService.CreateEnvelope(GameActionId.RallyDefenders)),
-                _actionService.Describe(_actionService.CreateEnvelope(GameActionId.HoldDefenders))
+                _actionService.Describe(_actionService.CreateEnvelope(GameActionId.HoldDefenders)),
+                _actionService.Describe(_actionService.CreateEnvelope(GameActionId.PerimeterDefenders))
             };
 
             if (selection.hasSelectedCell)
@@ -1335,10 +1373,29 @@ namespace Ggj2026.Game.Shell.World
 
         private bool ShouldShowEdgeGroup(GameSelectionState selection)
         {
+            if (_actionService.ActiveToolMode == WorldToolMode.BuildEdge)
+            {
+                return true;
+            }
+
+            if (selection.hasSelectedEdge || selection.hasHoveredEdge)
+            {
+                return true;
+            }
+
+            if (selection.resolvedContextKind == ContextKind.World)
+            {
+                return true;
+            }
+
+            if (selection.hasSelectedCell && NeedsShelterEdgeForSelection(selection.selectedCell))
+            {
+                return true;
+            }
+
             return _actionService.ActiveToolMode == WorldToolMode.BuildEdge ||
                    selection.hasSelectedEdge ||
-                   selection.hasHoveredEdge ||
-                   selection.hasSelectedCell;
+                   selection.hasHoveredEdge;
         }
 
         private bool ShouldShowModuleGroup(GameSelectionState selection)
@@ -1358,17 +1415,79 @@ namespace Ggj2026.Game.Shell.World
             return state.floor != null && state.floor.isBuilt;
         }
 
+        private bool ShouldShowFloorGroup(GameSelectionState selection)
+        {
+            if (_actionService.ActiveToolMode == WorldToolMode.PaintFloor)
+            {
+                return true;
+            }
+
+            if (selection.resolvedContextKind == ContextKind.World)
+            {
+                return true;
+            }
+
+            if (selection.hasSelectedCell)
+            {
+                return true;
+            }
+
+            return selection.resolvedContextKind == ContextKind.Cell ||
+                   selection.resolvedContextKind == ContextKind.Stack;
+        }
+
         private bool ShouldShowLandmarkGroup(GameSelectionState selection)
         {
-            return _actionService.ActiveToolMode == WorldToolMode.PlaceLandmark || selection.hasSelectedCell;
+            if (_actionService.ActiveToolMode == WorldToolMode.PlaceLandmark)
+            {
+                return true;
+            }
+
+            if (selection.resolvedContextKind == ContextKind.Landmark)
+            {
+                return true;
+            }
+
+            if (!selection.hasSelectedCell)
+            {
+                return false;
+            }
+
+            return _gameplayService.GetLandmarksAtCell(selection.selectedCell).Count > 0;
         }
 
         private bool ShouldShowCleanupGroup(GameSelectionState selection)
         {
-            return _actionService.ActiveToolMode == WorldToolMode.ClearCell ||
-                   _actionService.ActiveToolMode == WorldToolMode.ClearEdge ||
-                   selection.hasSelectedCell ||
-                   selection.hasSelectedEdge;
+            if (_actionService.ActiveToolMode == WorldToolMode.ClearCell ||
+                _actionService.ActiveToolMode == WorldToolMode.ClearEdge)
+            {
+                return true;
+            }
+
+            if (selection.hasSelectedEdge)
+            {
+                HexEdgeState edge = _gameplayService.GetEdgeState(selection.selectedEdge);
+                return edge.isBuilt || _gameplayService.GetConstructionAtEdge(selection.selectedEdge).Count > 0;
+            }
+
+            if (!selection.hasSelectedCell)
+            {
+                return false;
+            }
+
+            HexCellState cellState = _gameplayService.GetCellState(selection.selectedCell);
+            if (cellState.floor != null && cellState.floor.isBuilt)
+            {
+                return true;
+            }
+
+            if (cellState.module != null && cellState.module.isBuilt)
+            {
+                return true;
+            }
+
+            return _gameplayService.GetConstructionAtCell(selection.selectedCell).Count > 0 ||
+                   _gameplayService.GetItemStacksAtCell(selection.selectedCell).Count > 0;
         }
 
         private List<GameActionDescriptor> BuildCleanupActions()
@@ -1388,14 +1507,16 @@ namespace Ggj2026.Game.Shell.World
                 _actionService.Describe(_actionService.CreateEnvelope(GameActionId.TrainSoldier)),
                 _actionService.Describe(_actionService.CreateEnvelope(GameActionId.RallyDefenders)),
                 _actionService.Describe(_actionService.CreateEnvelope(GameActionId.HoldDefenders)),
+                _actionService.Describe(_actionService.CreateEnvelope(GameActionId.PerimeterDefenders)),
                 _actionService.Describe(_actionService.CreateEnvelope(GameActionId.SaveWorld)),
-                _actionService.Describe(_actionService.CreateEnvelope(GameActionId.ResetWorld)),
-                _actionService.Describe(_actionService.CreateEnvelope(GameActionId.ExplainContext)),
-                _actionService.Describe(_actionService.CreateEnvelope(GameActionId.SetInspectorTab, inspectorTab: InspectorTabKind.World)),
-                _actionService.Describe(_actionService.CreateEnvelope(GameActionId.SetInspectorTab, inspectorTab: InspectorTabKind.Tasks)),
-                _actionService.Describe(_actionService.CreateEnvelope(GameActionId.SetInspectorTab, inspectorTab: InspectorTabKind.Entities)),
-                _actionService.Describe(_actionService.CreateEnvelope(GameActionId.SetInspectorTab, inspectorTab: InspectorTabKind.Context))
+                _actionService.Describe(_actionService.CreateEnvelope(GameActionId.ResetWorld))
             };
+        }
+
+        private bool NeedsShelterEdgeForSelection(HexCoord cell)
+        {
+            string activation = _gameplayService.DescribeSpaceActivation(cell);
+            return activation.StartsWith("Needs enclosed ", StringComparison.Ordinal);
         }
 
         private string BuildWorkerText()
@@ -1743,6 +1864,11 @@ namespace Ggj2026.Game.Shell.World
 
         private string DescribeWorkerDetail(UnitSnapshot unit)
         {
+            if (_gameplayService != null)
+            {
+                return _gameplayService.DescribeUnitTask(unit);
+            }
+
             string carryText = unit.carryLoad.amount > 0 ? $"{unit.carryLoad.resourceType} x{unit.carryLoad.amount}" : "empty hands";
             return $"{unit.currentJobType} at {unit.hexCoord}, target {unit.targetHex}, carrying {carryText}.";
         }

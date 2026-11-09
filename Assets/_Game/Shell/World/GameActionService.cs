@@ -81,6 +81,7 @@ namespace Ggj2026.Game.Shell.World
                 Describe(CreateEnvelope(GameActionId.TrainSoldier)),
                 Describe(CreateEnvelope(GameActionId.RallyDefenders)),
                 Describe(CreateEnvelope(GameActionId.HoldDefenders)),
+                Describe(CreateEnvelope(GameActionId.PerimeterDefenders)),
                 Describe(CreateEnvelope(GameActionId.SaveWorld)),
                 Describe(CreateEnvelope(GameActionId.ResetWorld))
             };
@@ -525,6 +526,13 @@ namespace Ggj2026.Game.Shell.World
                         string.IsNullOrEmpty(holdFailure) ? _gameplayService.DescribeStandingSquadOrder(_gameplayService.GetPrimaryColony()) : holdFailure,
                         holdFailure);
 
+                case GameActionId.PerimeterDefenders:
+                    return Finish(
+                        envelope,
+                        _gameplayService.TryIssueDefenderOrder(SquadOrderKind.Perimeter, default, false, out string perimeterFailure, envelope.uiSource, ToSessionActor(envelope.source)),
+                        string.IsNullOrEmpty(perimeterFailure) ? _gameplayService.DescribeStandingSquadOrder(_gameplayService.GetPrimaryColony()) : perimeterFailure,
+                        perimeterFailure);
+
                 case GameActionId.DefendArea:
                     return Finish(
                         envelope,
@@ -710,6 +718,9 @@ namespace Ggj2026.Game.Shell.World
                 case GameActionId.HoldDefenders:
                     return _gameplayService != null && _gameplayService.CanIssueDefenderOrder(SquadOrderKind.Hold, default, false, out blockedReason);
 
+                case GameActionId.PerimeterDefenders:
+                    return _gameplayService != null && _gameplayService.CanIssueDefenderOrder(SquadOrderKind.Perimeter, default, false, out blockedReason);
+
                 case GameActionId.DefendArea:
                     return _gameplayService != null && _gameplayService.CanIssueDefenderOrder(SquadOrderKind.DefendArea, envelope.targetCell, envelope.hasTargetCell, out blockedReason);
 
@@ -861,6 +872,12 @@ namespace Ggj2026.Game.Shell.World
         private GameActionResult Finish(GameActionEnvelope envelope, bool success, string message, string blockedReason = "")
         {
             _lastActionMessage = message;
+
+            if (success && _onboardingFlowService != null && _onboardingFlowService.IsActive)
+            {
+                _onboardingFlowService.NotifyActionPerformed(envelope.actionId);
+            }
+
             NotifyStateChanged();
             return new GameActionResult
             {
@@ -898,7 +915,7 @@ namespace Ggj2026.Game.Shell.World
                 GameActionId.SetLandmarkTool or GameActionId.PlaceLandmark => GameActionCategory.Landmarks,
                 GameActionId.IncreaseConstructionPriority or GameActionId.DecreaseConstructionPriority or GameActionId.CancelConstruction => GameActionCategory.Tasks,
                 GameActionId.SetClearCellTool or GameActionId.SetClearEdgeTool or GameActionId.ClearCell or GameActionId.ClearEdge or GameActionId.ClearTool => GameActionCategory.Cleanup,
-                GameActionId.SaveWorld or GameActionId.ResetWorld or GameActionId.TrainSoldier or GameActionId.RallyDefenders or GameActionId.HoldDefenders or GameActionId.DefendArea => GameActionCategory.World,
+                GameActionId.SaveWorld or GameActionId.ResetWorld or GameActionId.TrainSoldier or GameActionId.RallyDefenders or GameActionId.HoldDefenders or GameActionId.PerimeterDefenders or GameActionId.DefendArea => GameActionCategory.World,
                 GameActionId.SelectEntity or GameActionId.FocusSelectedTarget => GameActionCategory.Entities,
                 _ => GameActionCategory.Context
             };
@@ -931,6 +948,7 @@ namespace Ggj2026.Game.Shell.World
                 GameActionId.TrainSoldier => "Train Soldier",
                 GameActionId.RallyDefenders => "Rally Defenders",
                 GameActionId.HoldDefenders => "Hold Defenders",
+                GameActionId.PerimeterDefenders => "Perimeter Defenders",
                 GameActionId.DefendArea => "Defend Here",
                 GameActionId.SetOverlayMode => $"Overlay: {envelope.overlayMode}",
                 GameActionId.SetRealtimeRunning => envelope.desiredRunningState ? "Play Real Time" : "Pause",
@@ -972,6 +990,7 @@ namespace Ggj2026.Game.Shell.World
                 GameActionId.TrainSoldier => "Train one soldier from the current workforce using one Weapons stack.",
                 GameActionId.RallyDefenders => "Send defenders back to the colony rally point.",
                 GameActionId.HoldDefenders => "Make defenders hold their current position.",
+                GameActionId.PerimeterDefenders => "Spread defenders across the colony perimeter.",
                 GameActionId.DefendArea => "Send defenders to hold the selected tile.",
                 GameActionId.ExplainContext => "Explain the current selection and blockers.",
                 _ => string.Empty
@@ -991,6 +1010,7 @@ namespace Ggj2026.Game.Shell.World
                 GameActionId.TrainSoldier => "Requires active barracks, a recruit, and available Weapons.",
                 GameActionId.RallyDefenders => "Use this to regroup defenders at the colony rally point.",
                 GameActionId.HoldDefenders => "Keeps defenders at their current held position.",
+                GameActionId.PerimeterDefenders => "Distributes defenders around outer approach lanes.",
                 GameActionId.DefendArea => "Requires a selected tile. Future defenders will also go there.",
                 GameActionId.SetRealtimeRunning => _realTimeSimulationController.IsRunning ? "Pause realtime simulation." : "Start realtime simulation.",
                 _ => string.Empty
@@ -1027,6 +1047,7 @@ namespace Ggj2026.Game.Shell.World
                 GameActionId.SetInspectorTab => _activeInspectorTab == envelope.inspectorTab,
                 GameActionId.RallyDefenders => standingOrder?.orderKind == SquadOrderKind.Garrison,
                 GameActionId.HoldDefenders => standingOrder?.orderKind == SquadOrderKind.Hold,
+                GameActionId.PerimeterDefenders => standingOrder?.orderKind == SquadOrderKind.Perimeter,
                 GameActionId.DefendArea => standingOrder?.orderKind == SquadOrderKind.DefendArea &&
                                            envelope.hasTargetCell &&
                                            standingOrder.targetHex == envelope.targetCell,

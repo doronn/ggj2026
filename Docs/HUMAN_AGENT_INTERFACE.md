@@ -21,7 +21,7 @@ Current onboarding rules:
 
 The onboarding currently teaches:
 - what the top bar is for
-- what the command panel is for
+- what the actions panel is for
 - what the inspector is for
 - what the event strip is for
 - the current core colony loop at a high level
@@ -67,12 +67,28 @@ The default rail should stay quiet:
 - prefer a contextual `Next` group for the immediately useful actions
 - reveal broader tool families when the current context or active tool makes them relevant
 
+Current disclosure behavior:
+- with no selection, show the core build entry points (`Floors`, `Edges`) and hide unrelated families
+- when an edge is selected, prefer `Edges` and hide unrelated placement groups
+- when a landmark is selected, show `Landmarks`
+- when a tool is active, prioritize that tool family and avoid showing unrelated families
+
+Readability defaults:
+- labels should use plain language (`Actions`, `Current Action`, `Cursor Target`, `Latest Result`, `Blockers`)
+- keep `Current mode`, `Next`, and `Suggested action` visible near the main controls
+- when stylesheet binding fails, the HUD must still render with readable fallback colors, spacing, and button targets
+
 ### Right context inspector
 Tabs:
 - `Context`
 - `Tasks`
 - `Entities`
 - `World`
+
+Entities tab expectations:
+- each unit entry must show a plain-language status and assignment reason
+- idle units should explain what is missing (for example: no source, waiting to haul, no pending work)
+- the same per-unit explanation should be available through MCP HUD/entity queries
 
 Context priority:
 1. selected entity
@@ -94,6 +110,7 @@ Current maintained world-level defense verb:
 Current maintained world-level defense-order verbs:
 - `Rally Defenders`
 - `Hold Defenders`
+- `Perimeter Defenders`
 
 Current maintained contextual defense verb:
 - `Defend Here`
@@ -272,6 +289,7 @@ Defense-management action currently exposed through the shared action model:
 - `TrainSoldier`
 - `RallyDefenders`
 - `HoldDefenders`
+- `PerimeterDefenders`
 - `DefendArea`
 
 Onboarding actions currently exposed through the shared action model:
@@ -282,7 +300,7 @@ Onboarding actions currently exposed through the shared action model:
 
 These are intended to be invoked either from HUD task cards or through `unity_game_execute_action` with `targetConstructionId`.
 `TrainSoldier` is intended to be invoked from the world/defense card or through `unity_game_execute_action` without a cell target.
-`RallyDefenders` and `HoldDefenders` are intended to be invoked from the world/defense card or through `unity_game_execute_action` without a cell target.
+`RallyDefenders`, `HoldDefenders`, and `PerimeterDefenders` are intended to be invoked from the world/defense card or through `unity_game_execute_action` without a cell target.
 `DefendArea` is intended to be invoked from a selected tile context card or through `unity_game_execute_action` with `targetCell`.
 The current training flow consumes one recruit and one weapons stack up front, then materializes a soldier at the colony rally point when training completes.
 

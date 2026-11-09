@@ -8,6 +8,9 @@ using Ggj2026.Game.Shell.Config;
 using Ggj2026.Game.Shell.Diagnostics;
 using UnityEngine;
 using Zenject;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Ggj2026.Game.Shell.World
 {
@@ -75,6 +78,14 @@ namespace Ggj2026.Game.Shell.World
                 renderer = new GameObject("LocalWorldDebugRenderer").AddComponent<LocalWorldDebugRenderer>();
             }
 
+#if UNITY_EDITOR
+            WorldVisualPrefabLibrary visualLibrary =
+                AssetDatabase.LoadAssetAtPath<WorldVisualPrefabLibrary>("Assets/_Game/Art/WorldVisuals/WorldVisualPrefabLibrary.asset");
+            if (visualLibrary != null)
+            {
+                renderer.SetVisualPrefabLibrary(visualLibrary);
+            }
+#endif
             renderer.Initialize(snapshot, profile, gameplayService);
 
             var overlay = FindFirstObjectByType<ClientWorldHudController>();

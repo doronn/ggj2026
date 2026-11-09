@@ -130,6 +130,8 @@
   - World-space selection visuals, unit emphasis, wall/door rendering, and edge/cell hover feedback.
 - `Assets/_Game/Authoring/Editor/UiPlanInstallerService.cs`
   - Creates/refreshes the UI plan manifest and wires maintained `_Game` UI Toolkit documents into scenes.
+- `Assets/_Game/Authoring/Editor/PolygonAssetIntegrationWindow.cs`
+  - UI Toolkit editor window for importing selected Polygon `.unitypackage` packs from `/Users/doronnacash/polygon assets`, repairing incompatible legacy shaders/materials for URP, and auto-building `WorldVisualPrefabLibrary` mappings for runtime placeholder replacement.
 - `Assets/_Game/Authoring/Editor/HudStateBrowserWindow.cs`
   - UI Toolkit editor window for comparing the live human HUD state with the shared action/query surface used by MCP.
 - `Assets/_Game/Authoring/Editor/Mcp/UnityEditorMcpBridge.cs`
@@ -207,16 +209,21 @@
   - players should be able to click directly on the world and understand what will be selected
   - players should be able to see what is currently selected without reading the inspector first
   - hover/selection labels and contextual actions should explain the next useful action
+  - operations rail groups should stay progressively disclosed:
+    - keep `Simulation`/`View`/`Next` visible
+    - reveal `Floors`/`Edges`/`Modules`/`Landmarks`/`Cleanup` only when context or active tool makes them relevant
   - MCP gameplay queries should expose the same selection/context state the human HUD is using
 - Current shared defense verb:
   - `Train Soldier`
 - Current shared defense-order verbs:
   - `Rally Defenders`
   - `Hold Defenders`
+  - `Perimeter Defenders`
   - `Defend Here` (selected tile / targeted cell)
 - Current defense read model expectations:
   - world card shows barracks readiness, training status, current defender order, soldiers, threat summary, raid state, and weapons availability
   - blockers surface plain-language reasons such as missing barracks, missing weapons, no recruitable workforce, or an active raid
+  - entity summaries should include plain-language assignment/idle reasons that can be read from both HUD state and MCP queries
 
 ### Compile logs
 - Repo-local compile log:
@@ -278,6 +285,11 @@ Use it with Unity `-executeMethod` only when Unity is not already open on the pr
   - prefer the live editor bridge for scene/play-mode/editor tasks when the project is open,
   - prefer the live editor bridge for edit-mode and play-mode test runs when the project is open,
   - fall back to batch Unity commands for compile, UI-install, and test tasks when the bridge is unavailable.
+- Use `unity_polygon_visual_maintenance` for noninteractive Polygon asset upkeep:
+  - optional `.unitypackage` import from `/Users/doronnacash/polygon assets`,
+  - material/shader repair,
+  - visual library rebuild,
+  - assignment to loaded `LocalWorldDebugRenderer` components.
 - For gameplay work, query first:
   - `unity_game_hud_state`
   - `unity_game_selection`

@@ -21,7 +21,8 @@ namespace Ggj2026.Game.Shared.Combat
         DefendArea,
         Raid,
         Retreat,
-        Garrison
+        Garrison,
+        Perimeter
     }
 
     [Serializable]

@@ -9,6 +9,7 @@ using Ggj2026.Game.Shared.Telemetry;
 using Ggj2026.Game.Shared.UI;
 using Ggj2026.Game.Shared.Units;
 using Ggj2026.Game.Shared.World;
+using Ggj2026.Game.Shell.Audio;
 using Ggj2026.Game.Shell.Config;
 using Ggj2026.Game.Shell.Navigation;
 using Ggj2026.Game.Shell.UI;
@@ -56,10 +57,12 @@ namespace Ggj2026.Game.Shell.World
         private ScrollView _operationsScroll;
         private VisualElement _operationsRail;
         private Label _activeToolLabel;
+        private Label _nextStepLabel;
         private VisualElement _contextInspector;
         private Label _contextTitleLabel;
         private Label _contextSubtitleLabel;
         private Label _contextSummaryLabel;
+        private Label _contextActionHintLabel;
         private Button _contextTabButton;
         private Button _tasksTabButton;
         private Button _entitiesTabButton;
@@ -79,6 +82,7 @@ namespace Ggj2026.Game.Shell.World
         private VisualElement _hoverWorldLabel;
         private Label _hoverWorldLabelTitle;
         private Label _hoverWorldLabelSubtitle;
+        private VisualElement _controlHintsBar;
         private VisualElement _onboardingOverlay;
         private VisualElement _onboardingCard;
         private Label _onboardingProgressLabel;
@@ -90,9 +94,13 @@ namespace Ggj2026.Game.Shell.World
         private Button _onboardingNextButton;
         private Button _onboardingSkipButton;
         private string _lastOperationsRailRenderKey = string.Empty;
+        private bool _hasHudStylesheet;
+        private bool _fallbackStylesApplied;
 
         private bool _toolStrokeActive;
         private string _lastRenderKey = string.Empty;
+        private string _pendingMilestoneMessage;
+        private float _milestoneDisplayEndTime;
 
         public static ClientWorldHudController Active { get; private set; }
 
@@ -119,6 +127,8 @@ namespace Ggj2026.Game.Shell.World
             {
                 _gameplayService.WorldChanged -= HandleWorldChanged;
                 _gameplayService.WorldChanged += HandleWorldChanged;
+                _gameplayService.MilestoneAchieved -= HandleMilestoneAchieved;
+                _gameplayService.MilestoneAchieved += HandleMilestoneAchieved;
             }
 
             _actionService.StateChanged -= RefreshAll;
@@ -203,6 +213,7 @@ namespace Ggj2026.Game.Shell.World
             if (_gameplayService != null)
             {
                 _gameplayService.WorldChanged -= HandleWorldChanged;
+                _gameplayService.MilestoneAchieved -= HandleMilestoneAchieved;
             }
 
             if (_actionService != null)
@@ -236,9 +247,24 @@ namespace Ggj2026.Game.Shell.World
                     return;
                 }
 
-                ReturnToMenu().Forget();
+                if (PauseMenuController.Active != null)
+                {
+                    PauseMenuController.Active.TogglePause();
+                }
+                else
+                {
+                    ReturnToMenu().Forget();
+                }
+
                 return;
             }
+
+            if (PauseMenuController.Active != null && PauseMenuController.Active.IsPaused)
+            {
+                return;
+            }
+
+            HandleKeyboardShortcuts();
 
             if (Mouse.current == null)
             {
@@ -294,6 +320,86 @@ namespace Ggj2026.Game.Shell.World
 
             UpdateWorldLabels();
             RefreshIfStateChanged();
+        }
+
+        private void HandleKeyboardShortcuts()
+        {
+            if (_actionService == null || Keyboard.current == null) return;
+
+            if (Keyboard.current.spaceKey.wasPressedThisFrame)
+            {
+                ExecuteUiAction(_actionService.CreateEnvelope(
+                    GameActionId.SetRealtimeRunning,
+                    desiredRunningState: _realTimeSimulationController != null && !_realTimeSimulationController.IsRunning,
+                    uiSource: CreateUiSource("Keyboard", "Space")), "Keyboard", "ToggleSim").Forget();
+            }
+
+            if (Keyboard.current.equalsKey.wasPressedThisFrame || Keyboard.current.numpadPlusKey.wasPressedThisFrame)
+            {
+                float newSpeed = _realTimeSimulationController != null
+                    ? Mathf.Min(_realTimeSimulationController.SpeedMultiplier * 2f, 8f)
+                    : 2f;
+                ExecuteUiAction(_actionService.CreateEnvelope(
+                    GameActionId.AdjustSimulationSpeed,
+                    speedMultiplier: newSpeed,
+                    uiSource: CreateUiSource("Keyboard", "SpeedUp")), "Keyboard", "SpeedUp").Forget();
+            }
+
+            if (Keyboard.current.minusKey.wasPressedThisFrame || Keyboard.current.numpadMinusKey.wasPressedThisFrame)
+            {
+                float newSpeed = _realTimeSimulationController != null
+                    ? Mathf.Max(_realTimeSimulationController.SpeedMultiplier * 0.5f, 0.25f)
+                    : 0.5f;
+                ExecuteUiAction(_actionService.CreateEnvelope(
+                    GameActionId.AdjustSimulationSpeed,
+                    speedMultiplier: newSpeed,
+                    uiSource: CreateUiSource("Keyboard", "SlowDown")), "Keyboard", "SlowDown").Forget();
+            }
+
+            if (Keyboard.current.tabKey.wasPressedThisFrame)
+            {
+                InspectorTabKind next = _actionService.ActiveInspectorTab switch
+                {
+                    InspectorTabKind.Context => InspectorTabKind.Tasks,
+                    InspectorTabKind.Tasks => InspectorTabKind.Entities,
+                    InspectorTabKind.Entities => InspectorTabKind.World,
+                    _ => InspectorTabKind.Context
+                };
+                ExecuteUiAction(_actionService.CreateEnvelope(
+                    GameActionId.SetInspectorTab,
+                    inspectorTab: next,
+                    uiSource: CreateUiSource("Keyboard", "Tab")), "Keyboard", "CycleTab").Forget();
+            }
+
+            if (Keyboard.current.digit1Key.wasPressedThisFrame)
+            {
+                ExecuteUiAction(_actionService.CreateEnvelope(GameActionId.SetFloorTool, uiSource: CreateUiSource("Keyboard", "1")), "Keyboard", "FloorTool").Forget();
+            }
+
+            if (Keyboard.current.digit2Key.wasPressedThisFrame)
+            {
+                ExecuteUiAction(_actionService.CreateEnvelope(GameActionId.SetEdgeTool, uiSource: CreateUiSource("Keyboard", "2")), "Keyboard", "EdgeTool").Forget();
+            }
+
+            if (Keyboard.current.digit3Key.wasPressedThisFrame)
+            {
+                ExecuteUiAction(_actionService.CreateEnvelope(GameActionId.SetModuleTool, uiSource: CreateUiSource("Keyboard", "3")), "Keyboard", "ModuleTool").Forget();
+            }
+
+            if (Keyboard.current.digit4Key.wasPressedThisFrame)
+            {
+                ExecuteUiAction(_actionService.CreateEnvelope(GameActionId.SetLandmarkTool, uiSource: CreateUiSource("Keyboard", "4")), "Keyboard", "LandmarkTool").Forget();
+            }
+
+            if (Keyboard.current.digit5Key.wasPressedThisFrame)
+            {
+                ExecuteUiAction(_actionService.CreateEnvelope(GameActionId.SetClearCellTool, uiSource: CreateUiSource("Keyboard", "5")), "Keyboard", "ClearCellTool").Forget();
+            }
+
+            if (Keyboard.current.digit6Key.wasPressedThisFrame)
+            {
+                ExecuteUiAction(_actionService.CreateEnvelope(GameActionId.SetClearEdgeTool, uiSource: CreateUiSource("Keyboard", "6")), "Keyboard", "ClearEdgeTool").Forget();
+            }
         }
 
         private async UniTaskVoid ReturnToMenu()
@@ -366,11 +472,8 @@ namespace Ggj2026.Game.Shell.World
             _root = uiDocument.rootVisualElement;
             _root.Clear();
             _root.style.flexGrow = 1f;
-
-            if (styleSheet != null && !_root.styleSheets.Contains(styleSheet))
-            {
-                _root.styleSheets.Add(styleSheet);
-            }
+            _fallbackStylesApplied = false;
+            AttachHudStyleSheets();
 
             if (visualTreeAsset != null)
             {
@@ -395,10 +498,12 @@ namespace Ggj2026.Game.Shell.World
             _operationsScroll = _root.Q<ScrollView>("OperationsRailScroll");
             _operationsRail = _root.Q<VisualElement>("OperationsRailContainer");
             _activeToolLabel = _root.Q<Label>("ActiveToolLabel");
+            _nextStepLabel = _root.Q<Label>("NextStepLabel");
             _contextInspector = _root.Q<VisualElement>("ContextInspectorPanel");
             _contextTitleLabel = _root.Q<Label>("ContextTitleLabel");
             _contextSubtitleLabel = _root.Q<Label>("ContextSubtitleLabel");
             _contextSummaryLabel = _root.Q<Label>("ContextSummaryLabel");
+            _contextActionHintLabel = _root.Q<Label>("ContextActionHintLabel");
             _contextTabButton = _root.Q<Button>("ContextTabButton");
             _tasksTabButton = _root.Q<Button>("TasksTabButton");
             _entitiesTabButton = _root.Q<Button>("EntitiesTabButton");
@@ -411,6 +516,7 @@ namespace Ggj2026.Game.Shell.World
             _blockerHintLabel = _root.Q<Label>("BlockerHintLabel");
             _warningHintLabel = _root.Q<Label>("WarningHintLabel");
             _eventStripPanel = _root.Q<VisualElement>("EventStripPanel");
+            _controlHintsBar = _root.Q<VisualElement>("ControlHintsBar");
             _worldOverlayLayer = _root.Q<VisualElement>("WorldOverlayLayer");
             _selectedWorldLabel = _root.Q<VisualElement>("SelectedWorldLabel");
             _selectedWorldLabelTitle = _root.Q<Label>("SelectedWorldLabelTitle");
@@ -429,9 +535,26 @@ namespace Ggj2026.Game.Shell.World
             _onboardingNextButton = _root.Q<Button>("OnboardingNextButton");
             _onboardingSkipButton = _root.Q<Button>("OnboardingSkipButton");
 
+            var _shellEl = _root.Q<VisualElement>("ClientWorldHudRoot");
+            if (_shellEl != null) _shellEl.pickingMode = PickingMode.Ignore;
+            var _bodyEl = _root.Q<VisualElement>("HudBody");
+            if (_bodyEl != null) _bodyEl.pickingMode = PickingMode.Ignore;
+            var _spacerEl = _root.Q<VisualElement>("HudCenterSpacer");
+            if (_spacerEl != null) _spacerEl.pickingMode = PickingMode.Ignore;
+            if (_worldOverlayLayer != null) _worldOverlayLayer.pickingMode = PickingMode.Ignore;
+            if (_selectedWorldLabel != null) _selectedWorldLabel.pickingMode = PickingMode.Ignore;
+            if (_selectedWorldLabelTitle != null) _selectedWorldLabelTitle.pickingMode = PickingMode.Ignore;
+            if (_selectedWorldLabelSubtitle != null) _selectedWorldLabelSubtitle.pickingMode = PickingMode.Ignore;
+            if (_hoverWorldLabel != null) _hoverWorldLabel.pickingMode = PickingMode.Ignore;
+            if (_hoverWorldLabelTitle != null) _hoverWorldLabelTitle.pickingMode = PickingMode.Ignore;
+            if (_hoverWorldLabelSubtitle != null) _hoverWorldLabelSubtitle.pickingMode = PickingMode.Ignore;
+            if (_onboardingOverlay != null) _onboardingOverlay.pickingMode = PickingMode.Ignore;
+
             RuntimeInputCaptureService.Active?.ClearRegisteredElements();
+            RuntimeInputCaptureService.Active?.RegisterBlockingElement(_worldTopBar);
             RuntimeInputCaptureService.Active?.RegisterBlockingElement(_root.Q<VisualElement>("OperationsRailPanel"));
             RuntimeInputCaptureService.Active?.RegisterBlockingElement(_contextInspector);
+            RuntimeInputCaptureService.Active?.RegisterBlockingElement(_eventStripPanel);
             RuntimeInputCaptureService.Active?.RegisterBlockingElement(_onboardingCard);
 
             if (_worldTopBar != null)
@@ -453,6 +576,34 @@ namespace Ggj2026.Game.Shell.World
             if (_eventStripPanel != null)
             {
                 _eventStripPanel.tooltip = _onboardingFlowService != null ? _onboardingFlowService.GetPanelTooltip("EventStripPanel") : string.Empty;
+            }
+
+            if (!_hasHudStylesheet)
+            {
+                ApplyFallbackRuntimeStyles();
+            }
+        }
+
+        private void AttachHudStyleSheets()
+        {
+            _hasHudStylesheet = false;
+
+            StyleSheet defaultHudStyle = LoadDefaultHudStyleSheet();
+            if (defaultHudStyle != null && !_root.styleSheets.Contains(defaultHudStyle))
+            {
+                _root.styleSheets.Add(defaultHudStyle);
+                _hasHudStylesheet = true;
+            }
+
+            if (styleSheet != null && !_root.styleSheets.Contains(styleSheet))
+            {
+                _root.styleSheets.Add(styleSheet);
+                _hasHudStylesheet = true;
+            }
+
+            if (!_hasHudStylesheet && styleSheet != null)
+            {
+                _hasHudStylesheet = true;
             }
         }
 
@@ -481,7 +632,10 @@ namespace Ggj2026.Game.Shell.World
             body.style.flexDirection = FlexDirection.Row;
             var operationsPanel = new VisualElement { name = "OperationsRailPanel" };
             operationsPanel.style.width = 360f;
+            operationsPanel.Add(new Label { text = "Actions" });
+            operationsPanel.Add(new Label { text = "Choose an action, then click or drag on the world." });
             operationsPanel.Add(new Label { name = "ActiveToolLabel", text = "Active tool: None" });
+            operationsPanel.Add(new Label { name = "NextStepLabel", text = "Next step: Select a tile to begin." });
             operationsPanel.Add(new ScrollView { name = "OperationsRailScroll" });
             operationsPanel.Q<ScrollView>("OperationsRailScroll").Add(new VisualElement { name = "OperationsRailContainer" });
             body.Add(operationsPanel);
@@ -495,6 +649,7 @@ namespace Ggj2026.Game.Shell.World
             inspector.Add(new Label { name = "ContextTitleLabel", text = "Context" });
             inspector.Add(new Label { name = "ContextSubtitleLabel", text = "Nothing selected" });
             inspector.Add(new Label { name = "ContextSummaryLabel", text = "Select something in the world." });
+            inspector.Add(new Label { name = "ContextActionHintLabel", text = "Suggested action: Select a tile, edge, or unit." });
             var tabs = new VisualElement { name = "InspectorTabBar" };
             tabs.style.flexDirection = FlexDirection.Row;
             tabs.Add(new Button { name = "ContextTabButton", text = "Context" });
@@ -508,6 +663,7 @@ namespace Ggj2026.Game.Shell.World
             shell.Add(body);
 
             var worldOverlay = new VisualElement { name = "WorldOverlayLayer" };
+            worldOverlay.pickingMode = PickingMode.Ignore;
             worldOverlay.style.position = Position.Absolute;
             worldOverlay.style.left = 0f;
             worldOverlay.style.right = 0f;
@@ -515,11 +671,13 @@ namespace Ggj2026.Game.Shell.World
             worldOverlay.style.bottom = 0f;
 
             var hoverLabel = new VisualElement { name = "HoverWorldLabel" };
+            hoverLabel.pickingMode = PickingMode.Ignore;
             hoverLabel.Add(new Label { name = "HoverWorldLabelTitle" });
             hoverLabel.Add(new Label { name = "HoverWorldLabelSubtitle" });
             worldOverlay.Add(hoverLabel);
 
             var selectedLabel = new VisualElement { name = "SelectedWorldLabel" };
+            selectedLabel.pickingMode = PickingMode.Ignore;
             selectedLabel.Add(new Label { name = "SelectedWorldLabelTitle" });
             selectedLabel.Add(new Label { name = "SelectedWorldLabelSubtitle" });
             worldOverlay.Add(selectedLabel);
@@ -599,6 +757,19 @@ namespace Ggj2026.Game.Shell.World
             RefreshAll();
         }
 
+        private void HandleMilestoneAchieved(ColonyMilestone milestone)
+        {
+            if (_gameplayService == null)
+            {
+                return;
+            }
+
+            _pendingMilestoneMessage = _gameplayService.LastMilestoneMessage;
+            _milestoneDisplayEndTime = Time.time + 5f;
+            ColonyAudioService.Active?.PlaySound(ColonySoundId.MilestoneFanfare);
+            RefreshAll();
+        }
+
         private void RefreshIfStateChanged()
         {
             string renderKey = BuildRenderKey();
@@ -647,10 +818,29 @@ namespace Ggj2026.Game.Shell.World
             RenderWorldBar(hudState.worldBar);
             RenderOperationsRail(hudState.operationsRail);
             RenderContextInspector(hudState.contextInspector);
+            RenderGuidance(hudState);
             RenderEventStrip(hudState.eventStrip);
+            RenderMilestoneNotification();
             RenderOnboarding(hudState.onboarding);
+            RenderControlHints();
             UpdateWorldLabels();
+            EnsureReadableStyles();
             _lastRenderKey = BuildRenderKey();
+        }
+
+        private void RenderMilestoneNotification()
+        {
+            if (string.IsNullOrEmpty(_pendingMilestoneMessage) || Time.time > _milestoneDisplayEndTime)
+            {
+                _pendingMilestoneMessage = null;
+                return;
+            }
+
+            if (_warningHintLabel != null)
+            {
+                _warningHintLabel.text = _pendingMilestoneMessage;
+                _warningHintLabel.style.display = DisplayStyle.Flex;
+            }
         }
 
         private void RenderWorldBar(WorldBarState worldBar)
@@ -740,6 +930,52 @@ namespace Ggj2026.Game.Shell.World
             }
         }
 
+        private void RenderGuidance(HumanAgentHudState hudState)
+        {
+            if (_nextStepLabel != null)
+            {
+                string blockerText = hudState?.worldBar?.blockerText ?? string.Empty;
+                if (IsActionToolMode(_actionService != null ? _actionService.ActiveToolMode : WorldToolMode.None))
+                {
+                    _nextStepLabel.text = "Next: Click or drag on the world to apply the current tool.";
+                }
+                else if (!string.IsNullOrWhiteSpace(blockerText) &&
+                         !blockerText.Equals("No blockers", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    _nextStepLabel.text = $"Next: Resolve blocker - {blockerText}";
+                }
+                else if (TryFindFirstEnabledContextAction(hudState?.contextInspector, out GameActionDescriptor contextAction))
+                {
+                    _nextStepLabel.text = $"Next: {contextAction.label}";
+                }
+                else if (TryFindFirstEnabledAction(hudState?.operationsRail, out GameActionDescriptor opAction))
+                {
+                    _nextStepLabel.text = $"Next: {opAction.label}";
+                }
+                else
+                {
+                    _nextStepLabel.text = "Next: Select a tile in the world.";
+                }
+            }
+
+            if (_contextActionHintLabel != null)
+            {
+                if (TryFindFirstEnabledContextAction(hudState?.contextInspector, out GameActionDescriptor contextAction))
+                {
+                    _contextActionHintLabel.text = $"Suggested action: {contextAction.label}";
+                }
+                else if (TryFindFirstBlockedContextAction(hudState?.contextInspector, out GameActionDescriptor blockedAction) &&
+                         !string.IsNullOrWhiteSpace(blockedAction.blockedReason))
+                {
+                    _contextActionHintLabel.text = $"Blocked: {blockedAction.blockedReason}";
+                }
+                else
+                {
+                    _contextActionHintLabel.text = "Suggested action: Select a tile, edge, or unit.";
+                }
+            }
+        }
+
         private void RenderEventStrip(EventStripState eventStrip)
         {
             _currentToolHintLabel.text = eventStrip.currentToolText;
@@ -762,6 +998,7 @@ namespace Ggj2026.Game.Shell.World
             if (!isActive)
             {
                 ClearOnboardingHighlights();
+                _renderer?.SetOnboardingMarker(null);
                 SetInspectorTabVisibility(_contextTabButton, true);
                 SetInspectorTabVisibility(_tasksTabButton, true);
                 SetInspectorTabVisibility(_entitiesTabButton, true);
@@ -769,11 +1006,20 @@ namespace Ggj2026.Game.Shell.World
                 return;
             }
 
+            _renderer?.SetOnboardingMarker(onboarding.hasWorldMarkerCell ? onboarding.worldMarkerCell : (HexCoord?)null);
+
             _onboardingProgressLabel.text = onboarding.progressText;
             _onboardingTitleLabel.text = onboarding.title;
             _onboardingBodyLabel.text = onboarding.body;
             _onboardingEmphasisLabel.text = onboarding.emphasis;
-            _onboardingTipLabel.text = onboarding.tip;
+            string tipText = onboarding.tip;
+            if (onboarding.hasTryItAction)
+            {
+                tipText = string.IsNullOrWhiteSpace(tipText)
+                    ? "Try it now!"
+                    : tipText + " \u2014 Try it now!";
+            }
+            _onboardingTipLabel.text = tipText;
             _onboardingBackButton.SetEnabled(onboarding.canGoBack);
             _onboardingSkipButton.SetEnabled(onboarding.canSkip);
             _onboardingNextButton.text = onboarding.isFinalStep ? "Finish Guide" : "Next Tip";
@@ -814,6 +1060,24 @@ namespace Ggj2026.Game.Shell.World
             SetInspectorTabVisibility(_tasksTabButton, showTasks);
             SetInspectorTabVisibility(_entitiesTabButton, showEntities);
             SetInspectorTabVisibility(_worldTabButton, showWorld);
+        }
+
+        private void RenderControlHints()
+        {
+            if (_controlHintsBar == null) return;
+            _controlHintsBar.Clear();
+            InputDeviceKind device = InputDeviceService.Active != null ? InputDeviceService.Active.CurrentDevice : InputDeviceKind.KeyboardMouse;
+
+            _controlHintsBar.Add(KeycapStyleFactory.CreateHint(KeycapStyleFactory.GetKeyText("ToggleSim", device), "Play/Pause", device));
+            _controlHintsBar.Add(KeycapStyleFactory.CreateHint(KeycapStyleFactory.GetKeyText("SpeedUp", device), "Faster", device));
+            _controlHintsBar.Add(KeycapStyleFactory.CreateHint(KeycapStyleFactory.GetKeyText("SlowDown", device), "Slower", device));
+            _controlHintsBar.Add(KeycapStyleFactory.CreateHint(KeycapStyleFactory.GetKeyText("CycleTab", device), "Cycle Tab", device));
+            _controlHintsBar.Add(KeycapStyleFactory.CreateHint(KeycapStyleFactory.GetKeyText("Pause", device), "Pause", device));
+
+            if (_actionService != null && _actionService.ActiveToolMode != WorldToolMode.None)
+            {
+                _controlHintsBar.Add(KeycapStyleFactory.CreateHint(KeycapStyleFactory.GetKeyText("CancelTool", device), "Cancel Tool", device));
+            }
         }
 
         private void SetInspectorTabVisibility(Button button, bool isVisible)
@@ -992,11 +1256,16 @@ namespace Ggj2026.Game.Shell.World
 
             content.Add(header);
 
-            string metaText = !string.IsNullOrWhiteSpace(descriptor.blockedReason)
-                ? descriptor.blockedReason
-                : !string.IsNullOrWhiteSpace(descriptor.description)
-                    ? descriptor.description
-                    : descriptor.hint;
+            string metaText = string.Empty;
+            if (!string.IsNullOrWhiteSpace(descriptor.blockedReason))
+            {
+                metaText = descriptor.blockedReason;
+            }
+            else if (descriptor.isActive && !string.IsNullOrWhiteSpace(descriptor.hint))
+            {
+                metaText = descriptor.hint;
+            }
+
             if (!string.IsNullOrWhiteSpace(metaText))
             {
                 var meta = new Label(metaText);
@@ -1023,11 +1292,344 @@ namespace Ggj2026.Game.Shell.World
             return button;
         }
 
+        private static bool TryFindFirstEnabledAction(OperationsRailViewModel rail, out GameActionDescriptor descriptor)
+        {
+            descriptor = null;
+            if (rail?.groups == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < rail.groups.Count; i++)
+            {
+                OperationsGroupViewModel group = rail.groups[i];
+                if (group?.actions == null)
+                {
+                    continue;
+                }
+
+                for (int j = 0; j < group.actions.Count; j++)
+                {
+                    GameActionDescriptor candidate = group.actions[j];
+                    if (candidate != null && candidate.isEnabled)
+                    {
+                        descriptor = candidate;
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static bool TryFindFirstEnabledContextAction(ContextInspectorViewModel inspector, out GameActionDescriptor descriptor)
+        {
+            descriptor = null;
+            if (inspector == null)
+            {
+                return false;
+            }
+
+            List<ContextCardViewModel> cards = inspector.activeTab switch
+            {
+                InspectorTabKind.Context => inspector.contextCards,
+                InspectorTabKind.Tasks => inspector.taskCards,
+                InspectorTabKind.Entities => inspector.entityCards,
+                _ => inspector.worldCards
+            };
+
+            if (cards == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < cards.Count; i++)
+            {
+                ContextCardViewModel card = cards[i];
+                if (card?.actions == null)
+                {
+                    continue;
+                }
+
+                for (int j = 0; j < card.actions.Count; j++)
+                {
+                    GameActionDescriptor candidate = card.actions[j];
+                    if (candidate != null && candidate.isEnabled)
+                    {
+                        descriptor = candidate;
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static bool TryFindFirstBlockedContextAction(ContextInspectorViewModel inspector, out GameActionDescriptor descriptor)
+        {
+            descriptor = null;
+            if (inspector == null)
+            {
+                return false;
+            }
+
+            List<ContextCardViewModel> cards = inspector.activeTab switch
+            {
+                InspectorTabKind.Context => inspector.contextCards,
+                InspectorTabKind.Tasks => inspector.taskCards,
+                InspectorTabKind.Entities => inspector.entityCards,
+                _ => inspector.worldCards
+            };
+
+            if (cards == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < cards.Count; i++)
+            {
+                ContextCardViewModel card = cards[i];
+                if (card?.actions == null)
+                {
+                    continue;
+                }
+
+                for (int j = 0; j < card.actions.Count; j++)
+                {
+                    GameActionDescriptor candidate = card.actions[j];
+                    if (candidate == null || candidate.isEnabled)
+                    {
+                        continue;
+                    }
+
+                    descriptor = candidate;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsActionToolMode(WorldToolMode mode)
+        {
+            return mode == WorldToolMode.PaintFloor ||
+                   mode == WorldToolMode.BuildEdge ||
+                   mode == WorldToolMode.PlaceModule ||
+                   mode == WorldToolMode.PlaceLandmark ||
+                   mode == WorldToolMode.ClearCell ||
+                   mode == WorldToolMode.ClearEdge;
+        }
+
+        private void ApplyFallbackRuntimeStyles()
+        {
+            Color shellText = new Color(0.94f, 0.96f, 0.97f, 1f);
+            Color panel = new Color(0.08f, 0.11f, 0.14f, 0.95f);
+            Color panelStrong = new Color(0.12f, 0.16f, 0.2f, 0.97f);
+            _fallbackStylesApplied = true;
+
+            VisualElement shell = _root.Q<VisualElement>("ClientWorldHudRoot");
+            if (shell != null)
+            {
+                shell.style.flexDirection = FlexDirection.Column;
+                shell.style.justifyContent = Justify.SpaceBetween;
+                shell.style.paddingLeft = 16f;
+                shell.style.paddingRight = 16f;
+                shell.style.paddingTop = 14f;
+                shell.style.paddingBottom = 14f;
+            }
+
+            if (_worldTopBar != null)
+            {
+                _worldTopBar.style.backgroundColor = panelStrong;
+                _worldTopBar.style.paddingLeft = 16f;
+                _worldTopBar.style.paddingRight = 16f;
+                _worldTopBar.style.paddingTop = 14f;
+                _worldTopBar.style.paddingBottom = 14f;
+                _worldTopBar.style.marginBottom = 10f;
+            }
+
+            ApplyFallbackPanelStyle(_root.Q<VisualElement>("OperationsRailPanel"), panel);
+            ApplyFallbackPanelStyle(_contextInspector, panel);
+            ApplyFallbackPanelStyle(_eventStripPanel, panel);
+
+            if (_activeToolLabel != null)
+            {
+                _activeToolLabel.style.color = shellText;
+                _activeToolLabel.style.fontSize = 16f;
+            }
+
+            if (_nextStepLabel != null)
+            {
+                _nextStepLabel.style.color = new Color(0.94f, 0.89f, 0.71f, 1f);
+                _nextStepLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+                _nextStepLabel.style.fontSize = 14f;
+                _nextStepLabel.style.marginBottom = 8f;
+            }
+
+            if (_contextActionHintLabel != null)
+            {
+                _contextActionHintLabel.style.color = new Color(0.89f, 0.93f, 0.97f, 1f);
+                _contextActionHintLabel.style.fontSize = 13f;
+                _contextActionHintLabel.style.marginBottom = 8f;
+            }
+
+            SetFallbackTextColor(_root, shellText);
+            ApplyFallbackActionButtonStyles();
+        }
+
+        private static void ApplyFallbackPanelStyle(VisualElement panel, Color color)
+        {
+            if (panel == null)
+            {
+                return;
+            }
+
+            panel.style.backgroundColor = color;
+            panel.style.paddingLeft = 14f;
+            panel.style.paddingRight = 14f;
+            panel.style.paddingTop = 12f;
+            panel.style.paddingBottom = 12f;
+            panel.style.borderTopLeftRadius = 14f;
+            panel.style.borderTopRightRadius = 14f;
+            panel.style.borderBottomLeftRadius = 14f;
+            panel.style.borderBottomRightRadius = 14f;
+            panel.style.borderTopWidth = 1f;
+            panel.style.borderBottomWidth = 1f;
+            panel.style.borderLeftWidth = 1f;
+            panel.style.borderRightWidth = 1f;
+            panel.style.borderTopColor = new Color(0.45f, 0.52f, 0.58f, 0.35f);
+            panel.style.borderBottomColor = new Color(0.45f, 0.52f, 0.58f, 0.35f);
+            panel.style.borderLeftColor = new Color(0.45f, 0.52f, 0.58f, 0.35f);
+            panel.style.borderRightColor = new Color(0.45f, 0.52f, 0.58f, 0.35f);
+        }
+
+        private static void SetFallbackTextColor(VisualElement root, Color color)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            List<VisualElement> stack = new List<VisualElement> { root };
+            while (stack.Count > 0)
+            {
+                int index = stack.Count - 1;
+                VisualElement current = stack[index];
+                stack.RemoveAt(index);
+
+                if (current is TextElement textElement)
+                {
+                    textElement.style.color = color;
+                    if (textElement.style.fontSize.value.value < 13f)
+                    {
+                        textElement.style.fontSize = 13f;
+                    }
+                }
+
+                foreach (VisualElement child in current.Children())
+                {
+                    stack.Add(child);
+                }
+            }
+        }
+
+        private void EnsureReadableStyles()
+        {
+            if (_root == null)
+            {
+                return;
+            }
+
+            if (!_hasHudStylesheet && !_fallbackStylesApplied)
+            {
+                ApplyFallbackRuntimeStyles();
+                return;
+            }
+
+            if (!_fallbackStylesApplied && ShouldForceFallbackFromComputedStyles())
+            {
+                ApplyFallbackRuntimeStyles();
+                return;
+            }
+
+            if (_fallbackStylesApplied)
+            {
+                ApplyFallbackActionButtonStyles();
+            }
+        }
+
+        private bool ShouldForceFallbackFromComputedStyles()
+        {
+            if (_operationsRail == null)
+            {
+                return false;
+            }
+
+            Button sampleButton = _operationsRail.Q<Button>(className: "action-button");
+            if (sampleButton == null)
+            {
+                return false;
+            }
+
+            Color bg = sampleButton.resolvedStyle.backgroundColor;
+            float brightness = (bg.r + bg.g + bg.b) / 3f;
+            return bg.a <= 0.15f || brightness >= 0.62f;
+        }
+
+        private void ApplyFallbackActionButtonStyles()
+        {
+            if (_root == null)
+            {
+                return;
+            }
+
+            List<Button> actionButtons = _root.Query<Button>(className: "action-button").ToList();
+            for (int i = 0; i < actionButtons.Count; i++)
+            {
+                Button button = actionButtons[i];
+                bool isDisabled = button.ClassListContains("action-button--disabled");
+                bool isActive = button.ClassListContains("action-button--active");
+                button.style.minHeight = 56f;
+                button.style.paddingLeft = 12f;
+                button.style.paddingRight = 12f;
+                button.style.paddingTop = 8f;
+                button.style.paddingBottom = 8f;
+                button.style.borderTopLeftRadius = 12f;
+                button.style.borderTopRightRadius = 12f;
+                button.style.borderBottomLeftRadius = 12f;
+                button.style.borderBottomRightRadius = 12f;
+                button.style.backgroundColor = isActive
+                    ? new Color(0.32f, 0.27f, 0.17f, 0.96f)
+                    : new Color(0.2f, 0.24f, 0.29f, isDisabled ? 0.72f : 0.94f);
+            }
+
+            List<Button> tabs = _root.Query<Button>(className: "inspector-tab").ToList();
+            for (int i = 0; i < tabs.Count; i++)
+            {
+                Button tab = tabs[i];
+                tab.style.minHeight = 38f;
+                tab.style.paddingLeft = 12f;
+                tab.style.paddingRight = 12f;
+                tab.style.borderTopLeftRadius = 999f;
+                tab.style.borderTopRightRadius = 999f;
+                tab.style.borderBottomLeftRadius = 999f;
+                tab.style.borderBottomRightRadius = 999f;
+                tab.style.backgroundColor = tab.ClassListContains("inspector-tab--active")
+                    ? new Color(0.31f, 0.41f, 0.48f, 0.96f)
+                    : new Color(0.24f, 0.29f, 0.35f, 0.9f);
+            }
+        }
+
         private async UniTaskVoid ExecuteUiAction(GameActionEnvelope envelope, string panelId, string elementId)
         {
             GameActionResult result = await ExecuteActionAsync(envelope);
-            if (!result.success)
+            if (result.success)
             {
+                ColonyAudioService.Active?.PlaySound(ColonySoundId.UiClick);
+            }
+            else
+            {
+                ColonyAudioService.Active?.PlaySound(ColonySoundId.ErrorBlocked);
                 Debug.LogWarning(result.blockedReason);
             }
         }
@@ -1218,28 +1820,42 @@ namespace Ggj2026.Game.Shell.World
                 List<UnitSnapshot> units = _gameplayService.GetUnitsAtCell(_renderer.HoverHex.Value);
                 if (units.Count > 0)
                 {
-                    await ExecuteActionAsync(_actionService.CreateEnvelope(
+                    GameActionResult entityResult = await ExecuteActionAsync(_actionService.CreateEnvelope(
                         GameActionId.SelectEntity,
                         targetEntityId: units[0].entityUid.ToString(),
                         uiSource: CreateUiSource("WorldCanvas", "ClickSelectEntity")));
+                    if (entityResult.success)
+                    {
+                        ColonyAudioService.Active?.PlaySound(ColonySoundId.SelectionChanged);
+                    }
+
                     return;
                 }
 
-                await ExecuteActionAsync(_actionService.CreateEnvelope(
+                GameActionResult cellResult = await ExecuteActionAsync(_actionService.CreateEnvelope(
                     GameActionId.SelectCell,
                     targetCell: _renderer.HoverHex.Value,
                     hasTargetCell: true,
                     uiSource: CreateUiSource("WorldCanvas", "ClickSelectCell")));
+                if (cellResult.success)
+                {
+                    ColonyAudioService.Active?.PlaySound(ColonySoundId.SelectionChanged);
+                }
+
                 return;
             }
 
             if (_renderer.HoverEdge.HasValue)
             {
-                await ExecuteActionAsync(_actionService.CreateEnvelope(
+                GameActionResult edgeResult = await ExecuteActionAsync(_actionService.CreateEnvelope(
                     GameActionId.SelectEdge,
                     targetEdge: _renderer.HoverEdge.Value,
                     hasTargetEdge: true,
                     uiSource: CreateUiSource("WorldCanvas", "ClickSelectEdge")));
+                if (edgeResult.success)
+                {
+                    ColonyAudioService.Active?.PlaySound(ColonySoundId.SelectionChanged);
+                }
             }
         }
 
@@ -1264,20 +1880,20 @@ namespace Ggj2026.Game.Shell.World
 
             if (state == null || !state.isVisible || UnityEngine.Camera.main == null)
             {
-                container.style.display = DisplayStyle.None;
+                container.style.opacity = 0f;
                 return;
             }
 
             Vector3 screenPosition = UnityEngine.Camera.main.WorldToScreenPoint(state.worldPosition);
             if (screenPosition.z <= 0f)
             {
-                container.style.display = DisplayStyle.None;
+                container.style.opacity = 0f;
                 return;
             }
 
             titleLabel.text = state.title;
             subtitleLabel.text = state.subtitle;
-            container.style.display = DisplayStyle.Flex;
+            container.style.opacity = 1f;
             container.style.left = Mathf.Clamp(screenPosition.x + 12f, 18f, Screen.width - 290f);
             float top = Screen.height - screenPosition.y + (preferAbove ? -56f : 16f);
             container.style.top = Mathf.Clamp(top, 18f, Screen.height - 96f);

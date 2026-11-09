@@ -16,6 +16,7 @@ Prefer the project-owned MCP control plane over ad hoc Unity commands.
    - tests
    - scene open
    - play mode enter/exit
+   - Polygon visual maintenance (`unity_polygon_visual_maintenance`) when art/material assignments need repair
    - guided manual test execution
    - gameplay HUD/context queries
    - gameplay action execution

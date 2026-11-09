@@ -193,6 +193,32 @@ namespace Ggj2026.Game.Authoring.Editor.Mcp
                     return Success(request, JsonUtility.ToJson(report, true), report.summary);
                 }
 
+                case "polygon_visual_maintenance":
+                {
+                    EditorMcpPolygonVisualMaintenancePayload payload = ParsePayload<EditorMcpPolygonVisualMaintenancePayload>(request.payloadJson);
+                    bool importPackages = payload != null && payload.importPackages;
+                    bool repairMaterials = payload == null || payload.repairMaterials || !PayloadContainsObject(request.payloadJson, "repairMaterials");
+                    bool refreshVisualLibrary = payload == null || payload.refreshVisualLibrary || !PayloadContainsObject(request.payloadJson, "refreshVisualLibrary");
+                    bool assignLibraryToRenderers = payload == null || payload.assignLibraryToRenderers || !PayloadContainsObject(request.payloadJson, "assignLibraryToRenderers");
+                    string sourceRoot = payload != null ? payload.sourceRoot : string.Empty;
+
+                    PolygonAssetIntegrationWindow.PolygonMaintenanceReport report =
+                        PolygonAssetIntegrationWindow.RunMaintenanceNonInteractive(
+                            importPackages,
+                            repairMaterials,
+                            refreshVisualLibrary,
+                            assignLibraryToRenderers,
+                            sourceRoot);
+
+                    string reportJson = JsonUtility.ToJson(report, true);
+                    if (!report.success)
+                    {
+                        return Failure(request, report.summary, reportJson);
+                    }
+
+                    return Success(request, reportJson, report.summary);
+                }
+
                 case "open_scene":
                 {
                     if (HasDirtyOpenScenes())
@@ -464,7 +490,10 @@ namespace Ggj2026.Game.Authoring.Editor.Mcp
                     }
 
                     GameActionResult result = hud.ExecuteActionAsync(envelope).GetAwaiter().GetResult();
-                    return Success(request, JsonUtility.ToJson(result, true), result.message);
+                    string resultJson = JsonUtility.ToJson(result, true);
+                    if (result.success)
+                        return Success(request, resultJson, result.message);
+                    return Failure(request, result.message, resultJson);
                 }
 
                 default:
@@ -929,11 +958,13 @@ namespace Ggj2026.Game.Authoring.Editor.Mcp
                 targetCell = new HexCoord(rawPayload.targetCell.GetQ(), rawPayload.targetCell.GetR());
             }
 
-            if (rawPayload.targetEdge?.a != null && rawPayload.targetEdge?.b != null)
+            EditorMcpHexCoordLowercase edgeA = rawPayload.targetEdge?.GetA();
+            EditorMcpHexCoordLowercase edgeB = rawPayload.targetEdge?.GetB();
+            if (edgeA != null && edgeB != null)
             {
                 targetEdge = new HexEdgeCoord(
-                    new HexCoord(rawPayload.targetEdge.a.GetQ(), rawPayload.targetEdge.a.GetR()),
-                    new HexCoord(rawPayload.targetEdge.b.GetQ(), rawPayload.targetEdge.b.GetR()));
+                    new HexCoord(edgeA.GetQ(), edgeA.GetR()),
+                    new HexCoord(edgeB.GetQ(), edgeB.GetR()));
             }
         }
 
@@ -1067,6 +1098,18 @@ namespace Ggj2026.Game.Authoring.Editor.Mcp
                 requestId = request.requestId,
                 success = false,
                 error = error ?? "Unknown error.",
+                respondedAtUtc = DateTime.UtcNow.ToString("O")
+            };
+        }
+
+        private static EditorMcpBridgeResponse Failure(EditorMcpBridgeRequest request, string error, string payloadJson)
+        {
+            return new EditorMcpBridgeResponse
+            {
+                requestId = request.requestId,
+                success = false,
+                error = error ?? "Unknown error.",
+                payloadJson = payloadJson ?? string.Empty,
                 respondedAtUtc = DateTime.UtcNow.ToString("O")
             };
         }
@@ -1401,6 +1444,16 @@ namespace Ggj2026.Game.Authoring.Editor.Mcp
         }
 
         [Serializable]
+        private class EditorMcpPolygonVisualMaintenancePayload
+        {
+            public bool importPackages;
+            public bool repairMaterials;
+            public bool refreshVisualLibrary;
+            public bool assignLibraryToRenderers;
+            public string sourceRoot;
+        }
+
+        [Serializable]
         private class EditorMcpScenePayload
         {
             public string scenePath;
@@ -1483,6 +1536,11 @@ namespace Ggj2026.Game.Authoring.Editor.Mcp
         {
             public EditorMcpHexCoordLowercase a;
             public EditorMcpHexCoordLowercase b;
+            public EditorMcpHexCoordLowercase A;
+            public EditorMcpHexCoordLowercase B;
+
+            public EditorMcpHexCoordLowercase GetA() => a ?? A;
+            public EditorMcpHexCoordLowercase GetB() => b ?? B;
         }
 
         [Serializable]

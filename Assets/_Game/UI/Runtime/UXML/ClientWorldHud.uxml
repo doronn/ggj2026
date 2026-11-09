@@ -49,9 +49,10 @@
 
         <ui:VisualElement name="HudBody" class="hud-body">
             <ui:VisualElement name="OperationsRailPanel" class="hud-panel hud-panel--rail">
-                <ui:Label text="Command Panel" class="panel-title" />
-                <ui:Label text="Pick a mode here. Then act directly on the world." class="panel-summary panel-summary--soft" />
-                <ui:Label name="ActiveToolLabel" text="Active tool: None" class="panel-summary panel-summary--hero" />
+                <ui:Label text="Actions" class="panel-title" />
+                <ui:Label text="1. Choose an action. 2. Click or drag on the world." class="panel-summary panel-summary--soft" />
+                <ui:Label name="ActiveToolLabel" text="Current mode: Select" class="panel-summary panel-summary--hero" />
+                <ui:Label name="NextStepLabel" text="Next: Select a tile to begin." class="panel-summary panel-summary--next" />
                 <ui:ScrollView name="OperationsRailScroll" class="panel-scroll">
                     <ui:VisualElement name="OperationsRailContainer" class="operations-rail" />
                 </ui:ScrollView>
@@ -61,10 +62,11 @@
 
             <ui:VisualElement name="ContextInspectorPanel" class="hud-panel hud-panel--inspector">
                 <ui:VisualElement class="context-header">
-                    <ui:Label text="Inspector" class="world-section-label" />
+                    <ui:Label text="Context" class="world-section-label" />
                     <ui:Label name="ContextTitleLabel" text="World" class="panel-title" />
                     <ui:Label name="ContextSubtitleLabel" text="No target selected" class="panel-subtitle" />
                     <ui:Label name="ContextSummaryLabel" text="Select a tile, edge, or worker to inspect it." class="panel-summary" />
+                    <ui:Label name="ContextActionHintLabel" text="Suggested action: Select a tile, edge, or unit." class="panel-summary panel-summary--next" />
                 </ui:VisualElement>
                 <ui:VisualElement name="InspectorTabBar" class="inspector-tab-bar">
                     <ui:Button name="ContextTabButton" text="Context" class="inspector-tab" />
@@ -91,15 +93,15 @@
 
         <ui:VisualElement name="EventStripPanel" class="event-strip">
             <ui:VisualElement class="event-strip__block event-strip__block--primary">
-                <ui:Label text="Tool" class="event-strip__title" />
+                <ui:Label text="Current Action" class="event-strip__title" />
                 <ui:Label name="CurrentToolHintLabel" text="Choose a tool, then act on the world." class="event-strip__item" />
             </ui:VisualElement>
             <ui:VisualElement class="event-strip__block">
-                <ui:Label text="Hover" class="event-strip__title" />
+                <ui:Label text="Cursor Target" class="event-strip__title" />
                 <ui:Label name="HoverHintLabel" text="Move the pointer over the world for details." class="event-strip__item" />
             </ui:VisualElement>
             <ui:VisualElement class="event-strip__block">
-                <ui:Label text="Last Action" class="event-strip__title" />
+                <ui:Label text="Latest Result" class="event-strip__title" />
                 <ui:Label name="LastActionLabel" text="Choose a tool and act on the world." class="event-strip__item" />
             </ui:VisualElement>
             <ui:VisualElement class="event-strip__block event-strip__block--warning">
@@ -107,6 +109,7 @@
                 <ui:Label name="BlockerHintLabel" text="No blockers" class="event-strip__item" />
                 <ui:Label name="WarningHintLabel" text="" class="event-strip__item event-strip__item--warning" />
             </ui:VisualElement>
+            <ui:VisualElement name="ControlHintsBar" class="control-hints-bar" />
         </ui:VisualElement>
 
         <ui:VisualElement name="OnboardingOverlay" class="onboarding-overlay">
